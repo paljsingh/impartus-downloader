@@ -1,0 +1,30 @@
+{
+
+  "manifest_version": 2,
+  "name": "impartus-metadata-updater",
+  "version": "1.0",
+
+  "description": "convert serialized blobs to string for easy parsing.",
+  "homepage_url": "https://github.com/paljsingh/impartus-metadata-updater.",
+
+  "icons": {
+    "48": "icons/bit-48.png"
+  },
+
+  "permissions": [
+    "activeTab"
+  ],
+
+  "content_scripts": [
+    {
+      "matches": ["*://*.impartus.com/*"],
+      "js": ["metadata-updater.js"]
+    }
+  ],
+
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "paljsingh@gmail.com"
+    }
+  }
+}
