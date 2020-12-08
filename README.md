@@ -41,7 +41,7 @@ Login and download any number of videos using the download icon.
 
 Once the download shows complete Run the application.
 
-### Running application.
+### Run application.
 
 ``` $ python3 impartus.py```
 
