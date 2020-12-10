@@ -8,6 +8,9 @@ class BrowserFactory:
 
     @classmethod
     def get_browser(cls, browser_name: str) -> IBrowser:
+        """
+        return a browser object
+        """
         browser = None
         if browser_name == 'firefox':
             browser = Firefox()

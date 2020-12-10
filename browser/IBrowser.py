@@ -9,17 +9,20 @@ class IBrowser(ABC):
     @abstractmethod
     def get_downloads(self):
         """
-        Yields a video-metadata that has been downloaded completely.
-        :return:
+        Yields a video-metadata object corresponding to a video that has been
+        successfully downloaded.
+        [see Firefox -> Tools -> Web Developer -> Storage Options -> Indexed DB ->
+        https://a.impartus.com -> video_database -> video_list ]
+        :return: metadata object(s) from the objectstore.
         """
         pass
 
     @abstractmethod
     def get_media_files(self, ttid):
         """
-        for a given ttid, return the media files (and encryption key)
+        for a given ttid, return the media files (and encryption key, if exists)
         :param ttid:
-        :return:
+        :return: encryption key or None, list of media filenames.
         """
 
     @abstractmethod
@@ -40,7 +43,7 @@ class IBrowser(ABC):
 
     def get_encryption_key(self, directory: str, file: str):        # noqa
         """
-        extract decryption key from the key-file.
+        extract encryption key from the key-file.
         :param directory:
         :param file:
         :return:

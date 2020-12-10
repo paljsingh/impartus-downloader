@@ -18,17 +18,17 @@ class Impartus:
 
     def mp4_file_path(self, ttid, metadata):
         """
-        If the browser local storage has media information, use it to create filepath,
+        If the browser objectstorage has media information, use it to create filepath,
         else create filepath using video ttid.
         :param ttid:
         :param metadata:
-        :return: filepath.
+        :return: filepath of the mp4 file.
         """
         # default new path.
         filepath = os.path.join(self.download_dir, str(ttid) + ".mp4")
 
-        metadata = Utils.sanitize(metadata)
         if metadata:
+            metadata = Utils.sanitize(metadata)
             filepath = self.conf.get('name_format').format(**metadata, target_dir=self.download_dir)
 
         os.makedirs(os.path.dirname(filepath), exist_ok=True)
@@ -38,9 +38,11 @@ class Impartus:
         """
         decrypt aes-128 bit encrypted files using the decryption key and iv=0,
         and join them into a single file.
-        :param files_list:
-        :param decryption_key:
-        :param ttid:
+        :param ttid: video ttid
+        :param encryption_key: encryption key
+        :param files_list: list of stream files.
+        :param out_directory: output directory where the temp decrypted file
+        will be stored.
         :return: return a temporary file combining all the decrypted media files.
         """
         out_file = os.path.join(out_directory, ttid)
@@ -69,10 +71,12 @@ class Impartus:
         :param ttid:
         :param encryption_key: decryption key.
         :param media_files: list of files to be decrypted.
-        :return:
+        :param filepath: path of the mp4 file to be creaed.
+        :return: True if encode successful.
         """
         tmp_ts_file = self._decrypt_and_join(ttid, encryption_key, media_files, os.path.dirname(filepath))
 
+        # TODO; Figure out how to encode multiview streams.
         try:
             # ffmpeg -i all.ts -acodec copy -vcodec copy $outfile
             stream = ffmpeg.input(tmp_ts_file)
@@ -89,12 +93,16 @@ class Impartus:
     def process_videos(self):
         """
         Download videos and decrypt, encode to mp4
-        :return:
+        :return: 
         """
 
         print("Files will be saved at: {}".format(self.download_dir))
         count = 0
         for metadata_item in self.browser.get_downloads():
+            # metadata has a ttid field, which should be ideal choice to use.
+            # However in more than one occasions I found it to be incorrect,
+            # and object store not having any matching streams.
+            # Hence the crude way...
             ttid = re.sub("^.*/([0-9]{6,})[_/].*$", r"\1", metadata_item['filePath'])
             encryption_key, media_files = self.browser.get_media_files(ttid)
 
