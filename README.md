@@ -51,7 +51,6 @@ Drop a mail to paljsingh@gmail.com for any issues/errors.
 
 ### TODO
 - Chrome implementation.
-- Fix some of the old videos having incorrect ttid.
 - force download/overwrite.
 - multiview
 - download ppt/pdf
