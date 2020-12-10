@@ -7,11 +7,11 @@ from browser.IBrowser import IBrowser
 class BrowserFactory:
 
     @classmethod
-    def get_browser(cls, browser_name: str, profile_dir: str) -> IBrowser:
+    def get_browser(cls, browser_name: str) -> IBrowser:
         browser = None
         if browser_name == 'firefox':
-            browser = Firefox(profile_dir)
+            browser = Firefox()
         if browser_name == 'chrome':
-            browser = Chrome(profile_dir)
+            browser = Chrome()
 
         return browser
