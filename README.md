@@ -42,7 +42,7 @@ Login, and download the videos. Once the download is complete, the application
 will start processing the offline streams saved in browser cache and convert it
 to mp4.
 
-This output files will be saved to a target_folder specified in yaml.conf, the
+This output files will be saved to a target_dir specified in yaml.conf, the
 sub-directory organization and naming convention can be changed using available
 placeholders (see yaml.conf).
 

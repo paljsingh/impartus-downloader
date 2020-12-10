@@ -1,3 +1,5 @@
+from selenium.webdriver.firefox.options import Options
+
 from browser.IBrowser import IBrowser
 import os
 import sqlite3
@@ -6,6 +8,8 @@ from selenium import webdriver
 import contextlib
 import selenium.webdriver.support.ui as ui
 import time
+
+from config import Config
 from utils import Utils, CompareType
 
 
@@ -43,6 +47,7 @@ return indexeddb_metadata();
     def __init__(self):
         self.impartus_url = "https://a.impartus.com"
         self.profile_dir = os.path.join(os.environ.get('HOME'), "profile.impartus")
+        self.conf = Config().config
 
         os.makedirs(self.profile_dir, exist_ok=True)
 
@@ -58,7 +63,12 @@ return indexeddb_metadata();
             # ensure firefox/geckodriver creates profile under the profile directory.
             os.environ['TMPDIR'] = self.profile_dir     # linux/mac
             os.environ['TEMP'] = self.profile_dir     # windows
-            with contextlib.closing(webdriver.Firefox()) as driver:
+
+            options = Options()
+            size_in_kb = self.conf['cache_size_in_gb'] * 1024 * 1024
+            options.set_preference(name='browser.cache.disk.capacity', value=size_in_kb)
+            with contextlib.closing(webdriver.Firefox(options=options)) as driver:
+
                 driver.get(self.impartus_url)
                 wait = ui.WebDriverWait(driver, 3600)
                 wait.until(lambda drv: driver.find_elements_by_class_name('dashboard-content'))
@@ -75,8 +85,8 @@ return indexeddb_metadata();
             print("browser closed. {}".format(ex))
             driver.quit()
 
-    def get_media_files(self, ttid):
-        obfuscated_ttid = ''.join([chr(ord(x) + 1) for x in str(ttid)])
+    def get_media_files(self, ttid: str):
+        obfuscated_ttid = ''.join([chr(ord(x) + 1) for x in ttid])
 
         key_query = 'select file_ids, key from object_data where key like "%{}%::::"'.format(obfuscated_ttid)
         file_ids_query = 'select file_ids from object_data where key like "%0{}0%" order by CAST (file_ids as INTEGER) ASC'.format(obfuscated_ttid)

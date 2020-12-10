@@ -34,7 +34,7 @@ class Impartus:
         os.makedirs(os.path.dirname(filepath), exist_ok=True)
         return filepath
 
-    def _decrypt_and_join(self, files_list, encryption_key, ttid):   # noqa
+    def _decrypt_and_join(self, ttid, encryption_key, files_list, out_directory):   # noqa
         """
         decrypt aes-128 bit encrypted files using the decryption key and iv=0,
         and join them into a single file.
@@ -43,7 +43,7 @@ class Impartus:
         :param ttid:
         :return: return a temporary file combining all the decrypted media files.
         """
-        out_file = os.path.join(self.browser.media_directory(), str(ttid))
+        out_file = os.path.join(out_directory, ttid)
 
         if encryption_key:
             dec_key_bytes = bytes(encryption_key, 'utf-8')
@@ -71,7 +71,7 @@ class Impartus:
         :param media_files: list of files to be decrypted.
         :return:
         """
-        tmp_ts_file = self._decrypt_and_join(media_files, encryption_key, ttid)
+        tmp_ts_file = self._decrypt_and_join(ttid, encryption_key, media_files, os.path.dirname(filepath))
 
         try:
             # ffmpeg -i all.ts -acodec copy -vcodec copy $outfile
