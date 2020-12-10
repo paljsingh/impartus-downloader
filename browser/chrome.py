@@ -4,14 +4,10 @@ from browser.IBrowser import IBrowser
 
 
 class Chrome(IBrowser):
-    def __init__(self, profile_dir: str):
-        self.profile_dir = profile_dir
+    def get_downloads(self):
         pass
 
-    def ttid_key_files(self):
-        pass
-
-    def local_storage(self):
+    def get_media_files(self, ttid):
         pass
 
     def indexed_db(self):
@@ -19,3 +15,8 @@ class Chrome(IBrowser):
 
     def media_directory(self):
         pass
+
+    def __init__(self, profile_dir: str):
+        self.profile_dir = profile_dir
+        pass
+
