@@ -16,7 +16,6 @@ class Chrome(IBrowser):
     def media_directory(self):
         pass
 
-    def __init__(self, profile_dir: str):
-        self.profile_dir = profile_dir
+    def __init__(self):
         pass
 
