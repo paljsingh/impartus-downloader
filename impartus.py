@@ -2,6 +2,7 @@
 import os
 import ffmpeg
 from Crypto.Cipher import AES
+import re
 
 from browser import BrowserFactory
 from config import Config
@@ -72,7 +73,6 @@ class Impartus:
         """
         tmp_ts_file = self._decrypt_and_join(media_files, encryption_key, ttid)
 
-        out = err = None
         try:
             # ffmpeg -i all.ts -acodec copy -vcodec copy $outfile
             stream = ffmpeg.input(tmp_ts_file)
@@ -92,15 +92,11 @@ class Impartus:
         :return:
         """
 
-        print("Files saved at: {}".format(self.download_dir))
+        print("Files will be saved at: {}".format(self.download_dir))
         count = 0
         for metadata_item in self.browser.get_downloads():
-            ttid = metadata_item['ttid']
+            ttid = re.sub("^.*/([0-9]{6,})/.*$", r"\1", metadata_item['filePath'])
             encryption_key, media_files = self.browser.get_media_files(ttid)
-            if not encryption_key and len(media_files) == 0:
-                # try alternate method for ttid
-                ttid = self.browser.ttid_from_indexeddb
-                encryption_key, media_files = self.browser.get_media_files(ttid)
 
             count += 1
             filepath = self.mp4_file_path(ttid, metadata_item)
