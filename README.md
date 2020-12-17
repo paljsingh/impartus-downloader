@@ -40,7 +40,7 @@ Install geckodriver
 This will launch a new firefox application, and open the impartus.com page.
 Login, and download the videos. Once the download is complete, the application
 will start processing the offline streams saved in browser cache and convert it
-to mp4.
+to mkv.
 
 This output files will be saved to a target_dir specified in yaml.conf, the
 sub-directory organization and naming convention can be changed using available
@@ -51,7 +51,5 @@ Drop a mail to paljsingh@gmail.com for any issues/errors.
 
 ### TODO
 - Chrome implementation.
-- force download/overwrite.
-- multiview
 - download ppt/pdf
-- 
+- occasional crash with parallel downloads. 
