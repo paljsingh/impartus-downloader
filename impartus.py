@@ -2,10 +2,8 @@
 import os
 from collections import defaultdict
 
-import ffmpeg
 from Crypto.Cipher import AES
 import re
-from urllib.parse import unquote
 from shutil import copyfile
 from browser import BrowserFactory
 from config import Config
@@ -186,9 +184,8 @@ class Impartus:
             number_of_channels = metadata_item['tapNToggle']
             duration = metadata_item['actualDuration']
             m3u8_content = None
-            search_for = 'ttid={}'.format(ttid)
             for stream_result in stream_results:
-                if search_for in stream_result:
+                if "#EXTM3U" in stream_result and ttid in stream_result:
                     m3u8_content = stream_result.split("\n")
                     break
 

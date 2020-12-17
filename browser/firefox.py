@@ -71,7 +71,6 @@ return indexeddb_data();
                 driver.get(self.impartus_url)
                 wait = ui.WebDriverWait(driver, 3600)
                 wait.until(lambda drv: driver.find_elements_by_class_name('dashboard-content'))
-                stream_results = None
                 while True:
                     metadata_results = driver.execute_script(self.indexeddb_script.format(store_name="video_list"))
                     stream_results = driver.execute_script(self.indexeddb_script.format(store_name="video_data"))
