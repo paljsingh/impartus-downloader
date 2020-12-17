@@ -15,30 +15,26 @@ from utils import Utils, CompareType
 
 class Firefox(IBrowser):
 
-    indexeddb_metadata_script = '''
-async function indexeddb_metadata() {
-    return new Promise(function(resolve, reject) {
+    indexeddb_script = '''
+async function indexeddb_data() {{
+    return new Promise(function(resolve, reject) {{
         var db = window.indexedDB;
         var value = []
-        db.open("video_database").onsuccess = function (ev) {
+        db.open("video_database").onsuccess = function (ev) {{
             db = ev.target.result;
             window.setTimeout(getSomeValue, 1000);
-        };
-        function getSomeValue() {
-            console.log(db);
-            console.log(db.objectStoreNames);
-            db.transaction("video_list").objectStore("video_list").getAll().onsuccess = showValue;
-        };
-        function showValue(ev) {
+        }};
+        function getSomeValue() {{
+            db.transaction("{store_name}").objectStore("{store_name}").getAll().onsuccess = showValue;
+        }};
+        function showValue(ev) {{
             value = ev.target.result;
-            console.log(value);
-            // Don't forget to close your connections!
             db.close();
             resolve(value);
-        };
-    });
-}
-return indexeddb_metadata();
+        }};
+    }});
+}};
+return indexeddb_data();
 '''
 
     _media_directory = None
@@ -53,8 +49,10 @@ return indexeddb_metadata();
 
         # remove any rust_mozprofile* directories under profile_directory.
         for item in os.listdir(self.profile_dir):
-            if os.path.isdir(item) and "rust_mozprofile" in item:
-                rmtree(item)
+            dirname = os.path.join(self.profile_dir, item)
+            print("deleting .. {}".format(dirname))
+            if os.path.isdir(dirname) and "rust_mozprofile" in item:
+                rmtree(dirname)
 
     def get_downloads(self):
         processed = []
@@ -72,11 +70,14 @@ return indexeddb_metadata();
                 driver.get(self.impartus_url)
                 wait = ui.WebDriverWait(driver, 3600)
                 wait.until(lambda drv: driver.find_elements_by_class_name('dashboard-content'))
+                stream_results = None
                 while True:
-                    metadata_results = driver.execute_script(self.indexeddb_metadata_script)
+                    metadata_results = driver.execute_script(self.indexeddb_script.format(store_name="video_list"))
+                    stream_results = driver.execute_script(self.indexeddb_script.format(store_name="video_data"))
+
                     for metadata in metadata_results:
                         if metadata['downloaded'] and metadata['ttid'] not in processed:
-                            yield metadata
+                            yield metadata, stream_results
                             processed.append(metadata['ttid'])
                     print("processed {} / {}".format(len(processed), len(metadata_results)))
                     time.sleep(20)
@@ -88,19 +89,18 @@ return indexeddb_metadata();
     def get_media_files(self, ttid: str):
         obfuscated_ttid = ''.join([chr(ord(x) + 1) for x in ttid])
 
-        key_query = 'select file_ids, key from object_data where key like "%{}%::::"'.format(obfuscated_ttid)
-        file_ids_query = 'select file_ids from object_data where key like "%0{}0%" order by CAST (file_ids as INTEGER) ASC'.format(obfuscated_ttid)
+        file_ids_query = 'select file_ids from object_data where key like "%{}%" and file_ids is not NULL order by CAST (file_ids as INTEGER) ASC'.format(obfuscated_ttid)
 
         conn = sqlite3.connect(self.indexed_db())
-        result = conn.execute(key_query).fetchone()
-
-        encryption_key = None
-        if result:
-            file_id = result[0]
-            encryption_key = self.get_encryption_key(self.media_directory(), file_id)
-
         file_results = conn.execute(file_ids_query).fetchmany(0)
-        return encryption_key, [x[0] for x in file_results]
+
+        # encryption_key = None
+        # if result:
+        #     file_id = result[0]
+        #     encryption_key = self.get_encryption_key(self.media_directory(), file_id)
+
+        # file_results = conn.execute(file_ids_query).fetchmany(0)
+        return [x[0] for x in file_results]
 
     def indexed_db(self):
         """

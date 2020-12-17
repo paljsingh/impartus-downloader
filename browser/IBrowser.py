@@ -41,13 +41,12 @@ class IBrowser(ABC):
         """
         pass
 
-    def get_encryption_key(self, directory: str, file: str):        # noqa
+    def get_encryption_key(self, filepath: str):        # noqa
         """
         extract encryption key from the key-file.
-        :param directory:
-        :param file:
+        :param filepath:
         :return:
         """
-        with open(os.path.join(directory, file), 'r') as fh:
+        with open(filepath, 'rb') as fh:
             key = fh.read()
         return key
