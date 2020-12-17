@@ -65,6 +65,7 @@ return indexeddb_data();
             options = Options()
             size_in_kb = self.conf['cache_size_in_gb'] * 1024 * 1024
             options.set_preference(name='browser.cache.disk.capacity', value=size_in_kb)
+            options.set_preference(name='browser.cache.disk.content_type_media_limit', value=95)
             with contextlib.closing(webdriver.Firefox(options=options)) as driver:
 
                 driver.get(self.impartus_url)

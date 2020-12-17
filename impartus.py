@@ -80,7 +80,7 @@ class Impartus:
         return out_files
 
     def split_into_tracks(self, ts_files, duration):    # noqa
-        print("splitting into tracks...")
+        print("splitting into tracks ..")
         # take out splices from file 0 and create files 1 .. n
         for index in range(1, len(ts_files)):
             start_ss = index * duration
@@ -134,6 +134,7 @@ class Impartus:
 
         current_view = 0
         current_file = -1
+        print("decrypting .. ")
         for content_line in m3u8_content:
 
             if str(content_line).startswith("#EXT-X-KEY:METHOD"):  # encryption algorithm
@@ -153,7 +154,6 @@ class Impartus:
                 in_filepath = os.path.join(self.browser.media_directory(), media_files[current_file])
                 out_filepath = os.path.join(self.download_dir, media_files[current_file])
 
-                print("decrypting .. ")
                 self._decrypt(encryption_key, in_filepath, out_filepath)
                 media_files_by_view[current_view].append(out_filepath)
             elif str(content_line).startswith("#EXT-X-DISCONTINUITY"):
