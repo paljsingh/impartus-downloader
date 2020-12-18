@@ -1,3 +1,4 @@
+from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.firefox.options import Options
 
 from browser.IBrowser import IBrowser
@@ -8,33 +9,65 @@ from selenium import webdriver
 import contextlib
 import selenium.webdriver.support.ui as ui
 import time
-
+import re
 from config import Config
 from utils import Utils, CompareType
 
 
 class Firefox(IBrowser):
 
-    indexeddb_script = '''
-async function indexeddb_data() {{
+    indexeddb_videolist_script = '''
+async function indexeddbVideoList() {
+    return new Promise(function(resolve, reject) {
+        var db = window.indexedDB;
+        var value = [];
+        openreq = db.open("video_database", 1);
+        openreq.onsuccess = function (ev) {
+            db = ev.target.result;
+            window.setTimeout(getResults, 1000);
+        };
+        function getResults() {
+            db.transaction("video_list").objectStore("video_list").getAll().onsuccess = storeResults;
+        };
+        function storeResults(ev) {
+            value = ev.target.result;
+            resolve(value);
+            console.log(value);
+            window.setTimeout(closeDb, 1000);
+        };
+        function closeDb() {
+            db.close();
+        };
+    });
+};
+return indexeddbVideoList();
+'''
+
+    indexeddb_videodata_script = '''
+async function indexeddbVideoData() {{
     return new Promise(function(resolve, reject) {{
         var db = window.indexedDB;
-        var value = []
-        db.open("video_database").onsuccess = function (ev) {{
+        var value = [];
+        openreq = db.open("video_database", 1);
+        openreq.onsuccess = function (ev) {{
             db = ev.target.result;
-            window.setTimeout(getSomeValue, 1000);
+            window.setTimeout(getResults, 1000);
         }};
-        function getSomeValue() {{
-            db.transaction("{store_name}").objectStore("{store_name}").getAll().onsuccess = showValue;
+        function getResults() {{
+            db.transaction("video_data").objectStore("video_data").get("{item_key}").onsuccess = storeResults;
         }};
-        function showValue(ev) {{
+        function storeResults(ev) {{
             value = ev.target.result;
-            db.close();
             resolve(value);
+            console.log(value);
+            window.setTimeout(closeDb, 1000);
+        }};
+        function closeDb() {{
+            db.close();
         }};
     }});
 }};
-return indexeddb_data();
+return indexeddbVideoData();
 '''
 
     _media_directory = None
@@ -57,34 +90,47 @@ return indexeddb_data();
     def get_downloads(self):
         processed = []
 
-        try:
-            # ensure firefox/geckodriver creates profile under the profile directory.
-            os.environ['TMPDIR'] = self.profile_dir     # linux/mac
-            os.environ['TEMP'] = self.profile_dir     # windows
+        # ensure firefox/geckodriver creates profile under the profile directory.
+        os.environ['TMPDIR'] = self.profile_dir     # linux/mac
+        os.environ['TEMP'] = self.profile_dir     # windows
 
-            options = Options()
-            size_in_kb = self.conf['cache_size_in_gb'] * 1024 * 1024
-            options.set_preference(name='browser.cache.disk.capacity', value=size_in_kb)
-            options.set_preference(name='browser.cache.disk.content_type_media_limit', value=95)
-            with contextlib.closing(webdriver.Firefox(options=options)) as driver:
+        options = Options()
+        size_in_kb = self.conf['cache_size_in_gb'] * 1024 * 1024
+        options.set_preference(name='browser.cache.disk.capacity', value=size_in_kb)
+        options.set_preference(name='browser.cache.disk.content_type_media_limit', value=95)
+        with contextlib.closing(webdriver.Firefox(options=options)) as driver:
 
-                driver.get(self.impartus_url)
-                wait = ui.WebDriverWait(driver, 3600)
-                wait.until(lambda drv: driver.find_elements_by_class_name('dashboard-content'))
-                while True:
-                    metadata_results = driver.execute_script(self.indexeddb_script.format(store_name="video_list"))
-                    stream_results = driver.execute_script(self.indexeddb_script.format(store_name="video_data"))
+            timeout = 3600
+            driver.get(self.impartus_url)
+            wait = ui.WebDriverWait(driver, timeout)
+            wait.until(lambda drv: driver.find_elements_by_class_name('dashboard-content'))
+
+            driver.set_script_timeout(60)
+            while True:
+                try:
+                    metadata_results = driver.execute_script(self.indexeddb_videolist_script)
 
                     for metadata in metadata_results:
                         if metadata['downloaded'] and metadata['ttid'] not in processed:
-                            yield metadata, stream_results
-                            processed.append(metadata['ttid'])
+                            m3u8_path = re.sub(
+                                r"^.*m3u8=http.*%2F(download.*\.m3u8)", r"\1", metadata['m3u8Path'])
+
+                            stream_results = driver.execute_script(
+                                self.indexeddb_videodata_script.format(item_key=m3u8_path))
+
+                            if stream_results:
+                                yield metadata, stream_results.split("\n")
+                                processed.append(metadata['ttid'])
                     print("processed {} / {}".format(len(processed), len(metadata_results)))
                     time.sleep(20)
 
-        except Exception as ex:
-            print("browser closed. {}".format(ex))
-            driver.quit()
+                except TimeoutException as tex:
+                    print("timeout exception : {}".format(tex))
+                    continue
+                except Exception as ex:
+                    print("exception : {}".format(ex))
+                    driver.quit()
+                    return
 
     def get_media_files(self, ttid: str):
         obfuscated_ttid = ''.join([chr(ord(x) + 1) for x in ttid])
@@ -94,12 +140,6 @@ return indexeddb_data();
         conn = sqlite3.connect(self.indexed_db())
         file_results = conn.execute(file_ids_query).fetchmany(0)
 
-        # encryption_key = None
-        # if result:
-        #     file_id = result[0]
-        #     encryption_key = self.get_encryption_key(self.media_directory(), file_id)
-
-        # file_results = conn.execute(file_ids_query).fetchmany(0)
         return [x[0] for x in file_results]
 
     def indexed_db(self):

@@ -4,7 +4,6 @@ from collections import defaultdict
 
 from Crypto.Cipher import AES
 import re
-from shutil import copyfile
 from browser import BrowserFactory
 from config import Config
 from utils import Utils
@@ -74,7 +73,7 @@ class Impartus:
             out_files.append(out_filepath)
             with open(out_filepath, 'wb+') as out_fh:
                 for file in view:
-                    with open(os.path.join(self.browser.media_directory(), file), 'rb') as in_fh:
+                    with open(file, 'rb') as in_fh:
                         out_fh.write(in_fh.read())
 
                     if not self.conf.get('debug'):
@@ -194,7 +193,7 @@ class Impartus:
 
         print("Files will be saved at: {}".format(self.download_dir))
         count = 0
-        for metadata_item, stream_results in self.browser.get_downloads():
+        for metadata_item, m3u8_content in self.browser.get_downloads():
             # metadata has a ttid field, which should be ideal choice to use.
             # However in more than one occasions I found it to be incorrect,
             # and object-store not having any matching streams for metadata['ttid']
@@ -203,14 +202,10 @@ class Impartus:
 
             number_of_channels = metadata_item['tapNToggle']
             duration = metadata_item['actualDuration']
-            m3u8_content = None
-            for stream_result in stream_results:
-                if "#EXTM3U" in stream_result and ttid in stream_result:
-                    m3u8_content = stream_result.split("\n")
-                    break
 
             media_files = self.browser.get_media_files(ttid)
-            media_files_by_view = self.get_decrypted_media_files_by_channels(media_files, m3u8_content, number_of_channels, duration)
+            media_files_by_view = self.get_decrypted_media_files_by_channels(
+                media_files, m3u8_content, number_of_channels, duration)
 
             count += 1
             filepath = self.mkv_file_path(ttid, metadata_item)
