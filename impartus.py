@@ -35,7 +35,9 @@ class Impartus:
         os.makedirs(os.path.dirname(filepath), exist_ok=True)
         return filepath
 
-    def _decrypt(self, encryption_key, in_filepath, out_filepath):  # noqa
+    def _decrypt(self, encryption_key, in_filepath):  # noqa
+        out_filepath = in_filepath + ".ts"  # default
+
         if encryption_key:
             if type(encryption_key) == str:
                 dec_key_bytes = bytes(encryption_key, 'utf-8')
@@ -51,14 +53,15 @@ class Impartus:
                     aes = AES.new(dec_key_bytes, AES.MODE_CBC, iv)
                     out_fh.write(aes.decrypt(ciphertext))
         else:
-            # no encryption, simply copy the file.
-            copyfile(in_filepath, out_filepath)
+            # nothing to be done.
+            out_filepath = in_filepath
+
+        return out_filepath
 
     def _join(self, files_list_by_view, out_dir):  # noqa
         """
         decrypt aes-128 bit encrypted files using the decryption key and iv=0,
         and join them into a single file.
-        :param ttid: video ttid
         :param files_list_by_view: list of stream files.
         :param out_dir: output directory where the temp decrypted file
         will be stored.
@@ -73,19 +76,31 @@ class Impartus:
                 for file in view:
                     with open(os.path.join(self.browser.media_directory(), file), 'rb') as in_fh:
                         out_fh.write(in_fh.read())
-                    os.unlink(file)
+
+                    if not self.conf.get('debug'):
+                        os.unlink(file)
 
         return out_files
 
     def split_into_tracks(self, ts_files, duration):    # noqa
         print("splitting into tracks ..")
+        loglevel = "verbose" if self.conf.get('debug') else "quiet"
+
         # take out splices from file 0 and create files 1 .. n
         for index in range(1, len(ts_files)):
             start_ss = index * duration
-            os.system("ffmpeg -y -loglevel quiet -i {} -c copy  -ss {} -t {} {}".format(ts_files[0], start_ss, duration, ts_files[index]))
+            (
+                os.system("ffmpeg -y -loglevel {level} -i {input} -c copy  -ss {start} -t {duration} {output}"
+                          .format(level=loglevel, input=ts_files[0], start=start_ss, duration=duration,
+                                  output=ts_files[index]))
+            )
 
         # trim file 0
-        os.system("ffmpeg -y -loglevel quiet -i {} -c copy  -ss {} -t {} {}".format(ts_files[0], 0, duration, ts_files[0]+".ts"))
+        (
+            os.system("ffmpeg -y -loglevel {level} -i {input} -c copy -ss {start} -t {duration} {output}"
+                      .format(level=loglevel, input=ts_files[0], start=0, duration=duration,
+                              output=ts_files[0]+".ts"))
+        )
         os.rename(ts_files[0]+".ts", ts_files[0])
 
     def encode_mkv(self, media_files_by_view, filepath, duration):  # noqa
@@ -99,6 +114,8 @@ class Impartus:
         tmp_ts_files = self._join(media_files_by_view, os.path.dirname(filepath))
         tmp_ts_files.sort(key=lambda f: os.stat(f).st_size, reverse=True)
 
+        probe_size = 2147483647
+        loglevel = "verbose" if self.conf.get('debug') else "quiet"
         try:
             # ffmpeg -i in1.ts -i in2.ts ..  -c copy -map 0 -map 1 ..  $outfile
             in_args = list()
@@ -106,7 +123,7 @@ class Impartus:
 
             split_flag = False
             for index, tmp_ts_file in enumerate(tmp_ts_files):
-                in_args.append("-i {}".format(tmp_ts_file))
+                in_args.append("-analyzeduration {} -probesize {} -i {}".format(probe_size, probe_size, tmp_ts_file))
                 map_args.append("-map {}".format(index))
                 if os.stat(tmp_ts_file).st_size == 0:
                     split_flag = True
@@ -114,18 +131,23 @@ class Impartus:
             if split_flag:
                 self.split_into_tracks(tmp_ts_files, duration)
 
-            os.system("ffmpeg -y -loglevel quiet {} -c copy {} {}".format(' '.join(in_args), ' '.join(map_args), filepath))
+            print("encoding output file ..")
+            (
+                os.system("ffmpeg -y -loglevel {level} {input} -c copy {maps} {output}"
+                          .format(level=loglevel, input=' '.join(in_args), maps=' '.join(map_args), output=filepath))
+            )
         except Exception as ex:
             print("ffmpeg exception: {}".format(ex))
             print("check the ts file(s) generated at location: {}".format(', '.join(tmp_ts_files)))
             return False
 
-        for tmp_ts_file in tmp_ts_files:
-            os.unlink(tmp_ts_file)
+        if not self.conf.get('debug'):
+            for tmp_ts_file in tmp_ts_files:
+                os.unlink(tmp_ts_file)
 
         return True
 
-    def get_decrypted_media_files_by_channels(self, ttid, media_files, m3u8_content, number_of_views, duration):
+    def get_decrypted_media_files_by_channels(self, media_files, m3u8_content, number_of_views, duration):
         encryption_key = None
         media_files_by_view = [list() for x in range(number_of_views)]
         duration_view = defaultdict(lambda: 0)
@@ -150,9 +172,7 @@ class Impartus:
                 assert current_file < len(media_files)
 
                 in_filepath = os.path.join(self.browser.media_directory(), media_files[current_file])
-                out_filepath = os.path.join(self.download_dir, media_files[current_file])
-
-                self._decrypt(encryption_key, in_filepath, out_filepath)
+                out_filepath = self._decrypt(encryption_key, in_filepath)
                 media_files_by_view[current_view].append(out_filepath)
             elif str(content_line).startswith("#EXT-X-DISCONTINUITY"):
                 # do we need anything here ?
@@ -177,7 +197,7 @@ class Impartus:
         for metadata_item, stream_results in self.browser.get_downloads():
             # metadata has a ttid field, which should be ideal choice to use.
             # However in more than one occasions I found it to be incorrect,
-            # and object store not having any matching streams.
+            # and object-store not having any matching streams for metadata['ttid']
             # Hence the crude way...
             ttid = re.sub("^.*/([0-9]{6,})[_/].*$", r"\1", metadata_item['filePath'])
 
@@ -190,14 +210,14 @@ class Impartus:
                     break
 
             media_files = self.browser.get_media_files(ttid)
-            media_files_by_view = self.get_decrypted_media_files_by_channels(ttid, media_files, m3u8_content, number_of_channels, duration)
+            media_files_by_view = self.get_decrypted_media_files_by_channels(media_files, m3u8_content, number_of_channels, duration)
 
             count += 1
             filepath = self.mkv_file_path(ttid, metadata_item)
             if os.path.exists(filepath) and not self.conf.get('overwrite'):
                 print("{}. File {} exists, skipping.".format(count, filepath))
             else:
-                # create a mkv file at this location, use ttid, content (enc_key + filelist)
+                # create a mkv file at this location
                 retval = self.encode_mkv(media_files_by_view, filepath, duration)
                 if retval:
                     print("{}. {}".format(count, filepath))
