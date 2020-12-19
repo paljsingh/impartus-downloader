@@ -1,13 +1,14 @@
 from browser.IBrowser import IBrowser
+from typing import List, Dict
 
 # TODO: Implement for chrome
 
 
 class Chrome(IBrowser):
-    def get_downloads(self):
+    def get_downloads(self, processed: Dict):
         pass
 
-    def get_media_files(self, ttid):
+    def get_media_files(self, ttid: int):
         pass
 
     def indexed_db(self):
@@ -18,4 +19,3 @@ class Chrome(IBrowser):
 
     def __init__(self):
         pass
-

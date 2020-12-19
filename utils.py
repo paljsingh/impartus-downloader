@@ -81,16 +81,13 @@ class Utils:
 
         return data_dict
 
-
-if __name__ == '__main__':
-    print(Utils.find_dir(
-        "impartus",
-        os.path.join(os.environ.get('HOME'), "Library/Application Support/Firefox/Profiles"),
-        CompareType.CONTAINS
-    ))
-
-    print(Utils.find_file(
-        "webappsstore.sqlite",
-        os.path.join(os.environ.get('HOME'), "Library/Application Support/Firefox/Profiles"),
-        CompareType.EQ
-    ))
+    @classmethod
+    def read_file(cls, filepath: str):
+        """
+        extract encryption key from the key-file.
+        :param filepath:
+        :return:
+        """
+        with open(filepath, 'rb') as fh:
+            content = fh.read()
+        return content
