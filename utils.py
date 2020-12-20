@@ -61,16 +61,17 @@ class Utils:
             return
 
         strip_spaces = ['subjectName', 'institute', 'sessionName', 'professorName', 'topic', 'subjectDescription']
-        date_extract = {'startTime': 'startDate', 'endTime': 'endDate'}
+        datetime_fields = {'startTime': 'startDate', 'endTime': 'endDate'}
         fixed_width = {'seqNo': '{:02d}', 'views': '{:04d}', 'actualDuration': '{:05d}', 'sessionId': '{:04d}'}
 
         for x in strip_spaces:
             # remove leading/trailing spaces, replace other non-alphanum chars with '-'
+            # also replace 2 or more consecutive "-" with single "-"
             if data_dict[x]:
-                data_dict[x] = re.sub(r'[^a-zA-Z0-9_/-]', '-', str.strip(data_dict[x]))
+                data_dict[x] = re.sub(r"[-]{2,}", "-", re.sub(r'[^a-zA-Z0-9_/-]', '-', str.strip(data_dict[x])))
 
-        for key, val in date_extract.items():
-            # extract date field
+        for key, val in datetime_fields.items():
+            # extract datetime fields, and create new fields named startDate, endDate
             if data_dict[key]:
                 data_dict[val] = str.split(data_dict[key], ' ')[0]
 

@@ -186,17 +186,3 @@ class Firefox(IBrowser):
         # there can be more than one such directories with search word.
         for search_dir in Utils.find_dirs(search_for, self.profile_dir, CompareType.CONTAINS):
             return Utils.find_dirs(".files", search_dir, CompareType.ENDS_WITH)[0]
-
-    def delete_cache(self, files: list, debug: bool):
-        if not debug:
-            Utils.delete_files(files)
-
-            # # also remove media files from firefox global cache.
-            # global_cache_files = list()
-            # dirs = Utils.find_dirs("entries", self.profile_dir, CompareType.EQ)
-            # if len(dirs) > 0:
-            #     for item in os.listdir(dirs[0]):
-            #         itempath = os.path.join(dirs[0], item)
-            #         if os.path.isfile(itempath):
-            #             global_cache_files.append(itempath)
-            #     Utils.delete_files(global_cache_files)

@@ -17,8 +17,5 @@ class Chrome(IBrowser):
     def media_directory(self):
         pass
 
-    def delete_cache(self, files: list, debug: bool):
-        pass
-
     def __init__(self):
         pass

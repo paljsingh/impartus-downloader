@@ -41,13 +41,6 @@ class IBrowser(ABC):
         """
         pass
 
-    @abstractmethod
-    def delete_cache(self, files: List, debug: bool):
-        """
-        Delete a given item from the cache
-        """
-        pass
-
     def get_ttid(self, metadata: Dict) -> int:  # noqa
         """
         Returns ttid from metadata item.

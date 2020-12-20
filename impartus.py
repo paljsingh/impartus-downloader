@@ -85,14 +85,13 @@ class Impartus:
             if summary.get('key_files') > 0:
                 print("decrypting streams .. ")
 
-            cache_files = set()
+            temp_files_to_delete = list()
             for track_index, track_info in enumerate(tracks_info):
                 streams_to_join = list()
                 for item in track_info:
 
                     # decrypt files if encrypted.
                     stream_filepath = os.path.join(self.browser.media_directory(), media_files[item['file_number']])
-                    cache_files.add(stream_filepath)
 
                     if item.get('encryption_method') == "NONE":
                         streams_to_join.append(stream_filepath)
@@ -104,13 +103,13 @@ class Impartus:
                         decrypted_stream_filepath = Decrypter.decrypt(
                             encryption_key, stream_filepath, self.conf.get('tmp_dir'))
                         streams_to_join.append(decrypted_stream_filepath)
-                        cache_files.add(decrypted_stream_filepath)
+                        temp_files_to_delete.append(decrypted_stream_filepath)
 
                 # All stream files for this track are decrypted, join them.
                 print("joining streams for track {} ..".format(track_index))
                 ts_file = Encoder.join(streams_to_join, self.conf.get('tmp_dir'), track_index)
                 ts_files.append(ts_file)
-                cache_files.add(ts_file)
+                temp_files_to_delete.append(ts_file)
 
             # Encode all ts files into a single output mkv.
             success = Encoder.encode_mkv(ts_files, mkv_filepath, duration, self.conf.get('debug'))
@@ -120,8 +119,9 @@ class Impartus:
                 print("{}. {}".format(len(processed_videos), mkv_filepath))
                 print("---\n")
 
-                # delete from cache to free up space
-                self.browser.delete_cache(list(cache_files), self.conf.get('debug'))
+                # delete temp files.
+                if not self.conf.get('debug'):
+                    Utils.delete_files(temp_files_to_delete)
 
 
 if __name__ == '__main__':
