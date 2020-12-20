@@ -12,7 +12,7 @@ Impartus Downloader
 	$ cd impartus-downloader
 
 ### Install dependencies
-	$ pip3 install -r requirements
+	$ pip3 install -r requirements.txt
 
 
 Install ffmpeg

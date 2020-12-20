@@ -1,6 +1,7 @@
 from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.firefox.options import Options
-from typing import List, Dict
+from typing import Dict
+import random
 
 from browser.IBrowser import IBrowser
 import os
@@ -18,59 +19,59 @@ from utils import Utils, CompareType
 
 class Firefox(IBrowser):
 
-    indexeddb_videolist_script = '''
-async function indexeddbVideoList() {
-    return new Promise(function(resolve, reject) {
-        var db = window.indexedDB;
-        var value = [];
-        openreq = db.open("video_database", 1);
-        openreq.onsuccess = function (ev) {
-            db = ev.target.result;
-            window.setTimeout(getResults, 1000);
-        };
-        function getResults() {
-            db.transaction("video_list").objectStore("video_list").getAll().onsuccess = storeResults;
-        };
-        function storeResults(ev) {
-            value = ev.target.result;
-            resolve(value);
-            console.log(value);
-            window.setTimeout(closeDb, 1000);
-        };
-        function closeDb() {
-            db.close();
-        };
-    });
-};
-return indexeddbVideoList();
-'''
+    indexeddb_get = '''
+    async function indexeddbGet() {{
+        return new Promise(function(resolve, reject) {{
+            var db = window.indexedDB;
+            var value = [];
+            openreq = db.open("{database}", 1);
+            openreq.onsuccess = function (ev) {{
+                db = ev.target.result;
+                window.setTimeout(getResults, 1000);
+            }};
+            function getResults() {{
+                db.transaction("{table}").objectStore("{table}").get("{item_key}").onsuccess = storeResults;
+            }};
+            function storeResults(ev) {{
+                value = ev.target.result;
+                resolve(value);
+                console.log(value);
+                window.setTimeout(closeDb, 1000);
+            }};
+            function closeDb() {{
+                db.close();
+            }};
+        }});
+    }};
+    return indexeddbGet();
+    '''
 
-    indexeddb_videodata_script = '''
-async function indexeddbVideoData() {{
-    return new Promise(function(resolve, reject) {{
-        var db = window.indexedDB;
-        var value = [];
-        openreq = db.open("video_database", 1);
-        openreq.onsuccess = function (ev) {{
-            db = ev.target.result;
-            window.setTimeout(getResults, 1000);
-        }};
-        function getResults() {{
-            db.transaction("video_data").objectStore("video_data").get("{item_key}").onsuccess = storeResults;
-        }};
-        function storeResults(ev) {{
-            value = ev.target.result;
-            resolve(value);
-            console.log(value);
-            window.setTimeout(closeDb, 1000);
-        }};
-        function closeDb() {{
-            db.close();
-        }};
-    }});
-}};
-return indexeddbVideoData();
-'''
+    indexeddb_get_all = '''
+    async function indexeddbGetAll() {{
+        return new Promise(function(resolve, reject) {{
+            var db = window.indexedDB;
+            var value = [];
+            openreq = db.open("{database}", 1);
+            openreq.onsuccess = function (ev) {{
+                db = ev.target.result;
+                window.setTimeout(getResults, 1000);
+            }};
+            function getResults() {{
+                db.transaction("{table}").objectStore("{table}").getAll().onsuccess = storeResults;
+            }};
+            function storeResults(ev) {{
+                value = ev.target.result;
+                resolve(value);
+                console.log(value);
+                window.setTimeout(closeDb, 1000);
+            }};
+            function closeDb() {{
+                db.close();
+            }};
+        }});
+    }};
+    return indexeddbGetAll();
+    '''
 
     _media_directory = None
     _indexed_db = None
@@ -79,6 +80,10 @@ return indexeddbVideoData();
         self.impartus_url = "https://a.impartus.com"
         self.profile_dir = os.path.join(os.environ.get('HOME'), "profile.impartus")
         self.conf = Config().config
+        self.driver = None
+
+        # dictionary of { ttid1: [file1, file2 ..], ttid2: [file101, file102 ..], .. }
+        self.media_files = dict()
 
         os.makedirs(self.profile_dir, exist_ok=True)
 
@@ -98,25 +103,25 @@ return indexeddbVideoData();
         options = Options()
         size_in_kb = self.conf['cache_size_in_gb'] * 1024 * 1024
         options.set_preference(name='browser.cache.disk.capacity', value=size_in_kb)
-        options.set_preference(name='browser.cache.disk.content_type_media_limit',
-                value=self.conf['media_file_percentage'])
         with contextlib.closing(webdriver.Firefox(options=options)) as driver:
 
+            self.driver = driver
             driver.get(self.impartus_url)
-            wait = ui.WebDriverWait(driver, 3600)
+            wait = ui.WebDriverWait(driver, 86400)
             wait.until(lambda drv: driver.find_elements_by_class_name('dashboard-content'))
 
             driver.set_script_timeout(60)
 
-            to_sleep = False
             while True:
                 try:
-                    if to_sleep:
-                        time.sleep(20)
+                    time.sleep(15)
 
-                    metadata_results = driver.execute_script(self.indexeddb_videolist_script)
+                    to_process = list()
+                    metadata_results = driver.execute_script(self.indexeddb_get_all.format(
+                        database="video_database", table="video_list"
+                    ))
 
-                    for metadata in metadata_results:
+                    for indexeddb_id, metadata in enumerate(metadata_results):
                         ttid = self.get_ttid(metadata)
                         if metadata['downloaded'] and not processed.get(ttid):
                             to_sleep = False
@@ -124,14 +129,17 @@ return indexeddbVideoData();
                                 r"^.*m3u8=http.*%2F(download.*\.m3u8)", r"\1", metadata['m3u8Path']
                             )
 
-                            stream_results = driver.execute_script(
-                                self.indexeddb_videodata_script.format(item_key=m3u8_path)
-                            )
+                            stream_results = driver.execute_script(self.indexeddb_get.format(
+                                database="video_database", table="video_data", item_key=m3u8_path
+                            ))
 
                             if stream_results:
-                                yield metadata, stream_results.split("\n")
-                        else:
-                            to_sleep = True
+                                to_process.append([metadata, stream_results.split("\n")])
+
+                    # return an item at random, so that we are not stuck retrying the same item.
+                    if len(to_process) > 0:
+                        num = random.randint(0, len(to_process)-1)
+                        yield to_process[num]
 
                 except TimeoutException as tex:
                     print("timeout exception : {}".format(tex))
@@ -150,7 +158,8 @@ return indexeddbVideoData();
         conn = sqlite3.connect(self.indexed_db())
         file_results = conn.execute(file_ids_query).fetchmany(0)
 
-        return [x[0] for x in file_results]
+        self.media_files[ttid] = [x[0] for x in file_results]
+        return self.media_files[ttid]
 
     def indexed_db(self):
         """
@@ -177,3 +186,17 @@ return indexeddbVideoData();
         # there can be more than one such directories with search word.
         for search_dir in Utils.find_dirs(search_for, self.profile_dir, CompareType.CONTAINS):
             return Utils.find_dirs(".files", search_dir, CompareType.ENDS_WITH)[0]
+
+    def delete_cache(self, files: list, debug: bool):
+        if not debug:
+            Utils.delete_files(files)
+
+            # # also remove media files from firefox global cache.
+            # global_cache_files = list()
+            # dirs = Utils.find_dirs("entries", self.profile_dir, CompareType.EQ)
+            # if len(dirs) > 0:
+            #     for item in os.listdir(dirs[0]):
+            #         itempath = os.path.join(dirs[0], item)
+            #         if os.path.isfile(itempath):
+            #             global_cache_files.append(itempath)
+            #     Utils.delete_files(global_cache_files)

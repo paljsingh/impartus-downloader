@@ -1,5 +1,5 @@
 from browser.IBrowser import IBrowser
-from typing import List, Dict
+from typing import Dict
 
 # TODO: Implement for chrome
 
@@ -15,6 +15,9 @@ class Chrome(IBrowser):
         pass
 
     def media_directory(self):
+        pass
+
+    def delete_cache(self, files: list, debug: bool):
         pass
 
     def __init__(self):

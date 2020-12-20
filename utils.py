@@ -1,7 +1,7 @@
 import os
 import re
 from enum import Enum
-from typing import Dict
+from typing import Dict, List
 
 
 class CompareType(Enum):
@@ -61,7 +61,7 @@ class Utils:
             return
 
         strip_spaces = ['subjectName', 'institute', 'sessionName', 'professorName', 'topic', 'subjectDescription']
-        date_extract = ['startTime', 'endTime']
+        date_extract = {'startTime': 'startDate', 'endTime': 'endDate'}
         fixed_width = {'seqNo': '{:02d}', 'views': '{:04d}', 'actualDuration': '{:05d}', 'sessionId': '{:04d}'}
 
         for x in strip_spaces:
@@ -69,10 +69,10 @@ class Utils:
             if data_dict[x]:
                 data_dict[x] = re.sub(r'[^a-zA-Z0-9_/-]', '-', str.strip(data_dict[x]))
 
-        for x in date_extract:
+        for key, val in date_extract.items():
             # extract date field
-            if data_dict[x]:
-                data_dict[x] = str.split(data_dict[x], ' ')[0]
+            if data_dict[key]:
+                data_dict[val] = str.split(data_dict[key], ' ')[0]
 
         for key, val in fixed_width.items():
             # remove leading/trailing spaces, replace other non-alphanum chars with '-'
@@ -91,3 +91,8 @@ class Utils:
         with open(filepath, 'rb') as fh:
             content = fh.read()
         return content
+
+    @classmethod
+    def delete_files(cls, files: List):
+        for file in files:
+            os.unlink(file)

@@ -41,6 +41,13 @@ class IBrowser(ABC):
         """
         pass
 
+    @abstractmethod
+    def delete_cache(self, files: List, debug: bool):
+        """
+        Delete a given item from the cache
+        """
+        pass
+
     def get_ttid(self, metadata: Dict) -> int:  # noqa
         """
         Returns ttid from metadata item.
@@ -52,4 +59,3 @@ class IBrowser(ABC):
         # and object-store not having any matching streams for metadata['ttid']
         # Hence the crude way...
         return int(re.sub("^.*/([0-9]{6,})[_/].*$", r"\1", metadata['filePath']))
-

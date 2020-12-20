@@ -1,12 +1,11 @@
 #!/usr/bin/python3
 import os
-from collections import defaultdict
-
-from Crypto.Cipher import AES
-import re
 from browser import BrowserFactory
 from config import Config
 from utils import Utils
+from encoder import Encoder
+from m3u8parser import M3u8Parser
+from decrypter import Decrypter
 
 
 class Impartus:
@@ -15,10 +14,12 @@ class Impartus:
         self.conf = Config.load()
         self.browser = BrowserFactory.get_browser(self.conf.get('browser'))
         self.download_dir = self.conf.get('target_dir')
+        self.media_directory = self.browser.media_directory()
+        os.makedirs(self.conf.get('tmp_dir'), exist_ok=True)
 
     def mkv_file_path(self, ttid, metadata):
         """
-        If the browser objectstorage has media information, use it to create filepath,
+        If the metadata object has media information, use it to create filepath,
         else create filepath using video ttid.
         :param ttid:
         :param metadata:
@@ -34,188 +35,93 @@ class Impartus:
         os.makedirs(os.path.dirname(filepath), exist_ok=True)
         return filepath
 
-    def _decrypt(self, encryption_key, in_filepath):  # noqa
-        out_filepath = in_filepath + ".ts"  # default
-
-        if encryption_key:
-            if type(encryption_key) == str:
-                dec_key_bytes = bytes(encryption_key, 'utf-8')
-            elif type(encryption_key) == bytes:
-                dec_key_bytes = encryption_key
-            else:
-                assert False, "Implement handling for type {}".format(type(encryption_key))
-
-            iv = bytes('\0' * 16, 'utf-8')
-            with open(out_filepath, 'wb+') as out_fh:
-                with open(in_filepath, 'rb') as in_fh:
-                    ciphertext = in_fh.read()
-                    aes = AES.new(dec_key_bytes, AES.MODE_CBC, iv)
-                    out_fh.write(aes.decrypt(ciphertext))
-        else:
-            # nothing to be done.
-            out_filepath = in_filepath
-
-        return out_filepath
-
-    def _join(self, files_list_by_view, out_dir):  # noqa
-        """
-        decrypt aes-128 bit encrypted files using the decryption key and iv=0,
-        and join them into a single file.
-        :param files_list_by_view: list of stream files.
-        :param out_dir: output directory where the temp decrypted file
-        will be stored.
-        :return: return a temporary file combining all the decrypted media files.
-        """
-        out_files = []
-        print("joining streams ..")
-        for index, view in enumerate(files_list_by_view):
-            out_filepath = os.path.join(out_dir, str(index) + ".ts")
-            out_files.append(out_filepath)
-            with open(out_filepath, 'wb+') as out_fh:
-                for file in view:
-                    with open(file, 'rb') as in_fh:
-                        out_fh.write(in_fh.read())
-
-                    if not self.conf.get('debug'):
-                        os.unlink(file)
-
-        return out_files
-
-    def split_into_tracks(self, ts_files, duration):    # noqa
-        print("splitting into tracks ..")
-        loglevel = "verbose" if self.conf.get('debug') else "quiet"
-
-        # take out splices from file 0 and create files 1 .. n
-        for index in range(1, len(ts_files)):
-            start_ss = index * duration
-            (
-                os.system("ffmpeg -y -loglevel {level} -i {input} -c copy  -ss {start} -t {duration} {output}"
-                          .format(level=loglevel, input=ts_files[0], start=start_ss, duration=duration,
-                                  output=ts_files[index]))
-            )
-
-        # trim file 0
-        (
-            os.system("ffmpeg -y -loglevel {level} -i {input} -c copy -ss {start} -t {duration} {output}"
-                      .format(level=loglevel, input=ts_files[0], start=0, duration=duration,
-                              output=ts_files[0]+".ts"))
-        )
-        os.rename(ts_files[0]+".ts", ts_files[0])
-
-    def encode_mkv(self, media_files_by_view, filepath, duration):  # noqa
-        """
-        encode to mkv using ffmpeg.
-        :param media_files_by_view: list of files to be decrypted.
-        :param filepath: path of the mkv file to be created.
-        :param duration: duration from the metadata.
-        :return: True if encode successful.
-        """
-        tmp_ts_files = self._join(media_files_by_view, os.path.dirname(filepath))
-        tmp_ts_files.sort(key=lambda f: os.stat(f).st_size, reverse=True)
-
-        probe_size = 2147483647
-        loglevel = "verbose" if self.conf.get('debug') else "quiet"
-        try:
-            # ffmpeg -i in1.ts -i in2.ts ..  -c copy -map 0 -map 1 ..  $outfile
-            in_args = list()
-            map_args = list()
-
-            split_flag = False
-            for index, tmp_ts_file in enumerate(tmp_ts_files):
-                in_args.append("-analyzeduration {} -probesize {} -i {}".format(probe_size, probe_size, tmp_ts_file))
-                map_args.append("-map {}".format(index))
-                if os.stat(tmp_ts_file).st_size == 0:
-                    split_flag = True
-
-            if split_flag:
-                self.split_into_tracks(tmp_ts_files, duration)
-
-            print("encoding output file ..")
-            (
-                os.system("ffmpeg -y -loglevel {level} {input} -c copy {maps} {output}"
-                          .format(level=loglevel, input=' '.join(in_args), maps=' '.join(map_args), output=filepath))
-            )
-        except Exception as ex:
-            print("ffmpeg exception: {}".format(ex))
-            print("check the ts file(s) generated at location: {}".format(', '.join(tmp_ts_files)))
-            return False
-
-        if not self.conf.get('debug'):
-            for tmp_ts_file in tmp_ts_files:
-                os.unlink(tmp_ts_file)
-
-        return True
-
-    def get_decrypted_media_files_by_channels(self, media_files, m3u8_content, number_of_views, duration):
-        encryption_key = None
-        media_files_by_view = [list() for x in range(number_of_views)]
-        duration_view = defaultdict(lambda: 0)
-
-        current_view = 0
-        current_file = -1
-        print("decrypting .. ")
-        for content_line in m3u8_content:
-
-            if str(content_line).startswith("#EXT-X-KEY:METHOD"):  # encryption algorithm
-                method = re.sub(r"^#EXT-X-KEY:METHOD=([A-Z0-9-]+).*$", r"\1", content_line)
-                if method == "NONE":
-                    encryption_key = None
-                else:
-                    current_file += 1
-                    encryption_key_filepath = os.path.join(self.browser.media_directory(), media_files[current_file])
-                    encryption_key = self.browser.get_encryption_key(encryption_key_filepath)
-            elif str(content_line).startswith("#EXTINF:"):  # duration
-                duration_view[current_view] += float(re.sub(r'^#EXTINF:([0-9]+\.[0-9]+),.*', r"\1", content_line))
-            elif str(content_line).startswith("http"):  # media file
-                current_file += 1
-                assert current_file < len(media_files)
-
-                in_filepath = os.path.join(self.browser.media_directory(), media_files[current_file])
-                out_filepath = self._decrypt(encryption_key, in_filepath)
-                media_files_by_view[current_view].append(out_filepath)
-            elif str(content_line).startswith("#EXT-X-DISCONTINUITY"):
-                # do we need anything here ?
-                pass
-            elif str(content_line).startswith("#EXT-X-ENDLIST"):    # end of streams
-                break
-            elif str(content_line).startswith("#EXT-X-MEDIA-SEQUENCE"):    # switch view
-                current_view = int(re.sub("#EXT-X-MEDIA-SEQUENCE:", '', content_line))
-            else:
-                continue
-
-        return media_files_by_view
-
     def process_videos(self):
         """
         Download videos and decrypt, encode to mkv
         :return: 
         """
+        processed_videos = dict()
 
         print("Files will be saved at: {}".format(self.download_dir))
-        count = 0
-        for metadata_item, m3u8_content in self.browser.get_downloads():
-            # metadata has a ttid field, which should be ideal choice to use.
-            # However in more than one occasions I found it to be incorrect,
-            # and object-store not having any matching streams for metadata['ttid']
-            # Hence the crude way...
-            ttid = re.sub("^.*/([0-9]{6,})[_/].*$", r"\1", metadata_item['filePath'])
+        print("---\n")
 
-            number_of_channels = metadata_item['tapNToggle']
-            duration = metadata_item['actualDuration']
+        for metadata_item, m3u8_content in self.browser.get_downloads(processed_videos):
+            ttid = self.browser.get_ttid(metadata_item)
+            processed_videos[ttid] = False
 
+            # full path of the mkv file to be created.
+            mkv_filepath = self.mkv_file_path(ttid, metadata_item)
+
+            # Skip if we already have a file there (unless overwrite option set)
+            if os.path.exists(mkv_filepath) and not self.conf.get('overwrite'):
+                print("File {} exists, skipping.".format(mkv_filepath))
+                print("---\n")
+                processed_videos[ttid] = True
+                continue
+
+            # collect metadata like no-of-tracks, duration.
+            number_of_tracks = int(metadata_item['tapNToggle'])
+            duration = int(metadata_item['actualDuration'])
+
+            # list of media files on disk for this download.
+            # includes stream files + key files.
             media_files = self.browser.get_media_files(ttid)
-            media_files_by_view = self.get_decrypted_media_files_by_channels(
-                media_files, m3u8_content, number_of_channels, duration)
 
-            count += 1
-            filepath = self.mkv_file_path(ttid, metadata_item)
-            if os.path.exists(filepath) and not self.conf.get('overwrite'):
-                print("{}. File {} exists, skipping.".format(count, filepath))
-            else:
-                # create a mkv file at this location
-                retval = self.encode_mkv(media_files_by_view, filepath, duration)
-                if retval:
-                    print("{}. {}".format(count, filepath))
+            # Parse the m3u8 content and validate against the media files.
+            summary, tracks_info = M3u8Parser(m3u8_content, num_tracks=number_of_tracks).parse()
+            if len(media_files) != summary['total_files']:
+                print("{}".format(mkv_filepath))
+                print("number of media files needed {}, actual found {}".format(
+                    summary['media_files'], len(media_files)))
+                print("This is likely due to browser cache being full.")
+                print("Delete some of the downloaded videos and try downloading again.")
+                print("---\n")
+                continue
+
+            # All good.
+            # Decrypt files, join media streams and encode to mkv
+            ts_files = []
+
+            if summary.get('key_files') > 0:
+                print("decrypting streams .. ")
+
+            cache_files = set()
+            for track_index, track_info in enumerate(tracks_info):
+                streams_to_join = list()
+                for item in track_info:
+
+                    # decrypt files if encrypted.
+                    stream_filepath = os.path.join(self.browser.media_directory(), media_files[item['file_number']])
+                    cache_files.add(stream_filepath)
+
+                    if item.get('encryption_method') == "NONE":
+                        streams_to_join.append(stream_filepath)
+                    else:
+                        encryption_key_file = os.path.join(
+                            self.browser.media_directory(), media_files[item.get('encryption_key_file')]
+                        )
+                        encryption_key = Utils.read_file(encryption_key_file)
+                        decrypted_stream_filepath = Decrypter.decrypt(
+                            encryption_key, stream_filepath, self.conf.get('tmp_dir'))
+                        streams_to_join.append(decrypted_stream_filepath)
+                        cache_files.add(decrypted_stream_filepath)
+
+                # All stream files for this track are decrypted, join them.
+                print("joining streams for track {} ..".format(track_index))
+                ts_file = Encoder.join(streams_to_join, self.conf.get('tmp_dir'), track_index)
+                ts_files.append(ts_file)
+                cache_files.add(ts_file)
+
+            # Encode all ts files into a single output mkv.
+            success = Encoder.encode_mkv(ts_files, mkv_filepath, duration, self.conf.get('debug'))
+
+            if success:
+                processed_videos[ttid] = True
+                print("{}. {}".format(len(processed_videos), mkv_filepath))
+                print("---\n")
+
+                # delete from cache to free up space
+                self.browser.delete_cache(list(cache_files), self.conf.get('debug'))
 
 
 if __name__ == '__main__':

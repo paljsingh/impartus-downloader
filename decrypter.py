@@ -1,5 +1,5 @@
-from Crypto.Cipher import AES
-
+from Crypto.Cipher import AES  # noqa
+import os
 
 class Decrypter:
 
@@ -7,8 +7,8 @@ class Decrypter:
         pass
 
     @classmethod
-    def decrypt(cls, encryption_key, in_filepath):
-        out_filepath = in_filepath + ".ts"  # default
+    def decrypt(cls, encryption_key, in_filepath, out_dir):
+        out_filepath = os.path.join(out_dir, os.path.basename(in_filepath) + ".ts")  # default path
 
         if encryption_key:
             if type(encryption_key) == str:

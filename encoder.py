@@ -4,8 +4,11 @@ import os
 class Encoder:
 
     @classmethod
-    def split_into_tracks(cls, ts_files, duration, debug=False):
-        loglevel = "verbose" if debug else "quiet"
+    def split_track(cls, ts_files, duration: int, debug=False):
+        if debug:
+            loglevel = "verbose"
+        else:
+            loglevel = "quiet"
 
         # take out splices from track 0 ts_file and create ts_file1, ts_file2 ..
         for index in range(1, len(ts_files)):
@@ -17,12 +20,12 @@ class Encoder:
             )
 
         # trim ts_file 0, so that it contains only track 0 content
+        tmp_file_path = os.path.join(os.path.dirname(ts_files[0]), "tmp.ts")
         (
             os.system("ffmpeg -y -loglevel {level} -i {input} -c copy -ss {start} -t {duration} {output}"
-                      .format(level=loglevel, input=ts_files[0], start=0, duration=duration,
-                              output=ts_files[0] + ".ts"))
+                      .format(level=loglevel, input=ts_files[0], start=0, duration=duration, output=tmp_file_path))
         )
-        os.rename(ts_files[0] + ".ts", ts_files[0])
+        os.rename(tmp_file_path, ts_files[0])
 
     @classmethod
     def encode_mkv(cls, ts_files, filepath, duration, debug=False):
@@ -60,8 +63,8 @@ class Encoder:
                     split_flag = True
 
             if split_flag:
-                print("splitting track .. ")
-                Encoder.split_into_tracks(ts_files, duration, debug)
+                print("splitting track 0 .. ")
+                Encoder.split_track(ts_files, duration, debug)
 
             print("encoding output file ..")
             (
@@ -74,31 +77,23 @@ class Encoder:
             print("check the ts file(s) generated at location: {}".format(', '.join(ts_files)))
             return False
 
-        if not debug:
-            for ts_file in ts_files:
-                os.unlink(ts_file)
-
         return True
 
     @classmethod
-    def join(cls, files_list, out_dirpath: str, ts_index: int, debug=False):
+    def join(cls, files_list, out_dirpath: str, ts_index: int):
         """
         join media files into a single ts file.
         :param files_list: list of stream files.
         :param out_dirpath: output directory path.
         :param ts_index: ts file number.
-        :param debug: debug flag.
         will be stored.
         :return: return a temporary file combining all the decrypted media files.
         """
-        out_filename = "{}.ts".format(ts_index)
+        out_filename = "track-{}.ts".format(ts_index)
         out_filepath = os.path.join(out_dirpath, out_filename)
         with open(out_filepath, 'wb+') as out_fh:
             for file in files_list:
                 with open(file, 'rb') as in_fh:
                     out_fh.write(in_fh.read())
-
-                if not debug:
-                    os.unlink(file)
 
         return out_filepath

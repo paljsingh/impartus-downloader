@@ -16,7 +16,7 @@ class M3u8Parser:
         # ]
         # above example is a 2-track file with track 1 consisting of stream files 1, 2, and 4
         # and track 2 consists of stream files 3, 5 and 6. Of these 1,2,3 and 6 are encrypted.
-        self.tracks = [list() for x in range(num_tracks)]
+        self.tracks = [list() for x in range(num_tracks)]   # noqa
         self.summary = dict()
 
     def parse(self):
