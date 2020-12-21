@@ -1,10 +1,25 @@
 import os
+from typing import List
 
 
 class Encoder:
+    """
+    Utility functions to split, join, encode media streams using ffmpeg.
+    """
 
     @classmethod
-    def split_track(cls, ts_files, duration: int, debug=False):
+    def split_track(cls, ts_files: List, duration: int, debug: bool = False):
+        """
+        Impartus platform has some m3u8 streams that are badly coded, and put all the stream
+        contents to a single track, despite the metadata claiming to have more than 1 tracks.
+        In such cases, track 0 contains all the content, while other tracks are 0 sized.
+        Split [track 0] into [track 0, track 1, track 2 ..]
+        :param ts_files: list of track stream files (presorted by size DESC), so track 0 will always be
+        splittable.
+        :param duration: Duration of the lecture from the metadata.
+        Total size of track 0 is expected to be number_of_tracks * duration
+        :param debug: If true, print verbose output of ffmpeg command.
+        """
         if debug:
             loglevel = "verbose"
         else:
@@ -30,11 +45,11 @@ class Encoder:
     @classmethod
     def encode_mkv(cls, ts_files, filepath, duration, debug=False):
         """
-        encode to mkv using ffmpeg.
-        :param ts_files: list of ts files.
+        Encode to mkv using ffmpeg and create a multiview video file.
+        :param ts_files: list of track files.
         :param filepath: path of the output mkv file to be created.
         :param duration: duration from the metadata.
-        :param debug: debug flag
+        :param debug: debug flag, if True print verbose output from ffmpeg.
         :return: True if encode successful.
         """
 
@@ -80,16 +95,15 @@ class Encoder:
         return True
 
     @classmethod
-    def join(cls, files_list, out_dirpath: str, ts_index: int):
+    def join(cls, files_list, out_dirpath: str, track_number: int):
         """
-        join media files into a single ts file.
+        Join individual stream files into a single track file.
         :param files_list: list of stream files.
         :param out_dirpath: output directory path.
-        :param ts_index: ts file number.
-        will be stored.
-        :return: return a temporary file combining all the decrypted media files.
+        :param track_number: track number.
+        :return: return a track file combining all the decrypted media files.
         """
-        out_filename = "track-{}.ts".format(ts_index)
+        out_filename = "track-{}.ts".format(track_number)
         out_filepath = os.path.join(out_dirpath, out_filename)
         with open(out_filepath, 'wb+') as out_fh:
             for file in files_list:

@@ -1,13 +1,26 @@
 from Crypto.Cipher import AES  # noqa
+from typing import Any
 import os
 
-class Decrypter:
 
+class Decrypter:
+    """
+    Utility functions for decrypting AES-128 encrypted streams.
+    """
     def __init__(self):
         pass
 
     @classmethod
-    def decrypt(cls, encryption_key, in_filepath, out_dir):
+    def decrypt(cls, encryption_key: Any, in_filepath: str, out_dir: str) -> str:
+        """
+        Given an encryption key and input filepath, decrypt the file using AES-128 bit decryption.
+        Return filepath to the decrypted file.
+        :param cls: class name.
+        :param encryption_key: Encryption key (string and bytes type supported)
+        :param in_filepath: Input file path.
+        :param out_dir: Directory path where decrypted contents are to be saved.
+        :Return : decrypted file path if key exists, input filepath otherwise.
+        """
         out_filepath = os.path.join(out_dir, os.path.basename(in_filepath) + ".ts")  # default path
 
         if encryption_key:

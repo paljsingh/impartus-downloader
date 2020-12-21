@@ -1,7 +1,14 @@
 Impartus Downloader
 ===
-
 (see demo video at: https://www.youtube.com/watch?v=CYk_dgyso1E)
+
+Downloader for impartus streaming videos.
+
+- Convert impartus lectures to mkv files.
+- Multiview supported. Tested with files up to 4 views.
+- Tested on Mac and Linux.
+- 
+
 
 ### Setup virtualenv (optional)
 	$ virtualenv venv
@@ -19,8 +26,8 @@ Install ffmpeg
 > mac: ```brew install ffmpeg```
 > 
 > linux: 
-> ```yum install ffmpeg``` or
-> ```apt-get install ffmpeg```
+> ```sudo yum install ffmpeg``` or
+> ```sudo apt-get install ffmpeg```
 > 
 > windows: [https://ffmpeg.org/download.html ](https://ffmpeg.org/download.html)
 > 
@@ -28,7 +35,8 @@ Install ffmpeg
 Install geckodriver
 > mac: ```brew install geckodriver```
 > 
-> linux, windows:
+> linux: ```sudo apt-get install firefox-geckodriver```
+> windows:
 > [https://github.com/mozilla/geckodriver/releases](https://github.com/mozilla/geckodriver/releases)
 > Download the release tarball and follow installation instruction.
 > 
@@ -51,5 +59,8 @@ Drop a mail to paljsingh@gmail.com for any issues/errors.
 
 ### TODO
 - Chrome implementation.
-- download ppt/pdf
-- occasional crash with parallel downloads. 
+- Auto download ppt/pdf.
+- Fix occasional crash with parallel downloads. 
+- Test on Windows.
+- Auto-clear browser cache when running low.
+- Reconcile with local storage and automatically download new lectures.

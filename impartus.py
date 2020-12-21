@@ -37,7 +37,7 @@ class Impartus:
 
     def process_videos(self):
         """
-        Download videos and decrypt, encode to mkv
+        Download videos and decrypt, join, encode to mkv
         :return: 
         """
         processed_videos = dict()

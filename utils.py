@@ -36,6 +36,10 @@ class Utils:
 
     @classmethod
     def find_dirs(cls, name: str, directory: str, comp_type: CompareType):
+        """
+        Find directories matching a given string and comparison type.
+
+        """
         dirs_list = []
         for root, subdirs, files in os.walk(directory):
             if comp_type == CompareType.EQ:
@@ -56,8 +60,12 @@ class Utils:
         return dirs_list
 
     @classmethod
-    def sanitize(cls, data_dict: Dict):  # noqa
-        if data_dict is None:
+    def sanitize(cls, metadata: Dict):  # noqa
+        """
+        Sanitize the fields in the metadata item, for better display.
+        Also creates a few new fields.
+        """
+        if metadata is None:
             return
 
         strip_spaces = ['subjectName', 'institute', 'sessionName', 'professorName', 'topic', 'subjectDescription']
@@ -67,20 +75,20 @@ class Utils:
         for x in strip_spaces:
             # remove leading/trailing spaces, replace other non-alphanum chars with '-'
             # also replace 2 or more consecutive "-" with single "-"
-            if data_dict[x]:
-                data_dict[x] = re.sub(r"[-]{2,}", "-", re.sub(r'[^a-zA-Z0-9_/-]', '-', str.strip(data_dict[x])))
+            if metadata[x]:
+                metadata[x] = re.sub(r"[-]{2,}", "-", re.sub(r'[^a-zA-Z0-9_/-]', '-', str.strip(metadata[x])))
 
         for key, val in datetime_fields.items():
             # extract datetime fields, and create new fields named startDate, endDate
-            if data_dict[key]:
-                data_dict[val] = str.split(data_dict[key], ' ')[0]
+            if metadata[key]:
+                metadata[val] = str.split(metadata[key], ' ')[0]
 
         for key, val in fixed_width.items():
             # remove leading/trailing spaces, replace other non-alphanum chars with '-'
-            if data_dict[key]:
-                data_dict[key] = val.format(data_dict[key])
+            if metadata[key]:
+                metadata[key] = val.format(metadata[key])
 
-        return data_dict
+        return metadata
 
     @classmethod
     def read_file(cls, filepath: str):

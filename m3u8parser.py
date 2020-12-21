@@ -10,16 +10,33 @@ class M3u8Parser:
         else:
             self.m3u8_content = []
 
+        # Tracks object is a list of lists, example:
         # [
-        #   [ {file1, 02:00, key1, AES-128}, {file2, 01:00, key2, AES-128}, {file4, 00:30, None, None}    ],
-        #   [ {file3, 02:00, key3, AES-128}, {file5, 01:00, None, None},    {file6, 00:30, key6, AES-128} ],
+        #  [
+        #   { "file_number": 123, "duration": 7200, "encryption_key_file": "100", "encryption_method": "AES-128" },
+        #   { "file_number": 456, "duration": 5400, "encryption_key_file": None, "encryption_method": "NONE" },
+        #   ...
+        #  ],
+        #  [
+        #   { "file_number": 999, "duration": 7500, "encryption_key_file": "777", "encryption_method": "AES-128" },
+        #   { "file_number": 888, "duration": 3600, "encryption_key_file": None, "encryption_method": "NONE" },
+        #   ...
+        #  ],
         # ]
-        # above example is a 2-track file with track 1 consisting of stream files 1, 2, and 4
-        # and track 2 consists of stream files 3, 5 and 6. Of these 1,2,3 and 6 are encrypted.
+        #
+        # Above example is a 2-track file with track 0 consisting of stream files 123, 456, ...
+        # and track 1 consisting of stream files 999, 888, ...
+        # Of these, streams 123 and 999 are encrypted, encryption keys stored in file 100 and 777 respectively.
         self.tracks = [list() for x in range(num_tracks)]   # noqa
+
+        # Summary object to provide a summary of m3u8 parsed content.
         self.summary = dict()
 
     def parse(self):
+        """
+        Parse the m3u8 file and create mapping of stream files to their encryption algorithm and encryption key file.
+        Also, populate the summary object listing total number of files, number of keys and total duration.
+        """
 
         current_track = 0
         current_file_number = -1
