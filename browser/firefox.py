@@ -151,9 +151,10 @@ class Firefox(IBrowser):
 
     def get_media_files(self, ttid: int):
         obfuscated_ttid = ''.join([chr(ord(x) + 1) for x in str(ttid)])
+        obfuscated_ttid_in_hex = obfuscated_ttid.encode('utf-8').hex()
 
-        file_ids_query = 'select file_ids from object_data where key like '\
-            + '"%{}%" and file_ids is not NULL order by CAST (file_ids as INTEGER) ASC'.format(obfuscated_ttid)
+        file_ids_query = 'select file_ids from object_data where hex(key) like '\
+            + '"%{}%" and file_ids is not NULL order by CAST (file_ids as INTEGER) ASC'.format(obfuscated_ttid_in_hex)
 
         conn = sqlite3.connect(self.indexed_db())
         file_results = conn.execute(file_ids_query).fetchmany(0)
