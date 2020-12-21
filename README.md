@@ -6,7 +6,7 @@ Downloader for impartus streaming videos.
 
 - Convert impartus lectures to mkv files.
 - Multiview supported. Tested with files up to 4 views.
-- Tested on Mac and Linux.
+- Tested on Mac and Linux (ubuntu).
 - 
 
 
@@ -25,8 +25,7 @@ Downloader for impartus streaming videos.
 Install ffmpeg
 > mac: ```brew install ffmpeg```
 > 
-> linux: 
-> ```sudo yum install ffmpeg``` or
+> linux (ubuntu): 
 > ```sudo apt-get install ffmpeg```
 > 
 > windows: [https://ffmpeg.org/download.html ](https://ffmpeg.org/download.html)
@@ -35,7 +34,8 @@ Install ffmpeg
 Install geckodriver
 > mac: ```brew install geckodriver```
 > 
-> linux: ```sudo apt-get install firefox-geckodriver```
+> linux (ubuntu): ```sudo apt-get install firefox-geckodriver```
+> 
 > windows:
 > [https://github.com/mozilla/geckodriver/releases](https://github.com/mozilla/geckodriver/releases)
 > Download the release tarball and follow installation instruction.
