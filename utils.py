@@ -105,3 +105,15 @@ class Utils:
     def delete_files(cls, files: List):
         for file in files:
             os.unlink(file)
+
+    @classmethod
+    def get_temp_dir(self):
+        if os.environ.get('TMPDIR'):
+            return os.environ.get('TMPDIR')
+        if os.environ.get('TEMP'):
+            return os.environ.get('TEMP')
+        if os.environ.get('TMP'):
+            return os.environ.get('TMP')
+        return '/tmp'
+
+ 
