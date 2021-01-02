@@ -1,3 +1,3 @@
-pycrypto==2.6.1
-envyaml==1.1.201202
-selenium==3.141.0
+pycryptodome
+envyaml
+selenium
