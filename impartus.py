@@ -13,7 +13,12 @@ class Impartus:
     def __init__(self):
         self.conf = Config.load()
         self.browser = BrowserFactory.get_browser(self.conf.get('browser'))
-        self.download_dir = self.conf.get('target_dir')
+
+        if os.name == 'posix':
+            self.download_dir = self.conf.get('target_dir').get('posix')
+        else:
+            self.download_dir = self.conf.get('target_dir').get('windows')
+
         self.media_directory = self.browser.media_directory()
         self.decrypted_media_dir = os.path.join(Utils.get_temp_dir(), 'impartus.media')
         os.makedirs(self.decrypted_media_dir, exist_ok=True)
