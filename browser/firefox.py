@@ -78,8 +78,10 @@ class Firefox(IBrowser):
 
     def __init__(self):
         self.impartus_url = "https://a.impartus.com"
-        self.profile_dir = os.path.join(os.environ.get('HOME'), "profile.impartus")
         self.conf = Config().config
+
+        # create profile directory under temp
+        self.profile_dir = os.path.join(Utils.get_temp_dir(), "impartus.profile")
         self.driver = None
 
         # dictionary of { ttid1: [file1, file2 ..], ttid2: [file101, file102 ..], .. }
@@ -97,8 +99,12 @@ class Firefox(IBrowser):
     def get_downloads(self, processed: Dict) -> Dict:
 
         # ensure firefox/geckodriver creates profile under the profile directory.
-        os.environ['TMPDIR'] = self.profile_dir     # linux/mac
-        os.environ['TEMP'] = self.profile_dir     # windows
+        # linux/mac
+        os.environ['TMPDIR'] = self.profile_dir
+
+        # windows
+        os.environ['TEMP'] = self.profile_dir
+        os.environ['TMP'] = self.profile_dir
 
         options = Options()
         size_in_kb = self.conf['cache_size_in_gb'] * 1024 * 1024

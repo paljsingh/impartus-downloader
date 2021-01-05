@@ -13,9 +13,15 @@ class Impartus:
     def __init__(self):
         self.conf = Config.load()
         self.browser = BrowserFactory.get_browser(self.conf.get('browser'))
-        self.download_dir = self.conf.get('target_dir')
+
+        if os.name == 'posix':
+            self.download_dir = self.conf.get('target_dir').get('posix')
+        else:
+            self.download_dir = self.conf.get('target_dir').get('windows')
+
         self.media_directory = self.browser.media_directory()
-        os.makedirs(self.conf.get('tmp_dir'), exist_ok=True)
+        self.decrypted_media_dir = os.path.join(Utils.get_temp_dir(), 'impartus.media')
+        os.makedirs(self.decrypted_media_dir, exist_ok=True)
 
     def mkv_file_path(self, ttid, metadata):
         """
@@ -101,13 +107,15 @@ class Impartus:
                         )
                         encryption_key = Utils.read_file(encryption_key_file)
                         decrypted_stream_filepath = Decrypter.decrypt(
-                            encryption_key, stream_filepath, self.conf.get('tmp_dir'))
+                            encryption_key, stream_filepath,
+                            self.decrypted_media_dir)
                         streams_to_join.append(decrypted_stream_filepath)
                         temp_files_to_delete.append(decrypted_stream_filepath)
 
                 # All stream files for this track are decrypted, join them.
                 print("joining streams for track {} ..".format(track_index))
-                ts_file = Encoder.join(streams_to_join, self.conf.get('tmp_dir'), track_index)
+                ts_file = Encoder.join(streams_to_join,
+                        self.decrypted_media_dir, track_index)
                 ts_files.append(ts_file)
                 temp_files_to_delete.append(ts_file)
 

@@ -1,4 +1,5 @@
 import os
+from shutil import move
 from typing import List
 
 
@@ -40,7 +41,9 @@ class Encoder:
             os.system("ffmpeg -y -loglevel {level} -i {input} -c copy -ss {start} -t {duration} {output}"
                       .format(level=loglevel, input=ts_files[0], start=0, duration=duration, output=tmp_file_path))
         )
-        os.rename(tmp_file_path, ts_files[0])
+        # os.rename() fails on windows if the target file exists.
+        # using shutils.move
+        move(tmp_file_path, ts_files[0])
 
     @classmethod
     def encode_mkv(cls, ts_files, filepath, duration, debug=False):
