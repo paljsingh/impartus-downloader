@@ -72,11 +72,18 @@ class Impartus:
                 for item in track_info:
 
                     # download encrypted stream..
-                    enc_stream_filepath = '{}/{}.ts'.format(temp_download_dir, item['file_number'])
+                    enc_stream_filepath = '{}/{}'.format(temp_download_dir, item['file_number'])
                     temp_files_to_delete.add(enc_stream_filepath)
-                    with open(enc_stream_filepath, 'wb') as fh:
-                        content = requests.get(item['url']).content
-                        fh.write(content)
+                    download_flag = False
+                    while not download_flag:
+                        try:
+                            with open(enc_stream_filepath, 'wb') as fh:
+                                content = requests.get(item['url']).content
+                                fh.write(content)
+                                download_flag = True
+                        except TimeoutError:
+                            print("retrying download for {}...".format(item['url']))
+
 
                     # decrypt files if encrypted.
                     if item.get('encryption_method') == "NONE":
