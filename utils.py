@@ -93,13 +93,15 @@ class Utils:
             if metadata[key]:
                 metadata[key] = val.format(metadata[key])
 
-
         conf = Config.load()
         for key, val in conf.get('subject_mapping').items():
             if re.search(key, metadata['subjectName']):
                 metadata['subjectNameShort'] = val
                 break
 
+        duration_hour = int(metadata.get('actualDuration')) // 3600
+        duration_min = (int(metadata.get('actualDuration')) % 3600) // 60
+        metadata['actualDurationReadable'] = '{}h{}m'.format(duration_hour, duration_min)
         return metadata
 
     @classmethod

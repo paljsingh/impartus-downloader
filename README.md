@@ -49,8 +49,7 @@ Drop a mail to paljsingh@gmail.com for any issues/errors.
 
 
 ### TODO
-- Chrome implementation.
 - Auto download ppt/pdf.
-- Fix occasional crash with parallel downloads. 
-- Auto-clear browser cache when running low.
-- Reconcile with local storage and automatically download new lectures.
+- Better UI and feedback.
+- Logging improvements.
+- 
