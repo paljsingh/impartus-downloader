@@ -1,137 +1,153 @@
 #!/usr/bin/python3
 import os
+import re
 from browser import BrowserFactory
 from config import Config
 from utils import Utils
 from encoder import Encoder
 from m3u8parser import M3u8Parser
 from decrypter import Decrypter
+import urllib
+
+import requests
 
 
 class Impartus:
+    def __init__(self, token=None):
+        self.session = None
+        self.token = None
 
-    def __init__(self):
+        # reuse the auth token, if we are already authenticated.
+        if token:
+            self.token = token
+            self.session = requests.Session()
+            self.session.cookies.update({'Bearer': token})
+            self.session.headers.update({'Authorization': 'Bearer {}'.format(token)})
+
         self.conf = Config.load()
-        self.browser = BrowserFactory.get_browser(self.conf.get('browser'))
 
+        # save the files here.
         if os.name == 'posix':
             self.download_dir = self.conf.get('target_dir').get('posix')
         else:
             self.download_dir = self.conf.get('target_dir').get('windows')
 
-        self.media_directory = self.browser.media_directory()
-        self.decrypted_media_dir = os.path.join(Utils.get_temp_dir(), 'impartus.media')
-        os.makedirs(self.decrypted_media_dir, exist_ok=True)
+        self.temp_downloads_dir = os.path.join(Utils.get_temp_dir(), 'impartus.media')
+        os.makedirs(self.temp_downloads_dir, exist_ok=True)
 
-    def mkv_file_path(self, ttid, metadata):
+    def _download_m3u8(self, root_url, ttid):
+        response = self.session.get('{}/api/fetchvideo?ttid={}&token={}&type=index.m3u8'.format(root_url, ttid, self.token))
+        if response.status_code == 200:
+            lines = response.text.splitlines()
+            for line in lines:
+                if re.match('^http', line):
+                    url = line.strip()
+                    response = self.session.get(url)
+                    if response.status_code == 200:
+                        return response.text.splitlines()
+        return None
+
+    def process_video(self, video_metadata, mkv_filepath, root_url, progress_bar_value):
         """
-        If the metadata object has media information, use it to create filepath,
-        else create filepath using video ttid.
-        :param ttid:
-        :param metadata:
-        :return: filepath of the mkv file.
-        """
-        # default new path.
-        filepath = os.path.join(self.download_dir, str(ttid) + ".mkv")
-
-        if metadata:
-            metadata = Utils.sanitize(metadata)
-            filepath = self.conf.get('name_format').format(**metadata, target_dir=self.download_dir)
-
-        os.makedirs(os.path.dirname(filepath), exist_ok=True)
-        return filepath
-
-    def process_videos(self):
-        """
-        Download videos and decrypt, join, encode to mkv
+        Download video and decrypt, join, encode to mkv
         :return: 
         """
-        processed_videos = dict()
+        ttid = video_metadata['ttid']
+        number_of_tracks = int(video_metadata['tapNToggle'])
+        duration = int(video_metadata['actualDuration'])
+        encryption_keys = dict()
 
-        print("Files will be saved at: {}".format(self.download_dir))
-        print("---\n")
-
-        for metadata_item, m3u8_content in self.browser.get_downloads(processed_videos):
-            ttid = self.browser.get_ttid(metadata_item)
-            processed_videos[ttid] = False
-
-            # full path of the mkv file to be created.
-            mkv_filepath = self.mkv_file_path(ttid, metadata_item)
-
-            # Skip if we already have a file there (unless overwrite option set)
-            if os.path.exists(mkv_filepath) and not self.conf.get('overwrite'):
-                print("File {} exists, skipping.".format(mkv_filepath))
-                print("---\n")
-                processed_videos[ttid] = True
-                continue
-
-            # collect metadata like no-of-tracks, duration.
-            number_of_tracks = int(metadata_item['tapNToggle'])
-            duration = int(metadata_item['actualDuration'])
-
-            # list of media files on disk for this download.
-            # includes stream files + key files.
-            media_files = self.browser.get_media_files(ttid)
-
-            # Parse the m3u8 content and validate against the media files.
+        # download media files for this video.
+        m3u8_content = self._download_m3u8(root_url, ttid)
+        if m3u8_content:
             summary, tracks_info = M3u8Parser(m3u8_content, num_tracks=number_of_tracks).parse()
-            if len(media_files) != summary['total_files']:
-                print("{}".format(mkv_filepath))
-                print("number of media files needed {}, actual found {}".format(
-                    summary['media_files'], len(media_files)))
-                print("This is likely due to browser cache being full.")
-                print("Delete some of the downloaded videos and try downloading again.")
-                print("---\n")
-                continue
+            temp_download_dir = os.path.join(self.download_dir, str(ttid))
+            os.makedirs(temp_download_dir, exist_ok=True)
 
-            # All good.
-            # Decrypt files, join media streams and encode to mkv
-            ts_files = []
-
-            if summary.get('key_files') > 0:
-                print("decrypting streams .. ")
-
-            temp_files_to_delete = list()
+            temp_files_to_delete = set()
+            ts_files = list()
+            items_processed = 0
             for track_index, track_info in enumerate(tracks_info):
                 streams_to_join = list()
                 for item in track_info:
 
-                    # decrypt files if encrypted.
-                    stream_filepath = os.path.join(self.browser.media_directory(), media_files[item['file_number']])
+                    # download encrypted stream..
+                    enc_stream_filepath = '{}/{}.ts'.format(temp_download_dir, item['file_number'])
+                    temp_files_to_delete.add(enc_stream_filepath)
+                    with open(enc_stream_filepath, 'wb') as fh:
+                        content = requests.get(item['url']).content
+                        fh.write(content)
 
+                    # decrypt files if encrypted.
                     if item.get('encryption_method') == "NONE":
-                        streams_to_join.append(stream_filepath)
+                        streams_to_join.append(enc_stream_filepath)
                     else:
-                        encryption_key_file = os.path.join(
-                            self.browser.media_directory(), media_files[item.get('encryption_key_file')]
-                        )
-                        encryption_key = Utils.read_file(encryption_key_file)
+                        if not encryption_keys.get(item['encryption_key_id']):
+                            key = self.session.get(item['encryption_key_url']).content[2:]
+                            key = key[::-1]     # reverse the bytes.
+                            encryption_keys[item['encryption_key_id']] = key
+                        encryption_key = encryption_keys[item['encryption_key_id']]
                         decrypted_stream_filepath = Decrypter.decrypt(
-                            encryption_key, stream_filepath,
-                            self.decrypted_media_dir)
+                                encryption_key, enc_stream_filepath,
+                                self.temp_downloads_dir)
                         streams_to_join.append(decrypted_stream_filepath)
-                        temp_files_to_delete.append(decrypted_stream_filepath)
+                        temp_files_to_delete.add(decrypted_stream_filepath)
+                    # update progress bar
+                    items_processed += 1
+                    progress_bar_value.set(items_processed * 100 // summary.get('total_files'))
 
                 # All stream files for this track are decrypted, join them.
-                print("joining streams for track {} ..".format(track_index))
-                ts_file = Encoder.join(streams_to_join,
-                        self.decrypted_media_dir, track_index)
+                print("joining streams for track {}..".format(track_index))
+                ts_file = Encoder.join(streams_to_join, self.temp_downloads_dir, track_index)
                 ts_files.append(ts_file)
                 temp_files_to_delete.append(ts_file)
 
             # Encode all ts files into a single output mkv.
+            os.makedirs(os.path.dirname(mkv_filepath), exist_ok=True)
             success = Encoder.encode_mkv(ts_files, mkv_filepath, duration, self.conf.get('debug'))
 
             if success:
-                processed_videos[ttid] = True
-                print("{}. {}".format(len(processed_videos), mkv_filepath))
+                print("{}".format(mkv_filepath))
                 print("---\n")
 
                 # delete temp files.
                 if not self.conf.get('debug'):
                     Utils.delete_files(temp_files_to_delete)
 
+    def filter_subjects(self, subjects):
+        return subjects
 
-if __name__ == '__main__':
-    impartus = Impartus()
-    impartus.process_videos()
+    def get_mkv_path(self, video_metadata):
+        filepath = os.path.join(self.download_dir, str(video_metadata.get('ttid')) + ".mkv")
+        if video_metadata:
+            filepath = self.conf.get('name_format').format(**video_metadata, target_dir=self.download_dir)
+        return filepath
+
+    def get_videos(self, root_url, subject):
+        response = self.session.get('{}/api/subjects/{}/lectures/{}'.format(root_url, subject.get('subjectId'), subject.get('sessionId')))
+        if response.status_code == 200:
+            return response.json()
+        else:
+            return []
+
+    def get_subjects(self, root_url):
+        response = self.session.get('{}/api/subjects'.format(root_url))
+        if response.status_code == 200:
+            return response.json()
+        else:
+            return []
+
+    def authenticate(self, username, password, url):
+        self.session = requests.Session()
+        data = {
+            'username': username,
+            'password': password
+        }
+        response = self.session.post('{}/api/auth/signin'.format(url), json=data, timeout=30)
+        if response.status_code == 200:
+            self.token = response.json()['token']
+            self.session.cookies.update({'Bearer': self.token})
+            self.session.headers.update({'Authorization': 'Bearer {}'.format(self.token)})
+            return True
+
+        return False

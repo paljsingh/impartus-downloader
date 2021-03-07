@@ -2,6 +2,7 @@ import os
 import re
 from enum import Enum
 from typing import Dict, List
+from config import Config
 
 
 class CompareType(Enum):
@@ -69,7 +70,10 @@ class Utils:
             return
 
         strip_spaces = ['subjectName', 'institute', 'sessionName', 'professorName', 'topic', 'subjectDescription']
-        datetime_fields = {'startTime': 'startDate', 'endTime': 'endDate'}
+        datetime_fields = {
+            'startTime': 'startDate',
+            'endTime': 'endDate'
+        }
         fixed_width = {'seqNo': '{:02d}', 'views': '{:04d}', 'actualDuration': '{:05d}', 'sessionId': '{:04d}'}
 
         for x in strip_spaces:
@@ -87,6 +91,13 @@ class Utils:
             # remove leading/trailing spaces, replace other non-alphanum chars with '-'
             if metadata[key]:
                 metadata[key] = val.format(metadata[key])
+
+
+        conf = Config.load()
+        for key, val in conf.get('subject_mapping').items():
+            if re.search(key, metadata['subjectName']):
+                metadata['subjectNameShort'] = val
+                break
 
         return metadata
 

@@ -77,8 +77,8 @@ class Firefox(IBrowser):
     _indexed_db = None
 
     def __init__(self):
-        self.impartus_url = "https://a.impartus.com"
         self.conf = Config().config
+        self.impartus_url = self.conf.get('impartus_url')
 
         # create profile directory under temp
         self.profile_dir = os.path.join(Utils.get_temp_dir(), "impartus.profile")

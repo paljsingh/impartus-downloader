@@ -13,13 +13,13 @@ class M3u8Parser:
         # Tracks object is a list of lists, example:
         # [
         #  [
-        #   { "file_number": 123, "duration": 7200, "encryption_key_file": "100", "encryption_method": "AES-128" },
-        #   { "file_number": 456, "duration": 5400, "encryption_key_file": None, "encryption_method": "NONE" },
+        #   { "file_number": 123, "duration": 7200, "encryption_key_file": "100", "encryption_method": "AES-128", 'url": 'http://...' },
+        #   { "file_number": 456, "duration": 5400, "encryption_key_file": None, "encryption_method": "NONE", 'url": 'http://...' },
         #   ...
         #  ],
         #  [
-        #   { "file_number": 999, "duration": 7500, "encryption_key_file": "777", "encryption_method": "AES-128" },
-        #   { "file_number": 888, "duration": 3600, "encryption_key_file": None, "encryption_method": "NONE" },
+        #   { "file_number": 999, "duration": 7500, "encryption_key_file": "777", "encryption_method": "AES-128", 'url": 'http://...' },
+        #   { "file_number": 888, "duration": 3600, "encryption_key_file": None, "encryption_method": "NONE", 'url": 'http://...' },
         #   ...
         #  ],
         # ]
@@ -42,8 +42,9 @@ class M3u8Parser:
         current_file_number = -1
         current_file_duration = 0
         current_encryption_method = "NONE"
-        current_encryption_key_file = None
+        current_encryption_key_url = None
 
+        key_id = 0
         key_files = 0
         media_files = 0
         total_duration = 0
@@ -51,11 +52,12 @@ class M3u8Parser:
             if str(token).startswith("#EXT-X-KEY:METHOD"):  # encryption algorithm
                 current_encryption_method = re.sub(r"^#EXT-X-KEY:METHOD=([A-Z0-9-]+).*$", r"\1", token)
                 if current_encryption_method == "NONE":
-                    current_encryption_key_file = None
+                    current_encryption_key_url = None
                 else:
-                    current_file_number += 1
+                    current_encryption_key_url = re.sub(r"^#EXT-X-KEY:METHOD=([A-Z0-9-]+).*(http.*)\"$", r"\2", token)
+                    key_id = re.sub(r"^.*keyid=([0-9]+).*$", r"\1", current_encryption_key_url)
                     key_files += 1
-                    current_encryption_key_file = current_file_number
+
             elif str(token).startswith("#EXTINF:"):  # duration
                 current_file_duration = float(re.sub(r'^#EXTINF:([0-9]+\.[0-9]+),.*', r"\1", token))
                 total_duration += current_file_duration
@@ -65,8 +67,10 @@ class M3u8Parser:
                 self.tracks[current_track].append({
                     "file_number": current_file_number,
                     "duration": current_file_duration,
-                    "encryption_key_file": current_encryption_key_file,
+                    "encryption_key_url": current_encryption_key_url,
+                    "encryption_key_id": key_id,
                     "encryption_method": current_encryption_method,
+                    "url": str(token).strip(),
                 })
             elif str(token).startswith("#EXT-X-DISCONTINUITY"):
                 # do we need anything here ?
