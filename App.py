@@ -89,6 +89,9 @@ class App:
         root_url = self.url_box.get()
 
         self.progress_bar_values.clear()
+        self.download_buttons.clear()
+        self.open_buttons.clear()
+        self.play_buttons.clear()
 
         if not self.impartus.session:
             success = self.impartus.authenticate(username, password, root_url)
@@ -111,7 +114,7 @@ class App:
         sf.bind_scroll_wheel(frame_table)
         self.scrollable_frame = sf
 
-        for i, col in enumerate(list(['Subject', 'Lecture No.', 'Professor', 'Topic', 'Date', 'Duration', 'Channels', 'Downloaded ?'])):
+        for i, col in enumerate(list(['Subject', 'Lecture No.', 'Professor', 'Topic', 'Date', 'Duration', 'Tracks', 'Downloaded?'])):
             tk.Label(frame_table, text=col).grid(row=0, column=i)
 
         row = 1
@@ -128,9 +131,7 @@ class App:
                 tk.Label(frame_table, text=video_metadata.get('professorName')).grid(row=row, column=2)
                 tk.Label(frame_table, text=video_metadata.get('topic')).grid(row=row, column=3)
                 tk.Label(frame_table, text=video_metadata.get('startDate')).grid(row=row, column=4)
-                duration_hour = int(video_metadata.get('actualDuration')) // 3600
-                duration_min = (int(video_metadata.get('actualDuration')) % 3600 ) // 60
-                tk.Label(frame_table, text='{}h{}m'.format(duration_hour, duration_min)).grid(row=row, column=5)
+                tk.Label(frame_table, text=video_metadata.get('actualDurationReadable')).grid(row=row, column=5)
                 tk.Label(frame_table, text=video_metadata.get('tapNToggle')).grid(row=row, column=6)
                 filepath = self.impartus.get_mkv_path(video_metadata)
                 progress_bar_value = tk.DoubleVar()
