@@ -6,7 +6,6 @@ from utils import Utils
 from encoder import Encoder
 from m3u8parser import M3u8Parser
 from decrypter import Decrypter
-import urllib
 
 import requests
 
@@ -119,9 +118,6 @@ class Impartus:
                 if not self.conf.get('debug'):
                     Utils.delete_files(list(temp_files_to_delete))
                     os.rmdir(download_dir)
-
-    def filter_subjects(self, subjects):
-        return subjects
 
     def get_mkv_path(self, video_metadata):
         filepath = os.path.join(self.download_dir, str(video_metadata.get('ttid')) + ".mkv")
