@@ -1,3 +1,5 @@
 pycryptodome
 envyaml
-selenium
+tkscrolledframe
+tk
+requests

@@ -39,30 +39,13 @@ Install ffmpeg
 > Download ffmpeg win64 zip, extract and copy ffmpeg.exe to current folder.
 > 
 
-Install geckodriver
-> mac: ```brew install geckodriver```
-> 
-> linux (ubuntu): ```sudo apt-get install firefox-geckodriver```
-> 
-> windows:
-> [https://github.com/mozilla/geckodriver/releases](https://github.com/mozilla/geckodriver/releases)
-> 
-> Download the windows release zip, extract and copy geckodriver.exe to current
-> folder.
-> 
-
 ### Run application.
 
-``` $ python3 impartus.py```
+``` $ python3 App.py```
 
-This will launch a new firefox application, and open the impartus.com page.
-Login, and download the videos. Once the download is complete, the application
-will start processing the offline streams saved in browser cache and convert it
-to mkv.
+### Configuration
+see yaml.conf 
 
-This output files will be saved to a target_dir specified in yaml.conf, the
-sub-directory organization and naming convention can be changed using available
-placeholders (see yaml.conf).
 
 Drop a mail to paljsingh@gmail.com for any issues/errors.
 
