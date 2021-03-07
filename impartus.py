@@ -119,6 +119,7 @@ class Impartus:
                 # delete temp files.
                 if not self.conf.get('debug'):
                     Utils.delete_files(list(temp_files_to_delete))
+                    os.rmdir(download_dir)
 
     def filter_subjects(self, subjects):
         return subjects
