@@ -2,6 +2,9 @@ Impartus Downloader
 ===
 Downloader for impartus streaming videos.
 
+Demo video:
+[![Impartus v2.0 demo](https://img.youtube.com/vi/V5pcdUtiRjw/0.jpg)](https://www.youtube.com/watch?v=V5pcdUtiRjw)
+
 - Convert impartus lectures to mkv files.
 - Multiview supported. Tested with files up to 4 views.
 - Tested on Mac, Linux (ubuntu) and Windows 10.
