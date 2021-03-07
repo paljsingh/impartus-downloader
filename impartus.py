@@ -100,7 +100,7 @@ class Impartus:
                 print("joining streams for track {}..".format(track_index))
                 ts_file = Encoder.join(streams_to_join, self.temp_downloads_dir, track_index)
                 ts_files.append(ts_file)
-                temp_files_to_delete.append(ts_file)
+                temp_files_to_delete.add(ts_file)
 
             # Encode all ts files into a single output mkv.
             os.makedirs(os.path.dirname(mkv_filepath), exist_ok=True)
@@ -112,7 +112,7 @@ class Impartus:
 
                 # delete temp files.
                 if not self.conf.get('debug'):
-                    Utils.delete_files(temp_files_to_delete)
+                    Utils.delete_files(list(temp_files_to_delete))
 
     def filter_subjects(self, subjects):
         return subjects
