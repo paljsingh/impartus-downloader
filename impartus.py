@@ -61,8 +61,8 @@ class Impartus:
         m3u8_content = self._download_m3u8(root_url, ttid)
         if m3u8_content:
             summary, tracks_info = M3u8Parser(m3u8_content, num_tracks=number_of_tracks).parse()
-            temp_download_dir = os.path.join(self.download_dir, str(ttid))
-            os.makedirs(temp_download_dir, exist_ok=True)
+            download_dir = os.path.join(self.temp_downloads_dir, str(ttid))
+            os.makedirs(download_dir, exist_ok=True)
 
             temp_files_to_delete = set()
             ts_files = list()
@@ -72,7 +72,7 @@ class Impartus:
                 for item in track_info:
 
                     # download encrypted stream..
-                    enc_stream_filepath = '{}/{}'.format(temp_download_dir, item['file_number'])
+                    enc_stream_filepath = '{}/{}'.format(download_dir, item['file_number'])
                     temp_files_to_delete.add(enc_stream_filepath)
                     download_flag = False
                     while not download_flag:
@@ -83,7 +83,6 @@ class Impartus:
                                 download_flag = True
                         except TimeoutError:
                             print("retrying download for {}...".format(item['url']))
-
 
                     # decrypt files if encrypted.
                     if item.get('encryption_method') == "NONE":
@@ -96,7 +95,7 @@ class Impartus:
                         encryption_key = encryption_keys[item['encryption_key_id']]
                         decrypted_stream_filepath = Decrypter.decrypt(
                                 encryption_key, enc_stream_filepath,
-                                self.temp_downloads_dir)
+                                download_dir)
                         streams_to_join.append(decrypted_stream_filepath)
                         temp_files_to_delete.add(decrypted_stream_filepath)
                     # update progress bar
@@ -105,7 +104,7 @@ class Impartus:
 
                 # All stream files for this track are decrypted, join them.
                 print("joining streams for track {}..".format(track_index))
-                ts_file = Encoder.join(streams_to_join, self.temp_downloads_dir, track_index)
+                ts_file = Encoder.join(streams_to_join, download_dir, track_index)
                 ts_files.append(ts_file)
                 temp_files_to_delete.add(ts_file)
 
