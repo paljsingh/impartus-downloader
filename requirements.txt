@@ -1,4 +1,5 @@
 pycryptodome
 envyaml
 tkscrolledframe
-tkinter
+tk
+requests
