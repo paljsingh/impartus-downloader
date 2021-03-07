@@ -100,7 +100,7 @@ class Impartus:
                         temp_files_to_delete.add(decrypted_stream_filepath)
                     # update progress bar
                     items_processed += 1
-                    progress_bar_value.set(items_processed * 100 // summary.get('total_files'))
+                    progress_bar_value.set(items_processed * 100 // summary.get('media_files'))
 
                 # All stream files for this track are decrypted, join them.
                 print("joining streams for track {}..".format(track_index))
