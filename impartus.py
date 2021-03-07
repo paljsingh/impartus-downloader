@@ -1,7 +1,6 @@
 #!/usr/bin/python3
 import os
 import re
-from browser import BrowserFactory
 from config import Config
 from utils import Utils
 from encoder import Encoder

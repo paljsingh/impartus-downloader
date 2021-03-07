@@ -6,15 +6,14 @@ import tkinter as tk
 import tkinter.ttk as ttk
 from tkscrolledframe import ScrolledFrame
 from functools import partial
-import sys
 import os
 import threading
 
 from impartus import Impartus
 from utils import Utils
 
-class App():
 
+class App:
     def __init__(self):
         self.frame_auth = None
         self.frame_videos = None
@@ -34,9 +33,7 @@ class App():
         pad = 3
         geometry = '{}x{}+0+0'.format(self.app.winfo_screenwidth()-pad, self.app.winfo_screenheight()-pad)
         self.app.geometry(geometry)
-
-        self.content_frame = self._add_content(self.app)
-
+        self._add_content(self.app)
         self.app.mainloop()
 
     def _init_backend(self):
@@ -78,7 +75,6 @@ class App():
         self.pass_box = pass_box
         self.url_box = url_box
 
-
     def get_videos(self):
         username = self.user_box.get()
         password = self.pass_box.get()
@@ -115,7 +111,6 @@ class App():
             videos = self.impartus.get_videos(root_url, subject)
             for video_metadata in videos:
                 video_metadata = Utils.sanitize(video_metadata)
-                subject_name = None
                 if video_metadata.get('subjectNameShort'):
                     subject_name = video_metadata.get('subjectNameShort')
                 else:
