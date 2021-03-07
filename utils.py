@@ -3,6 +3,7 @@ import re
 from enum import Enum
 from typing import Dict, List
 from config import Config
+import webbrowser
 
 
 class CompareType(Enum):
@@ -118,7 +119,7 @@ class Utils:
             os.unlink(file)
 
     @classmethod
-    def get_temp_dir(self):
+    def get_temp_dir(cls):
         if os.environ.get('TMPDIR'):
             return os.environ.get('TMPDIR')
         if os.environ.get('TEMP'):
@@ -127,4 +128,8 @@ class Utils:
             return os.environ.get('TMP')
         return '/tmp'
 
- 
+    @classmethod
+    def open_file(cls, path):
+        webbrowser.open('file://{}'.format(path))
+
+
