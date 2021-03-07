@@ -1,3 +1,4 @@
 pycryptodome
 envyaml
-selenium
+tkscrolledframe
+tkinter
