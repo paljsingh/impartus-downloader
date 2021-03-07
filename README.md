@@ -1,7 +1,5 @@
 Impartus Downloader
 ===
-(see demo video at: https://www.youtube.com/watch?v=CYk_dgyso1E)
-
 Downloader for impartus streaming videos.
 
 - Convert impartus lectures to mkv files.
