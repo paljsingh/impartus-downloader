@@ -53,7 +53,7 @@ class App:
 
     def _add_content(self, anchor):
         """
-        Adds authentication widgets and black frame for holding video/lectures data.
+        Adds authentication widgets and blank frame for holding video/lectures data.
         """
         options = {
             'padx': 5,
