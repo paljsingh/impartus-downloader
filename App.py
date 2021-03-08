@@ -172,7 +172,8 @@ class App:
                 self.play_buttons.append(play_button)
 
                 row += 1
-                self.scrollable_frame.focus()
+        # set focus
+        self.scrollable_frame.focus()
 
     def _download_video_thread(self, video_metadata, filepath, root_url, index):
         """
