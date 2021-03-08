@@ -10,7 +10,7 @@ class Utils:
     @classmethod
     def sanitize(cls, metadata: Dict):  # noqa
         """
-        Sanitize the fields in the metadata item, for better display.
+        Sanitize the fields in the metadata item for better display.
         Also creates a few new fields.
         """
         if metadata is None:
@@ -35,31 +35,22 @@ class Utils:
                 metadata[val] = str.split(metadata[key], ' ')[0]
 
         for key, val in fixed_width.items():
-            # remove leading/trailing spaces, replace other non-alphanum chars with '-'
+            # format these numeric fields to fix width with leading zeros.
             if metadata[key]:
                 metadata[key] = val.format(metadata[key])
 
+        # create new field to hold shortened subject names.
         conf = Config.load()
         for key, val in conf.get('subject_mapping').items():
             if re.search(key, metadata['subjectName']):
                 metadata['subjectNameShort'] = val
                 break
 
+        # create new field to show human readable duration of the video.
         duration_hour = int(metadata.get('actualDuration')) // 3600
         duration_min = (int(metadata.get('actualDuration')) % 3600) // 60
         metadata['actualDurationReadable'] = '{}h{}m'.format(duration_hour, duration_min)
         return metadata
-
-    @classmethod
-    def read_file(cls, filepath: str):
-        """
-        extract encryption key from the key-file.
-        :param filepath:
-        :return:
-        """
-        with open(filepath, 'rb') as fh:
-            content = fh.read()
-        return content
 
     @classmethod
     def delete_files(cls, files: List):
