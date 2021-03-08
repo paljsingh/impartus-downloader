@@ -17,7 +17,7 @@ class App:
     def __init__(self):
         self.frame_auth = None
         self.frame_videos = None
-        self.pass_box = None
+        self.user_box = None
         self.pass_box = None
         self.url_box = None
         self.scrollable_frame = None
@@ -35,6 +35,9 @@ class App:
         self._init_ui()
 
     def _init_ui(self):
+        """
+        UI initialization.
+        """
         self.app = tkinter.Tk()
         pad = 3
         geometry = '{}x{}+0+0'.format(self.app.winfo_screenwidth()-pad, self.app.winfo_screenheight()-pad)
@@ -43,12 +46,15 @@ class App:
         self.app.mainloop()
 
     def _init_backend(self):
+        """
+        backend initialization.
+        """
         self.impartus = Impartus()
 
-    def donothing(self):
-        pass
-
     def _add_content(self, anchor):
+        """
+        Adds authentication widgets and black frame for holding video/lectures data.
+        """
         options = {
             'padx': 5,
             'pady': 5,
@@ -84,6 +90,10 @@ class App:
         self.url_box = url_box
 
     def get_videos(self):
+        """
+        Callback function for 'List Videos' button.
+        Fetch video/lectures list available to the user and display on the UI.
+        """
         username = self.user_box.get()
         password = self.pass_box.get()
         root_url = self.url_box.get()
@@ -165,6 +175,9 @@ class App:
                 self.scrollable_frame.focus()
 
     def _download_video_thread(self, video_metadata, filepath, root_url, index):
+        """
+        Download a video in a thread. Update the UI upon completion.
+        """
         # create a new Impartus session reusing existing token.
         imp = Impartus(self.impartus.token)
         imp.process_video(video_metadata, filepath, root_url, self.progress_bar_values[index-1])
@@ -177,6 +190,10 @@ class App:
         self.download_buttons[index - 1].config(state=tk.NORMAL)
 
     def download_video(self, video_metadata, filepath, root_url, index):
+        """
+        callback function for Download button.
+        Creates a thread to download the request video.
+        """
         # disable download button.
         self.download_buttons[index-1].config(state=tk.DISABLED, disabledforeground='gray')
 

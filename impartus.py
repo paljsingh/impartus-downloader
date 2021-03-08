@@ -1,13 +1,13 @@
 #!/usr/bin/python3
 import os
 import re
+import requests
+
 from config import Config
 from utils import Utils
 from encoder import Encoder
 from m3u8parser import M3u8Parser
 from decrypter import Decrypter
-
-import requests
 
 
 class Impartus:
