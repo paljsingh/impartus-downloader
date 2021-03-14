@@ -120,10 +120,10 @@ class Impartus:
                     os.rmdir(download_dir)
 
     def get_mkv_path(self, video_metadata):
-        filepath = os.path.join(self.download_dir, str(video_metadata.get('ttid')) + ".mkv")
-        if video_metadata:
-            filepath = self.conf.get('name_format').format(**video_metadata, target_dir=self.download_dir)
-        return filepath
+        return self.conf.get('video_path').format(**video_metadata, target_dir=self.download_dir)
+
+    def get_slides_path(self, video_metadata):
+        return self.conf.get('pdf_path').format(**video_metadata, target_dir=self.download_dir)
 
     def get_videos(self, root_url, subject):
         response = self.session.get('{}/api/subjects/{}/lectures/{}'.format(root_url, subject.get('subjectId'), subject.get('sessionId')))
@@ -138,6 +138,20 @@ class Impartus:
             return response.json()
         else:
             return []
+
+    def download_slides(self, video_metadata, filepath, root_url):
+        response = requests.get(
+            '{}/backpacks/auto-generated/{}.pdf'.format(root_url, video_metadata.get('videoId')),
+            headers={'Cookie': 'Bearer={}'.format(self.token)},
+        )
+        if response.status_code == 200:
+            with open(filepath, 'wb+') as fh:
+                fh.write(response.content)
+            return True
+        else:
+            print('Error fetching slides for videoIod: {}'.format(video_metadata['videoId']))
+            print('Http response code: {}, response body: {}: '.format(response.status_code, response.text))
+            return False
 
     def authenticate(self, username, password, url):
         self.session = requests.Session()
