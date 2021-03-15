@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-
 import tkinter.messagebox
 import tkinter as tk
 import tkinter.ttk as ttk
@@ -119,15 +118,15 @@ class App:
 
     def get_videos(self, event=None):
         """
-        Callback function for 'List Videos' button.
-        Fetch video/lectures list available to the user and display on the UI.
+        Callback function for 'Show Videos' button.
+        Fetch video/lectures available to the user and display on the UI.
         """
 
         self.show_videos_button.config(state='disabled')
         username = self.user_box.get()
         password = self.pass_box.get()
         root_url = self.url_box.get()
-        if username == '' or password == '':
+        if username == '' or password == '' or root_url == '':
             return
 
         if not self.impartus.session:
@@ -162,7 +161,6 @@ class App:
         sf = ScrolledFrame(frame, use_ttk=True, width=self.screen_width-20, height=self.screen_height-300)
         sf.rowconfigure(0, weight=0)
         sf.columnconfigure(0, weight=1)
-        # sf.columnconfigure(1, weight=0, pad=5)
         sf.grid(row=0, column=0, sticky='nsew')
 
         # Bind the arrow keys and scroll wheel
@@ -191,7 +189,6 @@ class App:
                 video_path = self.impartus.get_mkv_path(video_metadata)
                 slides_path = self.impartus.get_slides_path(video_metadata)
                 video_exists = os.path.exists(video_path)
-                slides_exist_on_server = video_metadata.get('slideCount') != '0'
                 slides_exist_on_disk = os.path.exists(slides_path)
 
                 ttk.Label(frame_table, text=row).grid(row=row, column=0)
@@ -266,7 +263,6 @@ class App:
 
         # download complete, enable open / play buttons
         self.open_folder_buttons[index-1].config(state='active')
-
         self.play_video_buttons[index-1].config(state='active')
 
     def download_video(self, video_metadata, filepath, root_url, index):
@@ -284,7 +280,7 @@ class App:
 
     def _download_slides(self, ttid, file_url, filepath, root_url, index):
         """
-        Download a video in a thread. Update the UI upon completion.
+        Download a slide/pdf in a thread. Update the UI upon completion.
         """
         # create a new Impartus session reusing existing token.
         imp = Impartus(self.impartus.token)

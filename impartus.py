@@ -1,4 +1,3 @@
-#!/usr/bin/python3
 import os
 import re
 import time
@@ -86,7 +85,7 @@ class Impartus:
                                 download_flag = True
                         except TimeoutError:
                             self.logger.warning("[{}]: Timeout error. retrying download for {}...".format(ttid, item['url']))
-                            time.sleep(10)
+                            time.sleep(self.conf.get('retry_wait'))
 
                     # decrypt files if encrypted.
                     if item.get('encryption_method') == "NONE":
@@ -128,7 +127,7 @@ class Impartus:
         return self.conf.get('video_path').format(**video_metadata, target_dir=self.download_dir)
 
     def get_slides_path(self, video_metadata):
-        return self.conf.get('pdf_path').format(**video_metadata, target_dir=self.download_dir)
+        return self.conf.get('slides_path').format(**video_metadata, target_dir=self.download_dir)
 
     def get_videos(self, root_url, subject):
         response = self.session.get('{}/api/subjects/{}/lectures/{}'.format(root_url, subject.get('subjectId'), subject.get('sessionId')))
@@ -166,17 +165,16 @@ class Impartus:
 
     def map_slides_to_videos(self, videos_metadata, slides_metadata):
         mapping = dict()
-        # slides upload threashold... expect slides be uploaded with N days of video upload.
-        threashold_duration = 5
+        # slides upload threshold... expect slides be uploaded within N days of video upload.
+        threshold_duration = self.conf.get('slides_upload_threshold')
         for video_item in videos_metadata:
             video_upload_date = str.split(video_item['startTime'], ' ')[0]
             for slide_item in slides_metadata:
                 slide_upload_date = slide_item['fileDate']
                 diff_days = Utils.date_difference(slide_upload_date, video_upload_date)
-                if diff_days >= 0 and diff_days <= threashold_duration:
+                if 0 <= diff_days <= threshold_duration:
                     mapping[video_item['ttid']] = slide_item['filePath']
         return mapping
-
 
     def authenticate(self, username, password, url):
         self.session = requests.Session()
