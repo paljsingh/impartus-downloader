@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-import tkinter.filedialog 
 import tkinter.messagebox
 import tkinter as tk
 import tkinter.ttk as ttk
@@ -135,7 +134,7 @@ class App:
             success = self.impartus.authenticate(username, password, root_url)
             if not success:
                 self.impartus.session = None
-                tkinter.messagebox.showerror('Error', 'Error authenticating.')
+                tkinter.messagebox.showerror('Error', 'Error authenticating, see console logs for details.')
                 return
         subjects = self.impartus.get_subjects(root_url)
 
@@ -180,6 +179,8 @@ class App:
         row = 1
         for subject in subjects:
             videos = self.impartus.get_videos(root_url, subject)
+            slides = self.impartus.get_slides(root_url, subject)
+            video_slide_mapping = self.impartus.map_slides_to_videos(videos, slides)
             for video_metadata in videos:
                 video_metadata = Utils.sanitize(video_metadata)
                 if video_metadata.get('subjectNameShort'):
@@ -237,8 +238,8 @@ class App:
 
                 # download slides button
                 download_slides_button = ttk.Button(frame_table, text='⬇ Slides', command=partial(
-                    self.download_slides, video_metadata, slides_path, root_url, row))
-                if slides_exist_on_disk or not slides_exist_on_server:
+                    self.download_slides, video_metadata['ttid'], video_slide_mapping.get(video_metadata['ttid']), slides_path, root_url, row))
+                if slides_exist_on_disk or not video_slide_mapping.get(video_metadata['ttid']):
                     download_slides_button.config(state='disabled')
                 download_slides_button.grid(row=row, column=12)
                 self.download_slides_buttons.append(download_slides_button)
@@ -281,17 +282,20 @@ class App:
         self.threads.append(thread)
         thread.start()
 
-    def _download_slides(self, video_metadata, filepath, root_url, index):
+    def _download_slides(self, ttid, file_url, filepath, root_url, index):
         """
         Download a video in a thread. Update the UI upon completion.
         """
         # create a new Impartus session reusing existing token.
         imp = Impartus(self.impartus.token)
-        if imp.download_slides(video_metadata, filepath, root_url):
+        if imp.download_slides(ttid, file_url, filepath, root_url):
             # download complete, enable open / play buttons
             self.show_slides_buttons[index-1].config(state='active')
+        else:
+            tkinter.messagebox.showerror('Error', 'Error downloading slides, see console logs for details.')
+            self.download_slides_buttons[index - 1].config(state='active')
 
-    def download_slides(self, video_metadata, filepath, root_url, index):
+    def download_slides(self, ttid, file_url, filepath, root_url, index):
         """
         callback function for Download button.
         Creates a thread to download the request video.
@@ -300,7 +304,7 @@ class App:
         self.download_slides_buttons[index-1].config(state='disabled')
 
         # note: args is a tuple.
-        thread = threading.Thread(target=self._download_slides, args=(video_metadata, filepath, root_url, index,))
+        thread = threading.Thread(target=self._download_slides, args=(ttid, file_url, filepath, root_url, index,))
         self.threads.append(thread)
         thread.start()
 

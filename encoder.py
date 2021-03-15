@@ -1,4 +1,5 @@
 import os
+import logging
 from shutil import move
 from typing import List
 
@@ -46,7 +47,7 @@ class Encoder:
         move(tmp_file_path, ts_files[0])
 
     @classmethod
-    def encode_mkv(cls, ts_files, filepath, duration, debug=False):
+    def encode_mkv(cls, ttid, ts_files, filepath, duration, debug=False):
         """
         Encode to mkv using ffmpeg and create a multiview video file.
         :param ts_files: list of track files.
@@ -62,6 +63,7 @@ class Encoder:
 
         # ffmpeg log_level.
         log_level = "verbose" if debug else "quiet"
+        logger = logging.getLogger(cls.__name__)
 
         try:
             # ffmpeg command syntax we expect to run
@@ -81,18 +83,18 @@ class Encoder:
                     split_flag = True
 
             if split_flag:
-                print("splitting track 0 .. ")
+                logger.info("[{}]: splitting track 0 .. ".format(ttid))
                 Encoder.split_track(ts_files, duration, debug)
 
-            print("encoding output file ..")
+            logger.info("[{}]: encoding output file ..".format(ttid))
             (
                 os.system("ffmpeg -y -loglevel {level} {input} -c copy {maps} {output}"
                           .format(level=log_level, input=' '.join(in_args), maps=' '.join(map_args),
                                   output=filepath))
             )
         except Exception as ex:
-            print("ffmpeg exception: {}".format(ex))
-            print("check the ts file(s) generated at location: {}".format(', '.join(ts_files)))
+            logger.error("[{}]: ffmpeg exception: {}".format(ttid, ex))
+            logger.error("[{}]: Check the ts file(s) generated at location: {}".format(ttid, ', '.join(ts_files)))
             return False
 
         return True

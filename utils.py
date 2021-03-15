@@ -3,6 +3,7 @@ import re
 from typing import Dict, List
 from config import Config
 import webbrowser
+from datetime import datetime
 
 
 class Utils:
@@ -70,5 +71,11 @@ class Utils:
     @classmethod
     def open_file(cls, path):
         webbrowser.open('file://{}'.format(path))
+
+    @classmethod
+    def date_difference(cls, date1, date2):
+        date_format = "%Y-%m-%d"
+        delta = datetime.strptime(date1, date_format) - datetime.strptime(date2, date_format)
+        return delta.days
 
 

@@ -6,7 +6,9 @@ Demo video:
 [![Impartus v2.0 demo](https://img.youtube.com/vi/V5pcdUtiRjw/0.jpg)](https://www.youtube.com/watch?v=V5pcdUtiRjw)
 
 - Convert impartus lectures to mkv files.
+- Download Lecture slides.
 - Multiview supported. Tested with files up to 4 views.
+- Parallel downloads supported. 
 - Tested on Mac, Linux (ubuntu) and Windows 10.
 - 
 
@@ -52,7 +54,4 @@ Drop a mail to paljsingh@gmail.com for any issues/errors.
 
 
 ### TODO
-- Auto download ppt/pdf.
-- Better UI and feedback.
-- Logging improvements.
 - 

@@ -1,7 +1,9 @@
 #!/usr/bin/python3
 import os
 import re
+import time
 import requests
+import logging
 
 from config import Config
 from utils import Utils
@@ -14,6 +16,8 @@ class Impartus:
     def __init__(self, token=None):
         self.session = None
         self.token = None
+        logging.basicConfig(level=logging.INFO)
+        self.logger = logging.getLogger(self.__class__.__name__)
 
         # reuse the auth token, if we are already authenticated.
         if token:
@@ -55,6 +59,7 @@ class Impartus:
         duration = int(video_metadata['actualDuration'])
         encryption_keys = dict()
 
+        self.logger.info("[{}]: Starting download for {}".format(ttid, mkv_filepath))
         # download media files for this video.
         m3u8_content = self._download_m3u8(root_url, ttid)
         if m3u8_content:
@@ -80,7 +85,8 @@ class Impartus:
                                 fh.write(content)
                                 download_flag = True
                         except TimeoutError:
-                            print("retrying download for {}...".format(item['url']))
+                            self.logger.warning("[{}]: Timeout error. retrying download for {}...".format(ttid, item['url']))
+                            time.sleep(10)
 
                     # decrypt files if encrypted.
                     if item.get('encryption_method') == "NONE":
@@ -101,18 +107,17 @@ class Impartus:
                     progress_bar_value.set(items_processed * 100 // summary.get('media_files'))
 
                 # All stream files for this track are decrypted, join them.
-                print("joining streams for track {}..".format(track_index))
+                self.logger.info("[{}]: joining streams for track {}..".format(ttid, track_index))
                 ts_file = Encoder.join(streams_to_join, download_dir, track_index)
                 ts_files.append(ts_file)
                 temp_files_to_delete.add(ts_file)
 
             # Encode all ts files into a single output mkv.
             os.makedirs(os.path.dirname(mkv_filepath), exist_ok=True)
-            success = Encoder.encode_mkv(ts_files, mkv_filepath, duration, self.conf.get('debug'))
+            success = Encoder.encode_mkv(ttid, ts_files, mkv_filepath, duration, self.conf.get('debug'))
 
             if success:
-                print("{}".format(mkv_filepath))
-                print("---\n")
+                self.logger.info("[{}]: Processed {}\n---".format(ttid, mkv_filepath))
 
                 # delete temp files.
                 if not self.conf.get('debug'):
@@ -132,6 +137,13 @@ class Impartus:
         else:
             return []
 
+    def get_slides(self, root_url, subject):
+        response = self.session.get('{}/api/subjects/backpack/{}/sessions/{}'.format(root_url, subject.get('subjectId'), subject.get('sessionId')))
+        if response.status_code == 200:
+            return response.json()
+        else:
+            return []
+
     def get_subjects(self, root_url):
         response = self.session.get('{}/api/subjects'.format(root_url))
         if response.status_code == 200:
@@ -139,19 +151,32 @@ class Impartus:
         else:
             return []
 
-    def download_slides(self, video_metadata, filepath, root_url):
-        response = requests.get(
-            '{}/backpacks/auto-generated/{}.pdf'.format(root_url, video_metadata.get('videoId')),
-            headers={'Cookie': 'Bearer={}'.format(self.token)},
-        )
+    def download_slides(self, ttid, file_url, filepath, root_url):
+        response = requests.get('{}/{}'.format(root_url, file_url), headers={'Cookie': 'Bearer={}'.format(self.token)})
         if response.status_code == 200:
+            os.makedirs(os.path.dirname(filepath), exist_ok=True)
+
             with open(filepath, 'wb+') as fh:
                 fh.write(response.content)
             return True
         else:
-            print('Error fetching slides for videoIod: {}'.format(video_metadata['videoId']))
-            print('Http response code: {}, response body: {}: '.format(response.status_code, response.text))
+            self.logger.error('[{}]: Error fetching slides from url: {}'.format(ttid, file_url))
+            self.logger.error('[{}]: Http response code: {}, response body: {}: '.format(ttid, response.status_code, response.text))
             return False
+
+    def map_slides_to_videos(self, videos_metadata, slides_metadata):
+        mapping = dict()
+        # slides upload threashold... expect slides be uploaded with N days of video upload.
+        threashold_duration = 5
+        for video_item in videos_metadata:
+            video_upload_date = str.split(video_item['startTime'], ' ')[0]
+            for slide_item in slides_metadata:
+                slide_upload_date = slide_item['fileDate']
+                diff_days = Utils.date_difference(slide_upload_date, video_upload_date)
+                if diff_days >= 0 and diff_days <= threashold_duration:
+                    mapping[video_item['ttid']] = slide_item['filePath']
+        return mapping
+
 
     def authenticate(self, username, password, url):
         self.session = requests.Session()
@@ -159,11 +184,14 @@ class Impartus:
             'username': username,
             'password': password
         }
-        response = self.session.post('{}/api/auth/signin'.format(url), json=data, timeout=30)
+        url = '{}/api/auth/signin'.format(url)
+        response = self.session.post(url, json=data, timeout=30)
         if response.status_code == 200:
             self.token = response.json()['token']
             self.session.cookies.update({'Bearer': self.token})
             self.session.headers.update({'Authorization': 'Bearer {}'.format(self.token)})
             return True
-
-        return False
+        else:
+            self.logger.error('Error authenticating to {} with username {}.'.format(url, username))
+            self.logger.error('Http response code: {}, response body: {}: '.format(response.status_code, response.text))
+            return False
