@@ -9,49 +9,65 @@ Demo video:
 - Download Lecture slides.
 - Multiview supported. Tested with files up to 4 views.
 - Parallel downloads supported. 
-- Tested on Mac, Linux (ubuntu) and Windows 10.
-- 
+- Tested on Mac, Linux (ubuntu) and Windows 10. 
 
 ### Setup virtualenv (optional)
-	$ virtualenv venv
-	$ source venv/bin/activate 
+>	$ virtualenv venv
+>
+>	$ source venv/bin/activate 
 
 ### Clone repo
-	$ git clone https://github.com/paljsingh/impartus-downloader.git
-	$ cd impartus-downloader
+>	$ git clone https://github.com/paljsingh/impartus-downloader.git
+>
+>	$ cd impartus-downloader
 
 ### Install dependencies
 
-  mac/linux:    
-	$ pip3 install -r requirements.txt
+OSX, Linux
+>  
+>	$ pip3 install -r requirements.txt
+>
 
-  windows:
-	$ pip3.exe install -r requirements.txt
+Windows: 
+>  
+>	$ pip3.exe install -r requirements.txt
 
 
 
-Install ffmpeg
-> mac: ```brew install ffmpeg```
+### Install ffmpeg
+
+OSX
+> $ brew install ffmpeg
 > 
-> linux (ubuntu): 
-> ```sudo apt-get install ffmpeg```
+
+Linux (ubuntu)
+> $ sudo apt-get install ffmpeg
 > 
-> windows:
+
+Windows
+> Download ffmpeg win64 zip from the following link, extract and copy ffmpeg.exe to current folder.
+> 
 > [https://github.com/BtbN/FFmpeg-Builds/releases](https://github.com/BtbN/FFmpeg-Builds/releases)
-> 
-> Download ffmpeg win64 zip, extract and copy ffmpeg.exe to current folder.
-> 
+>
 
 ### Run application.
 
-``` $ python3 App.py```
+OSX, Linux
+> $ python3 App.py
+
+Windows
+> $ python.exe App.py
 
 ### Configuration
 see yaml.conf 
 
 
-Drop a mail to paljsingh@gmail.com for any issues/errors.
-
-
-### TODO
+### Todo
 - 
+
+### Known Issues
+- Lecture slides to video mapping may be incorrect, as the impartus platform does not offer a strict video to lecture slides mapping. The application uses the upload dates of the two for a fuzzy match.
+- Impartus site may start throttling the connections if there are too many parallel downloads. The application uses retry logic with induced delay. However, if the issue persists you may need to restart the app.
+
+
+Drop a mail to paljsingh@gmail.com for any issues/errors.
