@@ -137,7 +137,8 @@ class Impartus:
             return []
 
     def get_slides(self, root_url, subject):
-        response = self.session.get('{}/api/subjects/backpack/{}/sessions/{}'.format(root_url, subject.get('subjectId'), subject.get('sessionId')))
+        response = self.session.get('{}/api/subjects/backpack/{}/sessions/{}'.format(
+            root_url, subject.get('subjectId'), subject.get('sessionId')))
         if response.status_code == 200:
             return response.json()
         else:

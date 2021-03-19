@@ -180,6 +180,13 @@ class App:
             slides = self.impartus.get_slides(root_url, subject)
             video_slide_mapping = self.impartus.map_slides_to_videos(videos, slides)
             for video_metadata in videos:
+                video_metadata['ext'] = None
+                slides = video_slide_mapping.get(video_metadata['ttid'])
+                if slides:
+                    ext = video_slide_mapping.get(video_metadata['ttid']).split('.')[-1].lower()
+                    if ext in self.impartus.conf.get('allowed_ext'):
+                        video_metadata['ext'] = ext
+
                 video_metadata = Utils.sanitize(video_metadata)
                 if video_metadata.get('subjectNameShort'):
                     subject_name = video_metadata.get('subjectNameShort')
@@ -188,6 +195,7 @@ class App:
 
                 video_path = self.impartus.get_mkv_path(video_metadata)
                 slides_path = self.impartus.get_slides_path(video_metadata)
+
                 video_exists = os.path.exists(video_path)
                 slides_exist_on_disk = os.path.exists(slides_path)
 
