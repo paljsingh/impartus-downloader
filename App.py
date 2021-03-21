@@ -13,19 +13,26 @@ from utils import Utils
 
 class App:
     def __init__(self):
-        self.frame_auth = None
-        self.frame_videos = None
+        # ui elements
         self.user_box = None
         self.pass_box = None
         self.url_box = None
-        self.scrollable_frame = None
         self.show_videos_button = None
-        self.style = None
+
+        # element groups
+        self.frame_auth = None
+        self.frame_videos = None
+        self.scrollable_frame = None
+
+        # sort options
         self.sort_by = 'date'
         self.sort_order = None
+
+        # for holding the widgets
         self.table_widgets = None
         self.header_widgets = None
 
+        # hold the buttons
         self.progress_bar_values = list()
         self.download_video_buttons = list()
         self.download_slides_buttons = list()
@@ -33,11 +40,21 @@ class App:
         self.play_video_buttons = list()
         self.show_slides_buttons = list()
 
+        # style for buttons
+        self.style = None
+
+        # and threads ...
         self.threads = list()
 
+        # root container
         self.app = None
+
+        # backend
         self.impartus = None
+
+        # fields
         self.columns = None
+
         self._init_backend()
         self._init_ui()
 
@@ -61,7 +78,7 @@ class App:
         style.map("TButton", foreground=[("active", "white"), ("disabled", "gray")])
         self.style = style
 
-        self._add_content(self.app)
+        self.add_auth_frame(self.app)
         self.app.mainloop()
 
     def _init_backend(self):
@@ -71,17 +88,23 @@ class App:
         self.impartus = Impartus()
         self.columns = {
             'sno': {'type': 'label', 'width': 5, 'header': '#', 'sortable': 0},
-            'subject': {'type': 'label', 'width': 30, 'header': 'Subject', 'mapping': 'subjectNameShort', 'sortable': 1},
+            'subject': {
+                'type': 'label', 'width': 30, 'header': 'Subject', 'mapping': 'subjectNameShort', 'sortable': 1
+            },
             'lec_no': {'type': 'label', 'width': 5, 'header': 'Lecture #', 'mapping': 'seqNo', 'sortable': 1},
-            'prof': {'type': 'label', 'width': 30, 'header': 'Professor', 'mapping': 'professorName_raw', 'sortable': 1},
+            'prof': {
+                'type': 'label', 'width': 30, 'header': 'Professor', 'mapping': 'professorName_raw', 'sortable': 1
+            },
             'topic': {'type': 'label', 'width': 40, 'header': 'Topic', 'mapping': 'topic_raw', 'sortable': 1},
             'date': {'type': 'label', 'width': 10, 'header': 'Date', 'mapping': 'startDate', 'sortable': 1},
-            'duration': {'type': 'label', 'width': 6, 'header': 'Duration', 'mapping': 'actualDurationReadable', 'sortable': 1},
+            'duration': {
+                'type': 'label', 'width': 6, 'header': 'Duration', 'mapping': 'actualDurationReadable', 'sortable': 1
+            },
             'tracks': {'type': 'label', 'width': 2, 'header': 'Tracks', 'mapping': 'tapNToggle', 'sortable': 1},
             'status': {'type': 'progressbar', 'width': 30, 'header': 'Downloaded?', 'sortable': 0},
         }
 
-    def _add_content(self, anchor):
+    def add_auth_frame(self, anchor):
         """
         Adds authentication widgets and blank frame for holding video/lectures data.
         """
@@ -132,7 +155,7 @@ class App:
         else:
             self.pass_box.focus()
 
-    def get_videos(self, event=None):
+    def get_videos(self, event=None):   # noqa
         """
         Callback function for 'Show Videos' button.
         Fetch video/lectures available to the user and display on the UI.
@@ -204,7 +227,7 @@ class App:
         # hack #2... bring focus on one of the widgets to force refresh.
         self.table_widgets[0][0].focus()
 
-    def sort_and_draw_widgets(self, sort_by='date', event=None):
+    def sort_and_draw_widgets(self, sort_by='date', event=None):    # noqa
         if not self.columns[sort_by].get('sortable'):
             return
 
@@ -271,11 +294,12 @@ class App:
                 # progress bar
                 progress_bar_value = tk.DoubleVar()
                 if video_exists:
-                    progress_bar = ttk.Progressbar(anchor, orient=tk.HORIZONTAL, length=100, value=100,
-                                    mode='determinate')
+                    progress_bar = ttk.Progressbar(
+                        anchor, orient=tk.HORIZONTAL, length=100, value=100, mode='determinate')
                 else:
-                    progress_bar = ttk.Progressbar(anchor, orient=tk.HORIZONTAL, length=100, value=0,
-                                    variable=progress_bar_value, mode='determinate')
+                    progress_bar = ttk.Progressbar(
+                        anchor, orient=tk.HORIZONTAL, length=100, value=0, variable=progress_bar_value,
+                        mode='determinate')
                 widgets_row.append(progress_bar)
                 self.progress_bar_values.append(progress_bar_value)
 
@@ -304,14 +328,16 @@ class App:
 
                 # download slides button
                 download_slides_button = ttk.Button(anchor, text='⬇ Slides', command=partial(
-                    self.download_slides, video_metadata['ttid'], video_slide_mapping.get(video_metadata['ttid']), slides_path, root_url, row))
+                    self.download_slides, video_metadata['ttid'], video_slide_mapping.get(video_metadata['ttid']),
+                    slides_path, root_url, row))
                 if slides_exist_on_disk or not video_slide_mapping.get(video_metadata['ttid']):
                     download_slides_button.config(state='disabled')
                 widgets_row.append(download_slides_button)
                 self.download_slides_buttons.append(download_slides_button)
 
-                # show pdf button
-                show_slides_button = ttk.Button(anchor, text='▤ Slides', command=partial(Utils.open_file, slides_path))
+                # show slides button
+                show_slides_button = ttk.Button(anchor, text='▤ Slides', command=partial(
+                    Utils.open_file, slides_path))
                 if not slides_exist_on_disk:
                     show_slides_button.config(state='disabled')
                 show_slides_button.grid(row=row, column=13)
@@ -348,7 +374,7 @@ class App:
 
     def _download_slides(self, ttid, file_url, filepath, root_url, index):
         """
-        Download a slide/pdf in a thread. Update the UI upon completion.
+        Download a slide doc in a thread. Update the UI upon completion.
         """
         # create a new Impartus session reusing existing token.
         imp = Impartus(self.impartus.token)
@@ -375,4 +401,3 @@ class App:
 
 if __name__ == '__main__':
     App()
-
