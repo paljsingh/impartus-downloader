@@ -106,7 +106,7 @@ class Impartus:
                     progress_bar_value.set(items_processed * 100 // summary.get('media_files'))
 
                 # All stream files for this track are decrypted, join them.
-                self.logger.info("[{}]: joining streams for track {}..".format(ttid, track_index))
+                self.logger.info("[{}]: joining streams for track {} ..".format(ttid, track_index))
                 ts_file = Encoder.join(streams_to_join, download_dir, track_index)
                 ts_files.append(ts_file)
                 temp_files_to_delete.add(ts_file)

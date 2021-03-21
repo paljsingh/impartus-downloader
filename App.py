@@ -21,6 +21,10 @@ class App:
         self.scrollable_frame = None
         self.show_videos_button = None
         self.style = None
+        self.sort_by = 'date'
+        self.sort_order = None
+        self.table_widgets = None
+        self.header_widgets = None
 
         self.progress_bar_values = list()
         self.download_video_buttons = list()
@@ -33,6 +37,7 @@ class App:
 
         self.app = None
         self.impartus = None
+        self.columns = None
         self._init_backend()
         self._init_ui()
 
@@ -64,6 +69,17 @@ class App:
         backend initialization.
         """
         self.impartus = Impartus()
+        self.columns = {
+            'sno': {'type': 'label', 'width': 5, 'header': '#', 'sortable': 0},
+            'subject': {'type': 'label', 'width': 30, 'header': 'Subject', 'mapping': 'subjectNameShort', 'sortable': 1},
+            'lec_no': {'type': 'label', 'width': 5, 'header': 'Lecture #', 'mapping': 'seqNo', 'sortable': 1},
+            'prof': {'type': 'label', 'width': 30, 'header': 'Professor', 'mapping': 'professorName_raw', 'sortable': 1},
+            'topic': {'type': 'label', 'width': 40, 'header': 'Topic', 'mapping': 'topic_raw', 'sortable': 1},
+            'date': {'type': 'label', 'width': 10, 'header': 'Date', 'mapping': 'startDate', 'sortable': 1},
+            'duration': {'type': 'label', 'width': 6, 'header': 'Duration', 'mapping': 'actualDurationReadable', 'sortable': 1},
+            'tracks': {'type': 'label', 'width': 2, 'header': 'Tracks', 'mapping': 'tapNToggle', 'sortable': 1},
+            'status': {'type': 'progressbar', 'width': 30, 'header': 'Downloaded?', 'sortable': 0},
+        }
 
     def _add_content(self, anchor):
         """
@@ -105,7 +121,7 @@ class App:
         pass_box.grid(row=2, column=1, **entry_options)
 
         self.show_videos_button = ttk.Button(frame_auth, text='Show Videos', command=self.get_videos)
-        self.show_videos_button.grid(row=3, column=0)
+        self.show_videos_button.grid(row=2, column=2)
 
         self.user_box = user_box
         self.pass_box = pass_box
@@ -140,27 +156,8 @@ class App:
         # show table of videos under frame_videos
         frame = self.frame_videos
 
-        columns = {
-            'sno': {'display': '#', 'width': 5},
-            'subject': {'display': 'Subject', 'width': 20, 'mapping_field': 'Subject'},
-            'lec_no': {'display': 'Lecture #', 'width': 5, 'mapping_field': 'seqNo'},
-            'prof': {'display': 'Professor', 'width': 20, 'mapping_field': 'professorName'},
-            'topic': {'display': 'Topic', 'width': 40, 'mapping_field': 'topic'},
-            'date': {'display': 'Date', 'width': 11, 'mapping_field': 'startDate'},
-            'duration': {'display': 'Duration', 'width': 6, 'mapping_field': 'actualDurationReadable'},
-            'tracks': {'display': 'Tracks', 'width': 2, 'mapping_field': 'tapNToggle'},
-            'downloaded': {'display': 'Downloaded?', 'width': 10},
-            'icon_download_video': {'display': ' ', 'width': 6},
-            'icon_open_folder': {'display': ' ', 'width': 6},
-            'icon_play_video': {'display': ' ', 'width': 6},
-            'icon_download_slides': {'display': ' ', 'width': 6},
-            'icon_show_slides': {'display': ' ', 'width': 6}
-        }
-
         # make it scrollable.
         sf = ScrolledFrame(frame, use_ttk=True, width=self.screen_width-20, height=self.screen_height-300)
-        sf.rowconfigure(0, weight=0)
-        sf.columnconfigure(0, weight=1)
         sf.grid(row=0, column=0, sticky='nsew')
 
         # Bind the arrow keys and scroll wheel
@@ -170,96 +167,159 @@ class App:
         frame_table = sf.display_widget(tk.Frame)
 
         self.scrollable_frame = sf
+        self.scrollable_frame.focus()
 
-        for i, col in enumerate(columns.values()):
-            tk.Label(frame_table, text=col.get('display')).grid(row=0, column=i)
+        self.set_display_widgets(subjects, root_url, frame_table)
+        self.sort_and_draw_widgets()
+
+    def draw_widgets(self):     # noqa
+
+        # hack #1 , hide and redisplay the table to speed up ui refresh.
+        self.frame_videos.grid_remove()
+        for key, item in self.header_widgets.items():
+            display_text = self.columns.get(key)['header']
+            if self.columns.get(key)['sortable']:
+                if key == self.sort_by:
+                    if self.sort_order == 'asc':
+                        text = '{} ▲'.format(display_text)
+                    else:
+                        text = '{} ▼'.format(display_text)
+                else:
+                    text = '{} ↕'.format(display_text)
+            else:
+                text = '{}'.format(display_text)
+
+            item.config(text=text)
+
+        options = {'padx': 2, 'pady': 1}
+        for row, row_widgets in enumerate(self.table_widgets):
+            for col, cell_widget in enumerate(row_widgets):
+                if col == 0:
+                    cell_widget.config(text=row+1)
+
+                cell_widget.grid(row=row+1, column=col, **options)
+        self.frame_videos.grid(row=1, column=0)
+        self.app.update_idletasks()
+
+        # hack #2... bring focus on one of the widgets to force refresh.
+        self.table_widgets[0][0].focus()
+
+    def sort_and_draw_widgets(self, sort_by='date', event=None):
+        if not self.columns[sort_by].get('sortable'):
+            return
+
+        sort_orders = ['desc', 'asc']
+        if sort_by == self.sort_by:
+            if self.sort_order:
+                sort_order = sort_orders[(sort_orders.index(self.sort_order)+1) % len(sort_orders)]
+            else:
+                sort_order = 'desc'
+        else:
+            sort_order = sort_orders[0]
+        self.sort_by = sort_by
+        self.sort_order = sort_order
+
+        sort_by_index = list(self.columns.keys()).index(sort_by)
+        self.table_widgets = sorted(self.table_widgets, key=lambda x: x[sort_by_index]['text'])
+        if sort_order == 'desc':
+            self.table_widgets.reverse()
+        self.draw_widgets()
+
+    def set_display_widgets(self, subjects, root_url, anchor):
+        columns = self.columns
+        widget_headers = dict()
+        for i, key in enumerate(columns.keys()):
+            item = columns.get(key)
+            text = item.get('header') if item.get('header') else ''
+            label = tk.Label(anchor, text=text, background='#666666')
+            label.bind("<Button-1>", partial(self.sort_and_draw_widgets, key))
+            label.grid(row=0, column=i, sticky='ew')
+            widget_headers[key] = label
+        self.header_widgets = widget_headers
 
         row = 1
+        widgets_table = list()
+
         for subject in subjects:
             videos = self.impartus.get_videos(root_url, subject)
             slides = self.impartus.get_slides(root_url, subject)
             video_slide_mapping = self.impartus.map_slides_to_videos(videos, slides)
-            for video_metadata in videos:
-                video_metadata['ext'] = None
-                slides = video_slide_mapping.get(video_metadata['ttid'])
-                if slides:
-                    ext = video_slide_mapping.get(video_metadata['ttid']).split('.')[-1].lower()
-                    if ext in self.impartus.conf.get('allowed_ext'):
-                        video_metadata['ext'] = ext
 
+            for video_metadata in videos:
+                video_metadata = Utils.add_fields(video_metadata, video_slide_mapping)
                 video_metadata = Utils.sanitize(video_metadata)
-                if video_metadata.get('subjectNameShort'):
-                    subject_name = video_metadata.get('subjectNameShort')
-                else:
-                    subject_name = video_metadata.get('subjectName')
 
                 video_path = self.impartus.get_mkv_path(video_metadata)
                 slides_path = self.impartus.get_slides_path(video_metadata)
-
                 video_exists = os.path.exists(video_path)
                 slides_exist_on_disk = os.path.exists(slides_path)
 
-                ttk.Label(frame_table, text=row).grid(row=row, column=0)
-                ttk.Label(frame_table, text=subject_name).grid(row=row, column=1)
-                ttk.Label(frame_table, text=video_metadata.get('seqNo')).grid(row=row, column=2)
-                ttk.Label(frame_table, text=video_metadata.get('professorName')).grid(row=row, column=3)
-                ttk.Label(frame_table, text=video_metadata.get('topic')).grid(row=row, column=4)
-                ttk.Label(frame_table, text=video_metadata.get('startDate')).grid(row=row, column=5)
-                ttk.Label(frame_table, text=video_metadata.get('actualDurationReadable')).grid(row=row, column=6)
-                ttk.Label(frame_table, text=video_metadata.get('tapNToggle')).grid(row=row, column=7)
+                widgets_row = list()
+
+                for col_num, col_key in enumerate(columns.keys()):
+                    col_item = columns[col_key]
+                    if col_item['type'] == 'label':
+
+                        width = col_item.get('width')
+                        # truncate text for display purposes, if needed.
+                        text = video_metadata[col_item.get('mapping')] if col_item.get('mapping') else row
+                        text = ('{}..'.format(text[:width])) if len(str(text)) > width else text
+                        widget_cell = ttk.Label(anchor, text=text)
+                        widgets_row.append(widget_cell)
+                        anchor.columnconfigure(col_num, weight=1)
 
                 # progress bar
                 progress_bar_value = tk.DoubleVar()
                 if video_exists:
-                    ttk.Progressbar(frame_table, orient=tk.HORIZONTAL, length=100, value=100,
-                                    mode='determinate').grid(row=row, column=8)
+                    progress_bar = ttk.Progressbar(anchor, orient=tk.HORIZONTAL, length=100, value=100,
+                                    mode='determinate')
                 else:
-                    ttk.Progressbar(frame_table, orient=tk.HORIZONTAL, length=100, value=0,
-                                    variable=progress_bar_value, mode='determinate').grid(row=row, column=8)
+                    progress_bar = ttk.Progressbar(anchor, orient=tk.HORIZONTAL, length=100, value=0,
+                                    variable=progress_bar_value, mode='determinate')
+                widgets_row.append(progress_bar)
                 self.progress_bar_values.append(progress_bar_value)
 
                 # download button
-                download_video_button = ttk.Button(frame_table, text='⬇ Video', command=partial(
+                download_video_button = ttk.Button(anchor, text='⬇ Video', command=partial(
                     self.download_video, video_metadata, video_path, root_url, row))
                 if video_exists:
                     download_video_button.config(state='disabled')
-                download_video_button.grid(row=row, column=9)
+                widgets_row.append(download_video_button)
                 self.download_video_buttons.append(download_video_button)
 
                 # open button
-                open_button = ttk.Button(frame_table, text='⏏ Open', command=partial(
+                open_button = ttk.Button(anchor, text='⏏ Open', command=partial(
                     Utils.open_file, os.path.dirname(video_path)))
                 if not video_exists:
                     open_button.config(state='disabled')
-                open_button.grid(row=row, column=10)
+                widgets_row.append(open_button)
                 self.open_folder_buttons.append(open_button)
 
                 # play button
-                play_button = ttk.Button(frame_table, text='▶ Play', command=partial(Utils.open_file, video_path))
+                play_button = ttk.Button(anchor, text='▶ Play', command=partial(Utils.open_file, video_path))
                 if not video_exists:
                     play_button.config(state='disabled')
-                play_button.grid(row=row, column=11)
+                widgets_row.append(play_button)
                 self.play_video_buttons.append(play_button)
 
                 # download slides button
-                download_slides_button = ttk.Button(frame_table, text='⬇ Slides', command=partial(
+                download_slides_button = ttk.Button(anchor, text='⬇ Slides', command=partial(
                     self.download_slides, video_metadata['ttid'], video_slide_mapping.get(video_metadata['ttid']), slides_path, root_url, row))
                 if slides_exist_on_disk or not video_slide_mapping.get(video_metadata['ttid']):
                     download_slides_button.config(state='disabled')
-                download_slides_button.grid(row=row, column=12)
+                widgets_row.append(download_slides_button)
                 self.download_slides_buttons.append(download_slides_button)
 
                 # show pdf button
-                show_slides_button = ttk.Button(frame_table, text='▤ Slides', command=partial(Utils.open_file, slides_path))
+                show_slides_button = ttk.Button(anchor, text='▤ Slides', command=partial(Utils.open_file, slides_path))
                 if not slides_exist_on_disk:
                     show_slides_button.config(state='disabled')
                 show_slides_button.grid(row=row, column=13)
                 self.show_slides_buttons.append(show_slides_button)
 
                 row += 1
-                sf.rowconfigure(row, weight=1)
-        # set focus
-        self.scrollable_frame.focus()
+                widgets_table.append(widgets_row)
+        self.table_widgets = widgets_table
 
     def _download_video(self, video_metadata, filepath, root_url, index):
         """
