@@ -13,20 +13,25 @@ class M3u8Parser:
         # Tracks object is a list of lists, example:
         # [
         #  [
-        #   { "file_number": 123, "duration": 7200, "encryption_key_file": "100", "encryption_method": "AES-128", 'url": 'http://...' },
-        #   { "file_number": 456, "duration": 5400, "encryption_key_file": None, "encryption_method": "NONE", 'url": 'http://...' },
+        #   { "file_number": 123, "duration": 7200, "encryption_key_file": "100",
+        #   "encryption_method": "AES-128", 'url": 'http://...' },
+        #   { "file_number": 456, "duration": 5400, "encryption_key_file": None,
+        #   "encryption_method": "NONE", 'url": 'http://...' },
         #   ...
         #  ],
         #  [
-        #   { "file_number": 999, "duration": 7500, "encryption_key_file": "777", "encryption_method": "AES-128", 'url": 'http://...' },
-        #   { "file_number": 888, "duration": 3600, "encryption_key_file": None, "encryption_method": "NONE", 'url": 'http://...' },
+        #   { "file_number": 999, "duration": 7500, "encryption_key_file": "777",
+        #   "encryption_method": "AES-128", 'url": 'http://...' },
+        #   { "file_number": 888, "duration": 3600, "encryption_key_file": None,
+        #   "encryption_method": "NONE", 'url": 'http://...' },
         #   ...
         #  ],
         # ]
         #
         # Above example is a 2-track file with track 0 consisting of stream files 123, 456, ...
         # and track 1 consisting of stream files 999, 888, ...
-        # Of these, streams 123 and 999 are encrypted, encryption keys stored in file 100 and 777 respectively.
+        # Of these, streams 123 and 999 are encrypted, encryption keys stored in file 100 and 777
+        # respectively.
         self.tracks = [list() for x in range(num_tracks)]   # noqa
 
         # Summary object to provide a summary of m3u8 parsed content.
