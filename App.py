@@ -180,7 +180,8 @@ class App:
         frame = self.frame_videos
 
         # make it scrollable.
-        sf = ScrolledFrame(frame, use_ttk=True, width=self.screen_width-20, height=self.screen_height-300)
+        auth_frame_height = self.frame_auth.winfo_height()
+        sf = ScrolledFrame(frame, use_ttk=True, width=self.screen_width-20, height=self.screen_height-270)
         sf.grid(row=0, column=0, sticky='nsew')
 
         # Bind the arrow keys and scroll wheel
@@ -214,18 +215,26 @@ class App:
 
             item.config(text=text)
 
-        options = {'padx': 2, 'pady': 1}
+        options = {'padx': 0, 'pady': 0, 'ipadx': 3, 'sticky': 'nsew'}
         for row, row_widgets in enumerate(self.table_widgets):
+            if row % 2:
+                bgcolor = self.impartus.conf.get('colors')['odd_row']
+            else:
+                bgcolor = self.impartus.conf.get('colors')['even_row']
+
             for col, cell_widget in enumerate(row_widgets):
+                # regenerate sequence no.
                 if col == 0:
                     cell_widget.config(text=row+1)
-
+                col_name = list(self.columns.keys())[col] if col < len(self.columns.keys()) else None
+                if col_name and self.columns[col_name]['type'] == 'label':
+                    cell_widget.config(bg=bgcolor, borderwidth=1, relief='solid')
                 cell_widget.grid(row=row+1, column=col, **options)
         self.frame_videos.grid(row=1, column=0)
         self.app.update_idletasks()
 
         # hack #2... bring focus on one of the widgets to force refresh.
-        self.table_widgets[0][0].focus()
+        self.table_widgets[0][9].focus()
 
     def sort_and_draw_widgets(self, sort_by='date', event=None):    # noqa
         if not self.columns[sort_by].get('sortable'):
@@ -254,9 +263,10 @@ class App:
         for i, key in enumerate(columns.keys()):
             item = columns.get(key)
             text = item.get('header') if item.get('header') else ''
-            label = tk.Label(anchor, text=text, background='#666666')
+            label = tk.Label(anchor, text=text, background=self.impartus.conf.get('colors')['header'],
+                             cursor="hand2")
             label.bind("<Button-1>", partial(self.sort_and_draw_widgets, key))
-            label.grid(row=0, column=i, sticky='ew')
+            label.grid(row=0, column=i, sticky='nsew', ipadx=3)
             widget_headers[key] = label
         self.header_widgets = widget_headers
 
@@ -275,7 +285,7 @@ class App:
                 video_path = self.impartus.get_mkv_path(video_metadata)
                 slides_path = self.impartus.get_slides_path(video_metadata)
                 video_exists = os.path.exists(video_path)
-                slides_exist_on_disk = os.path.exists(slides_path)
+                slides_exist_on_disk, slides_path = self.impartus.slides_exist_on_disk(slides_path)
 
                 widgets_row = list()
 
@@ -287,7 +297,7 @@ class App:
                         # truncate text for display purposes, if needed.
                         text = video_metadata[col_item.get('mapping')] if col_item.get('mapping') else row
                         text = ('{}..'.format(text[:width])) if len(str(text)) > width else text
-                        widget_cell = ttk.Label(anchor, text=text)
+                        widget_cell = tk.Label(anchor, text=text)
                         widgets_row.append(widget_cell)
                         anchor.columnconfigure(col_num, weight=1)
 
@@ -340,7 +350,7 @@ class App:
                     Utils.open_file, slides_path))
                 if not slides_exist_on_disk:
                     show_slides_button.config(state='disabled')
-                show_slides_button.grid(row=row, column=13)
+                widgets_row.append(show_slides_button)
                 self.show_slides_buttons.append(show_slides_button)
 
                 row += 1

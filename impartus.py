@@ -37,7 +37,8 @@ class Impartus:
         os.makedirs(self.temp_downloads_dir, exist_ok=True)
 
     def _download_m3u8(self, root_url, ttid):
-        response = self.session.get('{}/api/fetchvideo?ttid={}&token={}&type=index.m3u8'.format(root_url, ttid, self.token))
+        response = self.session.get('{}/api/fetchvideo?ttid={}&token={}&type=index.m3u8'.format(
+            root_url, ttid, self.token))
         if response.status_code == 200:
             lines = response.text.splitlines()
             for line in lines:
@@ -84,7 +85,8 @@ class Impartus:
                                 fh.write(content)
                                 download_flag = True
                         except TimeoutError:
-                            self.logger.warning("[{}]: Timeout error. retrying download for {}...".format(ttid, item['url']))
+                            self.logger.warning("[{}]: Timeout error. retrying download for {}...".format(
+                                ttid, item['url']))
                             time.sleep(self.conf.get('retry_wait'))
 
                     # decrypt files if encrypted.
@@ -129,8 +131,17 @@ class Impartus:
     def get_slides_path(self, video_metadata):
         return self.conf.get('slides_path').format(**video_metadata, target_dir=self.download_dir)
 
+    def slides_exist_on_disk(self, path):
+        path_without_ext = path.rsplit('.', 1)[0]
+        for ext in self.conf.get('allowed_ext'):
+            path_with_ext = '{}.{}'.format(path_without_ext, ext)
+            if os.path.exists(path_with_ext):
+                return True, path_with_ext
+        return False, path
+
     def get_videos(self, root_url, subject):
-        response = self.session.get('{}/api/subjects/{}/lectures/{}'.format(root_url, subject.get('subjectId'), subject.get('sessionId')))
+        response = self.session.get('{}/api/subjects/{}/lectures/{}'.format(
+            root_url, subject.get('subjectId'), subject.get('sessionId')))
         if response.status_code == 200:
             return response.json()
         else:
@@ -161,13 +172,14 @@ class Impartus:
             return True
         else:
             self.logger.error('[{}]: Error fetching slides from url: {}'.format(ttid, file_url))
-            self.logger.error('[{}]: Http response code: {}, response body: {}: '.format(ttid, response.status_code, response.text))
+            self.logger.error('[{}]: Http response code: {}, response body: {}: '.format(
+                ttid, response.status_code, response.text))
             return False
 
     def map_slides_to_videos(self, videos_metadata, slides_metadata):
         mapping = dict()
         # slides upload threshold... expect slides be uploaded within N days of video upload.
-        threshold_duration = self.conf.get('slides_upload_threshold')
+        threshold_duration = self.conf.get('slides_upload_window')
         for video_item in videos_metadata:
             video_upload_date = str.split(video_item['startTime'], ' ')[0]
             for slide_item in slides_metadata:
