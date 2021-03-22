@@ -50,6 +50,7 @@ class Encoder:
     def encode_mkv(cls, ttid, ts_files, filepath, duration, debug=False):
         """
         Encode to mkv using ffmpeg and create a multiview video file.
+        :param ttid: video ttid
         :param ts_files: list of track files.
         :param filepath: path of the output mkv file to be created.
         :param duration: duration from the metadata.

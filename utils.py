@@ -93,5 +93,3 @@ class Utils:
         date_format = "%Y-%m-%d"
         delta = datetime.strptime(date1, date_format) - datetime.strptime(date2, date_format)
         return delta.days
-
-
