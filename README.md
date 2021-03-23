@@ -6,7 +6,7 @@ Downloader for impartus streaming videos.
 
 - Convert impartus lectures to mkv files.
 - Download Lecture slides.
-- Multiview supported. Tested with files up to 4 views.
+- Multi view/track files supported. Tested with files up to 4 tracks.
 - Parallel downloads supported. 
 - Tested on Mac, Linux (ubuntu) and Windows 10.
 
@@ -91,7 +91,7 @@ see yaml.conf
   * Paging in the table.
   * Keep table header fixed when scrolling.
   * Smooth scrolling.
-  * Fix mouse wheel scroll work when cursor is on labels.
+  * Fix mouse wheel scroll when cursor is on labels.
   * Refresh issues.
   * Try Treeview for table contents.
 * Support downloading flipped lectures.
