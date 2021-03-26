@@ -89,14 +89,6 @@ also, see color-schemes.conf
 
 
 ## Todo
-* Improve UI performance, user experience
-  * Better feedback on mouse events.
-  * Paging in the table.
-  * Keep table header fixed when scrolling.
-  * Smooth scrolling.
-  * Fix mouse wheel scroll when cursor is on labels.
-  * Refresh issues.
-  * Try Treeview for table contents.
 * Support downloading flipped lectures.
 * Option to download auto-generated slides.
 * Improve fuzzy matching of videos to slides by making use of slide name and content.
@@ -105,7 +97,6 @@ also, see color-schemes.conf
 ## Known Issues
 * Lecture slides to video mapping may be incorrect. The impartus platform does not offer a strict video to lecture slides mapping, the application uses the upload dates of the two for a fuzzy match.
 * Impartus site may start throttling the connections if there are too many parallel downloads. The application uses retry logic with induced delay. However, if the issue persists you may need to restart the app.
-* UI quibbles - If the table content does not refresh upon sorting, move the mouse towards any of the video/slides button.
 
 
 Drop a mail to paljsingh@gmail.com for any issues/errors.
