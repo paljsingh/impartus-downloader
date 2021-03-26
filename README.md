@@ -10,12 +10,12 @@ Downloader for impartus streaming videos.
 - Parallel downloads supported. 
 - Tested on Mac, Linux (ubuntu) and Windows 10.
 - Sortable content.
-- Color schemes.
+- Customizable color schemes.
 
 ___
 
 ### UI
-![Impartus Downloader](impartus-ui.png "Impartus Downloader")
+![Impartus Downloader](impartus-ui-blue.png "Impartus Downloader - color scheme: blue")
 
 
 ### Demo video (old)
