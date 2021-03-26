@@ -9,6 +9,8 @@ Downloader for impartus streaming videos.
 - Multi view/track files supported. Tested with files up to 4 tracks.
 - Parallel downloads supported. 
 - Tested on Mac, Linux (ubuntu) and Windows 10.
+- Sortable content.
+- Color schemes.
 
 ___
 
@@ -81,7 +83,8 @@ ___
 
 
 ## Configuration
-see yaml.conf 
+see yaml.conf
+also, see color-schemes.conf
 
 
 
