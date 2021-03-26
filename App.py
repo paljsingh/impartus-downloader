@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 import tkinter.messagebox
 import tkinter as tk
-import tkinter.ttk as ttk
+# import tkinter.ttk as ttk
 from functools import partial
 from tksheet import Sheet
 import os
 import ast
 import threading
 
+from config import Config
 from impartus import Impartus
 from utils import Utils
 
@@ -26,7 +27,7 @@ class App:
         self.sheet = None
 
         # sort options
-        self.sort_by = 'date'
+        self.sort_by = None
         self.sort_order = None
 
         self.threads = list()
@@ -36,9 +37,14 @@ class App:
 
         # backend
         self.impartus = None
+        self.conf = None
 
         # fields
         self.columns = None
+
+        self.colorscheme_config = None
+        self.colorscheme = None
+        self.style = None
 
         self._init_backend()
         self._init_ui()
@@ -47,6 +53,9 @@ class App:
         """
         UI initialization.
         """
+        self.colorscheme_config = Config.load('color-schemes.conf')
+        self.colorscheme = self.colorscheme_config.get(self.colorscheme_config.get('default'))
+
         self.app = tkinter.Tk()
         pad = 3
         self.screen_width = self.app.winfo_screenwidth() - pad
@@ -57,8 +66,17 @@ class App:
         self.app.rowconfigure(0, weight=0)
         self.app.rowconfigure(1, weight=1)
         self.app.columnconfigure(0, weight=1)
+        self.app.config(bg=self.colorscheme['root']['bg'])
+
+        # # style for buttons
+        # style = ttk.Style()
+        # cs = self.colorscheme
+        # style.map("TButton", foreground=[("active", "white"), ("disabled", "gray")])
+        # # style.map('TLabel', foreground=cs['root']['fg'], background=cs['root']['bg'])
+        # self.style = style
 
         self.add_auth_frame(self.app)
+
         self.app.mainloop()
 
     def _init_backend(self):
@@ -66,6 +84,8 @@ class App:
         backend initialization.
         """
         self.impartus = Impartus()
+        self.conf = Config.load()
+
         self.headers = [
             'Subject', 'Lecture #', 'Professor', 'Topic', 'Date', 'Duration', 'Tracks', 'Downloaded?',
             'Download Video', 'Open Folder', 'Play Video', 'Download Slides', 'Show Slides',
@@ -105,6 +125,7 @@ class App:
         """
         Adds authentication widgets and blank frame for holding video/lectures data.
         """
+        cs = self.colorscheme
         label_options = {
             'padx': 5,
             'pady': 5,
@@ -115,35 +136,40 @@ class App:
             'pady': 5,
         }
 
-        frame_auth = tk.Frame(anchor, padx=0, pady=0)
+        color_options = {
+            'fg': cs['root']['fg'],
+            'bg': cs['root']['bg'],
+        }
+
+        frame_auth = tk.Frame(anchor, padx=0, pady=0, bg=cs['root']['bg'])
         frame_auth.grid(row=0, column=0)
         self.frame_auth = frame_auth
 
-        frame_videos = tk.Frame(anchor, padx=0, pady=0)
+        frame_videos = tk.Frame(anchor, padx=0, pady=0, bg=cs['root']['bg'])
         frame_videos.grid(row=1, column=0, sticky='nsew')
         self.frame_videos = frame_videos
 
         # URL Label and Entry box.
-        ttk.Label(frame_auth, text='URL').grid(row=0, column=0, **label_options)
-        url_box = ttk.Entry(frame_auth, width=30)
-        url_box.insert(tk.END, self.impartus.conf.get('impartus_url'))
+        tk.Label(frame_auth, text='URL', **color_options).grid(row=0, column=0, **label_options)
+        url_box = tk.Entry(frame_auth, width=30, **color_options)
+        url_box.insert(tk.END, self.conf.get('impartus_url'))
         url_box.grid(row=0, column=1, **entry_options)
         self.url_box = url_box
 
         # Login Id Label and Entry box.
-        ttk.Label(frame_auth, text='Login (email) ').grid(row=1, column=0, **label_options)
-        user_box = ttk.Entry(frame_auth, width=30)
-        user_box.insert(tk.END, self.impartus.conf.get('login_email'))
+        tk.Label(frame_auth, text='Login (email) ', **color_options).grid(row=1, column=0, **label_options)
+        user_box = tk.Entry(frame_auth, width=30, **color_options)
+        user_box.insert(tk.END, self.conf.get('login_email'))
         user_box.grid(row=1, column=1, **entry_options)
         self.user_box = user_box
 
-        ttk.Label(frame_auth, text='Password ').grid(row=2, column=0, **label_options)
-        pass_box = ttk.Entry(frame_auth, text='', show="*", width=30)
+        tk.Label(frame_auth, text='Password ', **color_options).grid(row=2, column=0, **label_options)
+        pass_box = tk.Entry(frame_auth, text='', show="*", width=30, **color_options)
         pass_box.bind("<Return>", self.get_videos)
         pass_box.grid(row=2, column=1, **entry_options)
         self.pass_box = pass_box
 
-        show_videos_button = ttk.Button(frame_auth, text='Show Videos', command=self.get_videos)
+        show_videos_button = tk.Button(frame_auth, text='Show Videos', command=self.get_videos)
         show_videos_button.grid(row=2, column=2)
         self.show_videos_button = show_videos_button
 
@@ -177,6 +203,7 @@ class App:
         # show table of videos under frame_videos
         frame = self.frame_videos
         self.set_display_widgets(subjects, root_url, frame)
+        self.show_videos_button.config(state='normal', text='Reload')
 
     def sort_table(self, args):
         col = args[1]
@@ -185,9 +212,9 @@ class App:
             return
         column_name = self.headers[col]
         if column_name == self.sort_by:
-            sort_order = 'desc' if self.sort_order == 'asc' else 'asc'
+            sort_order = 'asc' if self.sort_order == 'desc' else 'desc'
         else:
-            sort_order = 'asc'
+            sort_order = 'desc'
         self.sort_by = column_name
         self.sort_order = sort_order
 
@@ -196,30 +223,36 @@ class App:
         table_data = self.sheet.get_sheet_data()
         table_data.sort(key=lambda x: x[col], reverse=reverse)
 
+        # set column title to reflect sort status
+        headers = self.headers.copy()
+        sort_icon = '▼' if sort_order == 'desc' else '▲'
+        headers[col] += ' {}'.format(sort_icon)
+        self.sheet.headers(headers)
+
         self.set_button_status()
 
     def set_display_widgets(self, subjects, root_url, anchor):
-        conf = self.impartus.conf
+        cs = self.colorscheme
 
         sheet = Sheet(
-            anchor, frame_bg=conf.get('colors')['table']['bg'],
-            table_bg=conf.get('colors')['table']['bg'],
-            table_fg=conf.get('colors')['table']['fg'],
-            table_grid_fg=conf.get('colors')['table']['grid'],
-            top_left_bg=conf.get('colors')['header']['bg'],
-            top_left_fg=conf.get('colors')['header']['bg'],
-            header_bg=conf.get('colors')['header']['bg'],
-            header_fg=conf.get('colors')['header']['fg'],
+            anchor, frame_bg=cs['table']['bg'],
+            table_bg=cs['table']['bg'],
+            table_fg=cs['table']['fg'],
+            table_grid_fg=cs['table']['grid'],
+            top_left_bg=cs['header']['bg'],
+            top_left_fg=cs['header']['bg'],
+            header_bg=cs['header']['bg'],
+            header_fg=cs['header']['fg'],
             header_font=("Arial", 12, "bold"),
             font=("Arial", 14, "normal"),
             align='center',
-            header_grid_fg=conf.get('colors')['table']['grid'],
-            index_grid_fg=conf.get('colors')['table']['grid'],
+            header_grid_fg=cs['table']['grid'],
+            index_grid_fg=cs['table']['grid'],
             header_align='center',
             empty_horizontal=0,
             empty_vertical=0,
-            header_border_fg=conf.get('colors')['table']['grid'],
-            index_border_fg=conf.get('colors')['table']['grid'],
+            header_border_fg=cs['table']['grid'],
+            index_border_fg=cs['table']['grid'],
         )
         self.sheet = sheet
 
@@ -313,24 +346,27 @@ class App:
     def progress_bar_color(self):
         col = self.headers.index('Downloaded?')
         num_rows = self.sheet.total_rows()
-        conf = self.impartus.conf
+        cs = self.colorscheme
 
         for row in range(num_rows):
-            self.sheet.highlight_cells(row, col, fg=conf.get('colors')['progressbar']['fg'], redraw=True)
+            odd_even_bg = cs['odd_row']['bg'] if row % 2 else cs['even_row']['bg']
+            self.sheet.highlight_cells(
+                row, col, fg=cs['progressbar']['fg'], bg=odd_even_bg, redraw=True)
             self.sheet.align_columns(col, 'w')
 
     def odd_even_color(self):
-        conf = self.impartus.conf
+        cs = self.colorscheme
         num_rows = self.sheet.total_rows()
+
         self.sheet.highlight_rows(
             list(range(0, num_rows, 2)),
-            bg=conf.get('colors')['even_row']['bg'],
-            fg=conf.get('colors')['even_row']['fg']
+            bg=cs['even_row']['bg'],
+            fg=cs['even_row']['fg']
         )
         self.sheet.highlight_rows(
             list(range(1, num_rows, 2)),
-            bg=conf.get('colors')['odd_row']['bg'],
-            fg=conf.get('colors')['odd_row']['fg']
+            bg=cs['odd_row']['bg'],
+            fg=cs['odd_row']['fg']
         )
 
     def reset_column_sizes(self):
@@ -339,12 +375,16 @@ class App:
         # reset column widths to fill the screen
         pad = 50
         extra_width = self.frame_videos.winfo_width() - sum(self.sheet.get_column_widths()) - pad
+
+        # adjust extra width only to data columns.
+        sortable_columns = {x: True for x, v in self.columns.items() if v.get('type') == 'data'}
         for col_num, col_width in enumerate(self.sheet.get_column_widths()):
-            self.sheet.column_width(col_num, col_width + extra_width // len(self.columns))
+            if sortable_columns.get(col_num):
+                self.sheet.column_width(col_num, col_width + extra_width // len(sortable_columns))
 
     def progress_bar_text(self, value):    # noqa
-        bars = 50
-        return '{}'.format('I' * (value * bars // 100))
+        bars = 33
+        return '{}'.format('l' * (value * bars // 100))
 
     def set_button_status(self):
         col_indexes = [x for x, v in enumerate(self.columns.values()) if v['type'] == 'state']
@@ -397,10 +437,10 @@ class App:
         func(row, col)
 
     def disable_button(self, row, col, redraw=True):
-        conf = self.impartus.conf
+        cs = self.colorscheme
         self.sheet.highlight_cells(
-            row, col, bg=conf.get('colors')['disabled']['bg'],
-            fg=conf.get('colors')['disabled']['fg'],
+            row, col, bg=cs['disabled']['bg'],
+            fg=cs['disabled']['fg'],
             redraw=redraw
         )
         # update state field.
@@ -408,19 +448,10 @@ class App:
         self.sheet.set_cell_data(row, state_button_col, False, redraw=redraw)
 
     def enable_button(self, row, col, redraw=True):
-        conf = self.impartus.conf
-        if row % 2:
-            self.sheet.highlight_cells(
-                row, col, bg=conf.get('colors')['odd_row']['bg'],
-                fg=conf.get('colors')['odd_row']['fg'],
-                redraw=redraw
-            )
-        else:
-            self.sheet.highlight_cells(
-                row, col, bg=conf.get('colors')['even_row']['bg'],
-                fg=conf.get('colors')['even_row']['fg'],
-                redraw=redraw
-            )
+        cs = self.colorscheme
+        odd_even_bg = cs['odd_row']['bg'] if row % 2 else cs['even_row']['bg']
+        odd_even_fg = cs['odd_row']['fg'] if row % 2 else cs['even_row']['fg']
+        self.sheet.highlight_cells(row, col, bg=odd_even_bg, fg=odd_even_fg, redraw=redraw)
 
         # update state field.
         state_button_col = col + len([x for x, v in self.columns.items() if v['type'] == 'state'])
