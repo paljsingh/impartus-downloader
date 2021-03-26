@@ -49,7 +49,7 @@ class Impartus:
                         return response.text.splitlines()
         return None
 
-    def process_video(self, video_metadata, mkv_filepath, root_url, progress_bar_value):
+    def process_video(self, video_metadata, mkv_filepath, root_url, progress_bar_value, callback_func):
         """
         Download video and decrypt, join, encode to mkv
         :return: 
@@ -105,7 +105,9 @@ class Impartus:
                         temp_files_to_delete.add(decrypted_stream_filepath)
                     # update progress bar
                     items_processed += 1
-                    progress_bar_value.set(items_processed * 100 // summary.get('media_files'))
+                    items_processed_percent = items_processed * 100 // summary.get('media_files')
+                    callback_func(items_processed_percent)
+                    # progress_bar_value.set(items_processed * 100 // summary.get('media_files'))
 
                 # All stream files for this track are decrypted, join them.
                 self.logger.info("[{}]: joining streams for track {} ..".format(ttid, track_index))
