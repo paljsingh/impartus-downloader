@@ -18,8 +18,8 @@ ___
 ![Impartus Downloader](impartus-ui-blue.png "Impartus Downloader - color scheme: blue")
 
 
-### Demo video (old)
-[![Impartus v2.0 demo](https://img.youtube.com/vi/V5pcdUtiRjw/0.jpg)](https://www.youtube.com/watch?v=V5pcdUtiRjw)
+### Demo video
+[![Impartus v3.0 demo](https://i9.ytimg.com/vi/o8uYDbbNyGQ/mq2.jpg)](https://youtu.be/o8uYDbbNyGQ)
 
 
 
