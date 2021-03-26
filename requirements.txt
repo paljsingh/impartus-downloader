@@ -1,5 +1,5 @@
 pycryptodome
 envyaml
-tkscrolledframe
 tk
+tksheet
 requests
