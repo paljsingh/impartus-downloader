@@ -43,7 +43,6 @@ class App:
 
         self.colorscheme_config = None
         self.colorscheme = None
-        self.style = None
 
         self._init_backend()
         self._init_ui()
@@ -67,13 +66,6 @@ class App:
         self.app.columnconfigure(0, weight=1)
         self.app.config(bg=self.colorscheme['root']['bg'])
 
-        # # style for buttons
-        # style = ttk.Style()
-        # cs = self.colorscheme
-        # style.map("TButton", foreground=[("active", "white"), ("disabled", "gray")])
-        # # style.map('TLabel', foreground=cs['root']['fg'], background=cs['root']['bg'])
-        # self.style = style
-
         self.add_auth_frame(self.app)
 
         self.app.mainloop()
@@ -85,40 +77,46 @@ class App:
         self.impartus = Impartus()
         self.conf = Config.load()
 
-        self.headers = [
-            'Subject', 'Lecture #', 'Professor', 'Topic', 'Date', 'Duration', 'Tracks', 'Downloaded?',
-            'Download Video', 'Open Folder', 'Play Video', 'Download Slides', 'Show Slides',
-            'download_video_state', 'open_folder_state', 'play_video_state', 'download_slides_state', 'show_slides_state',
-            'Index',
-            'metadata'
-        ]
         self.columns = {k: v for k, v in enumerate([
             # data fields
-            {'show': True, 'type': 'data', 'mapping': 'subjectNameShort', 'title_case': False, 'sortable': True, 'truncate': False },
-            {'show': True, 'type': 'data', 'mapping': 'seqNo', 'title_case': False, 'sortable': True, 'truncate': False },
-            {'show': True, 'type': 'data', 'mapping': 'professorName_raw', 'title_case': True, 'sortable': True, 'truncate': True},
-            {'show': True, 'type': 'data', 'mapping': 'topic_raw', 'title_case': True, 'sortable': True, 'truncate': True},
-            {'show': True, 'type': 'data', 'mapping': 'startDate', 'title_case': False, 'sortable': True, 'truncate': False},
-            {'show': True, 'type': 'data', 'mapping': 'actualDurationReadable', 'title_case': False, 'sortable': True, 'truncate': False},
-            {'show': True, 'type': 'data', 'mapping': 'tapNToggle', 'title_case': False, 'sortable': True, 'truncate': False},
+            {'name': 'Subject', 'show': True, 'type': 'data', 'mapping': 'subjectNameShort', 'title_case': False,
+             'sortable': True, 'truncate': False},
+            {'name': 'Lecture #', 'show': True, 'type': 'data', 'mapping': 'seqNo', 'title_case': False,
+             'sortable': True, 'truncate': False},
+            {'name': 'Professor', 'show': True, 'type': 'data', 'mapping': 'professorName_raw', 'title_case': True,
+             'sortable': True, 'truncate': True},
+            {'name': 'Topic', 'show': True, 'type': 'data', 'mapping': 'topic_raw', 'title_case': True,
+             'sortable': True, 'truncate': True},
+            {'name': 'Date', 'show': True, 'type': 'data', 'mapping': 'startDate', 'title_case': False,
+             'sortable': True, 'truncate': False},
+            {'name': 'Duration', 'show': True, 'type': 'data', 'mapping': 'actualDurationReadable', 'title_case': False,
+             'sortable': True, 'truncate': False},
+            {'name': 'Tracks', 'show': True, 'type': 'data', 'mapping': 'tapNToggle', 'title_case': False,
+             'sortable': True, 'truncate': False},
             # progress bar
-            {'show': True, 'type': 'progressbar', 'title_case': False, 'sortable': True},
+            {'name': 'Downloaded?', 'show': True, 'type': 'progressbar', 'title_case': False, 'sortable': True},
             # buttons
-            {'show': True, 'type': 'button', 'function': self.download_video, 'text': '⬇ Video', 'sortable': False},
-            {'show': True, 'type': 'button', 'function': self.open_folder, 'text': '⏏ Folder', 'sortable': False},
-            {'show': True, 'type': 'button', 'function': self.play_video, 'text': '▶ Video', 'sortable': False},
-            {'show': True, 'type': 'button', 'function': self.download_slides, 'text': '⬇ Slides', 'sortable': False},
-            {'show': True, 'type': 'button', 'function': self.show_slides, 'text': '▤ Slides', 'sortable': False},
-            {'show': False, 'type': 'state'},
-            {'show': False, 'type': 'state'},
-            {'show': False, 'type': 'state'},
-            {'show': False, 'type': 'state'},
-            {'show': False, 'type': 'state'},
+            {'name': 'Download Video', 'show': True, 'type': 'button', 'function': self.download_video,
+             'sortable': False, 'text': '⬇ Video'},
+            {'name': 'Open Folder', 'show': True, 'type': 'button', 'function': self.open_folder,
+             'sortable': False, 'text': '⏏ Folder'},
+            {'name': 'Play Video', 'show': True, 'type': 'button', 'function': self.play_video,
+             'sortable': False, 'text': '▶ Video'},
+            {'name': 'Download Slides', 'show': True, 'type': 'button', 'function': self.download_slides,
+             'sortable': False, 'text': '⬇ Slides'},
+            {'name': 'Show Slides', 'show': True, 'type': 'button', 'function': self.show_slides,
+             'sortable': False, 'text': '▤ Slides'},
+            {'name': 'download_video_state', 'show': False, 'type': 'state'},
+            {'name': 'open_folder_state', 'show': False, 'type': 'state'},
+            {'name': 'play_video_state', 'show': False, 'type': 'state'},
+            {'name': 'download_slides_state', 'show': False, 'type': 'state'},
+            {'name': 'show_slides_state', 'show': False, 'type': 'state'},
             # index
-            {'show': False, 'type': 'auto'},
+            {'name': 'Index', 'show': False, 'type': 'auto'},
             # video / slides data
-            {'show': False, 'type': 'metadata'},
+            {'name': 'metadata', 'show': False, 'type': 'metadata'},
         ])}
+        self.headers = [x['name'] for x in self.columns.values()]
 
     def add_auth_frame(self, anchor):
         """
@@ -196,6 +194,7 @@ class App:
             if not success:
                 self.impartus.session = None
                 tkinter.messagebox.showerror('Error', 'Error authenticating, see console logs for details.')
+                self.show_videos_button.config(state='normal')
                 return
         subjects = self.impartus.get_subjects(root_url)
 
