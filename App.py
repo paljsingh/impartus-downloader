@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import tkinter.messagebox
 import tkinter as tk
-# import tkinter.ttk as ttk
 from functools import partial
 from tksheet import Sheet
 import os
@@ -95,16 +94,16 @@ class App:
         ]
         self.columns = {k: v for k, v in enumerate([
             # data fields
-            {'show': True, 'type': 'data', 'mapping': 'subjectNameShort', 'title_case': False, 'sortable': True},
-            {'show': True, 'type': 'data', 'mapping': 'seqNo', 'title_case': False, 'sortable': True},
-            {'show': True, 'type': 'data', 'mapping': 'professorName_raw', 'title_case': True, 'sortable': True},
-            {'show': True, 'type': 'data', 'mapping': 'topic_raw', 'title_case': True, 'sortable': True},
-            {'show': True, 'type': 'data', 'mapping': 'startDate', 'title_case': False, 'sortable': True},
-            {'show': True, 'type': 'data', 'mapping': 'actualDurationReadable', 'title_case': False, 'sortable': True},
-            {'show': True, 'type': 'data', 'mapping': 'tapNToggle', 'title_case': False, 'sortable': True},
+            {'show': True, 'type': 'data', 'mapping': 'subjectNameShort', 'title_case': False, 'sortable': True, 'truncate': False },
+            {'show': True, 'type': 'data', 'mapping': 'seqNo', 'title_case': False, 'sortable': True, 'truncate': False },
+            {'show': True, 'type': 'data', 'mapping': 'professorName_raw', 'title_case': True, 'sortable': True, 'truncate': True},
+            {'show': True, 'type': 'data', 'mapping': 'topic_raw', 'title_case': True, 'sortable': True, 'truncate': True},
+            {'show': True, 'type': 'data', 'mapping': 'startDate', 'title_case': False, 'sortable': True, 'truncate': False},
+            {'show': True, 'type': 'data', 'mapping': 'actualDurationReadable', 'title_case': False, 'sortable': True, 'truncate': False},
+            {'show': True, 'type': 'data', 'mapping': 'tapNToggle', 'title_case': False, 'sortable': True, 'truncate': False},
             # progress bar
             {'show': True, 'type': 'progressbar', 'title_case': False, 'sortable': True},
-            # buttons (and state) - must be alternate
+            # buttons
             {'show': True, 'type': 'button', 'function': self.download_video, 'text': '⬇ Video', 'sortable': False},
             {'show': True, 'type': 'button', 'function': self.open_folder, 'text': '⏏ Folder', 'sortable': False},
             {'show': True, 'type': 'button', 'function': self.play_video, 'text': '▶ Video', 'sortable': False},
@@ -210,12 +209,12 @@ class App:
         self.sheet.deselect("all")
         if not self.columns[col].get('sortable'):
             return
-        column_name = self.headers[col]
-        if column_name == self.sort_by:
+        sort_by = self.headers[col]
+        if sort_by == self.sort_by:
             sort_order = 'asc' if self.sort_order == 'desc' else 'desc'
         else:
             sort_order = 'desc'
-        self.sort_by = column_name
+        self.sort_by = sort_by
         self.sort_order = sort_order
 
         reverse = True if sort_order == 'desc' else False
@@ -223,12 +222,7 @@ class App:
         table_data = self.sheet.get_sheet_data()
         table_data.sort(key=lambda x: x[col], reverse=reverse)
 
-        # set column title to reflect sort status
-        headers = self.headers.copy()
-        sort_icon = '▼' if sort_order == 'desc' else '▲'
-        headers[col] += ' {}'.format(sort_icon)
-        self.sheet.headers(headers)
-
+        self.set_headers(sort_by, sort_order)
         self.set_button_status()
 
     def set_display_widgets(self, subjects, root_url, anchor):
@@ -264,8 +258,7 @@ class App:
             "rc_select"
         ))
 
-        sheet.headers(self.headers)
-        sheet.headers(self.headers)
+        self.set_headers()
 
         indexes = [x for x, v in self.columns.items() if v['show']]
         sheet.display_columns(indexes=indexes, enable=True)
@@ -310,6 +303,10 @@ class App:
                         text = video_metadata[item['mapping']]
                         # title case
                         text = text.strip().title() if item.get('title_case') else text
+
+                        # truncate long fields
+                        if item['truncate'] and len(text) > self.conf.get('max_content_chars'):
+                            text = '{}..'.format(text[0:self.conf.get('max_content_chars')])
                     elif item['type'] == 'progressbar':
                         value = 100 if video_exists else 0
                         text = self.progress_bar_text(value)
@@ -338,6 +335,23 @@ class App:
         self.set_button_status()
 
         sheet.grid(row=0, column=0, sticky='nsew')
+
+    def set_headers(self, sort_by=None, sort_order=None):
+        # set column title to reflect sort status
+        headers = self.headers.copy()
+        for x, h in enumerate(headers):
+            
+            if not self.columns[x].get('sortable'):
+                continue
+
+            # only sortable headers.
+            sort_icon = None
+            if h == sort_by:
+                sort_icon = '▼' if sort_order == 'desc' else '▲'
+            else:
+                sort_icon = '⇅'
+            headers[x] += ' {}'.format(sort_icon)
+        self.sheet.headers(headers)
 
     def decorate(self):
         self.odd_even_color()
@@ -384,7 +398,7 @@ class App:
 
     def progress_bar_text(self, value):    # noqa
         bars = 33
-        return '{}'.format('l' * (value * bars // 100))
+        return '{}'.format('I' * (value * bars // 100))
 
     def set_button_status(self):
         col_indexes = [x for x, v in enumerate(self.columns.values()) if v['type'] == 'state']
