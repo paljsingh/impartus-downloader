@@ -10,7 +10,7 @@ Downloader for impartus streaming videos.
 - Parallel downloads supported. 
 - Tested on Mac, Linux (ubuntu) and Windows 10.
 - Sortable content.
-- Customizable color schemes.
+- Customizable color schemes, fonts.
 
 ___
 
