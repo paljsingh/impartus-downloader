@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import tkinter.messagebox
 import tkinter as tk
+from tkinter import font
 from functools import partial
 from tksheet import Sheet
 import os
@@ -66,6 +67,11 @@ class App:
         self.app.columnconfigure(0, weight=1)
         self.app.config(bg=self.colorscheme['root']['bg'])
 
+        default_font = font.nametofont("TkDefaultFont")
+        default_font.configure(family=self.conf.get('content_font'), size=14)
+        text_font = font.nametofont("TkTextFont")
+        text_font.configure(family=self.conf.get('content_font'), size=14)
+
         self.add_auth_frame(self.app)
 
         self.app.mainloop()
@@ -80,43 +86,45 @@ class App:
         self.columns = {k: v for k, v in enumerate([
             # data fields
             {'name': 'Subject', 'show': True, 'type': 'data', 'mapping': 'subjectNameShort', 'title_case': False,
-             'sortable': True, 'truncate': False},
+             'sortable': True, 'truncate': False, 'header': 'Subject'},
             {'name': 'Lecture #', 'show': True, 'type': 'data', 'mapping': 'seqNo', 'title_case': False,
-             'sortable': True, 'truncate': False},
+             'sortable': True, 'truncate': False, 'header': 'Lecture #'},
             {'name': 'Professor', 'show': True, 'type': 'data', 'mapping': 'professorName_raw', 'title_case': True,
-             'sortable': True, 'truncate': True},
+             'sortable': True, 'truncate': True, 'header': 'Professor'},
             {'name': 'Topic', 'show': True, 'type': 'data', 'mapping': 'topic_raw', 'title_case': True,
-             'sortable': True, 'truncate': True},
+             'sortable': True, 'truncate': True, 'header': 'Topic'},
             {'name': 'Date', 'show': True, 'type': 'data', 'mapping': 'startDate', 'title_case': False,
-             'sortable': True, 'truncate': False},
+             'sortable': True, 'truncate': False, 'header': 'Date'},
             {'name': 'Duration', 'show': True, 'type': 'data', 'mapping': 'actualDurationReadable', 'title_case': False,
-             'sortable': True, 'truncate': False},
+             'sortable': True, 'truncate': False, 'header': 'Duration'},
             {'name': 'Tracks', 'show': True, 'type': 'data', 'mapping': 'tapNToggle', 'title_case': False,
-             'sortable': True, 'truncate': False},
+             'sortable': True, 'truncate': False, 'header': 'Tracks'},
             # progress bar
-            {'name': 'Downloaded?', 'show': True, 'type': 'progressbar', 'title_case': False, 'sortable': True},
+            {'name': 'Downloaded?', 'show': True, 'type': 'progressbar', 'title_case': False, 'sortable': True,
+             'header': 'Downloaded?'},
             # buttons
             {'name': 'Download Video', 'show': True, 'type': 'button', 'function': self.download_video,
-             'sortable': False, 'text': '⬇ Video'},
+             'sortable': False, 'text': '⬇', 'header': 'Video'},
             {'name': 'Open Folder', 'show': True, 'type': 'button', 'function': self.open_folder,
-             'sortable': False, 'text': '⏏ Folder'},
+             'sortable': False, 'text': '⏏', 'header': 'Folder'},
             {'name': 'Play Video', 'show': True, 'type': 'button', 'function': self.play_video,
-             'sortable': False, 'text': '▶ Video'},
+             'sortable': False, 'text': '▶', 'header': 'Video'},
             {'name': 'Download Slides', 'show': True, 'type': 'button', 'function': self.download_slides,
-             'sortable': False, 'text': '⬇ Slides'},
+             'sortable': False, 'text': '⬇', 'header': 'Slides'},
             {'name': 'Show Slides', 'show': True, 'type': 'button', 'function': self.show_slides,
-             'sortable': False, 'text': '▤ Slides'},
-            {'name': 'download_video_state', 'show': False, 'type': 'state'},
-            {'name': 'open_folder_state', 'show': False, 'type': 'state'},
-            {'name': 'play_video_state', 'show': False, 'type': 'state'},
-            {'name': 'download_slides_state', 'show': False, 'type': 'state'},
-            {'name': 'show_slides_state', 'show': False, 'type': 'state'},
+             'sortable': False, 'text': '▤', 'header':  'Slides'},
+            {'name': 'download_video_state', 'show': False, 'type': 'state', 'header': 'download_video_state'},
+            {'name': 'open_folder_state', 'show': False, 'type': 'state', 'header': 'open_folder_state'},
+            {'name': 'play_video_state', 'show': False, 'type': 'state', 'header': 'play_slides_state'},
+            {'name': 'download_slides_state', 'show': False, 'type': 'state', 'header': 'download_slides_state'},
+            {'name': 'show_slides_state', 'show': False, 'type': 'state', 'header': 'show_slides_state'},
             # index
-            {'name': 'Index', 'show': False, 'type': 'auto'},
+            {'name': 'Index', 'show': False, 'type': 'auto', 'header': 'Index'},
             # video / slides data
-            {'name': 'metadata', 'show': False, 'type': 'metadata'},
+            {'name': 'metadata', 'show': False, 'type': 'metadata', 'header': 'metadata'},
         ])}
-        self.headers = [x['name'] for x in self.columns.values()]
+        self.headers = [x['header'] for x in self.columns.values()]
+        self.names = [x['name'] for x in self.columns.values()]
 
     def add_auth_frame(self, anchor):
         """
@@ -208,7 +216,7 @@ class App:
         self.sheet.deselect("all")
         if not self.columns[col].get('sortable'):
             return
-        sort_by = self.headers[col]
+        sort_by = self.names[col]
         if sort_by == self.sort_by:
             sort_order = 'asc' if self.sort_order == 'desc' else 'desc'
         else:
@@ -236,8 +244,8 @@ class App:
             top_left_fg=cs['header']['bg'],
             header_bg=cs['header']['bg'],
             header_fg=cs['header']['fg'],
-            header_font=("Arial", 12, "bold"),
-            font=("Arial", 14, "normal"),
+            header_font=(self.conf.get("content_font"), 12, "bold"),
+            font=(self.conf.get('content_font'), 14, "normal"),
             align='center',
             header_grid_fg=cs['table']['grid'],
             index_grid_fg=cs['table']['grid'],
@@ -311,13 +319,12 @@ class App:
                         text = self.progress_bar_text(value)
                     elif item['type'] == 'button':
                         button_states.append(self.get_button_state(
-                            self.headers[col], video_exists, slides_exist, slides_exist_on_disk)
+                            self.names[col], video_exists, slides_exist, slides_exist_on_disk)
                         )
                         text = item.get('text')
                     elif item['type'] == 'state':
                         text = button_states.pop(0)
                     elif item['type'] == 'metadata':
-                        # TODO: base64 encode to avoid any str conversion issue in tksheet.
                         text = metadata
 
                     row_items.append(text)
@@ -357,7 +364,7 @@ class App:
         self.progress_bar_color()
 
     def progress_bar_color(self):
-        col = self.headers.index('Downloaded?')
+        col = self.names.index('Downloaded?')
         num_rows = self.sheet.total_rows()
         cs = self.colorscheme
 
@@ -390,14 +397,41 @@ class App:
         extra_width = self.frame_videos.winfo_width() - sum(self.sheet.get_column_widths()) - pad
 
         # adjust extra width only to data columns.
-        sortable_columns = {x: True for x, v in self.columns.items() if v.get('type') == 'data'}
+        sortable_columns = {x: True for x, v in self.columns.items() if v.get('show') and not v['type'] == 'progressbar'}
         for col_num, col_width in enumerate(self.sheet.get_column_widths()):
             if sortable_columns.get(col_num):
                 self.sheet.column_width(col_num, col_width + extra_width // len(sortable_columns))
 
-    def progress_bar_text(self, value):    # noqa
-        bars = 33
-        return '{}'.format('I' * (value * bars // 100))
+    def progress_bar_text(self, value):
+        if self.conf.get('progress_bar') == 'unicode':
+            text = self.progress_bar_text_unicode(value)
+        else:
+            text = self.progress_bar_text_ascii(value)
+        percent_text = '{:3d}%'.format(value)
+        pad = ' ' * 4   # to keep the cell wide enough even with all videos at 0%.
+        return '[{}] {}{}'.format(text, percent_text, pad)
+
+    def progress_bar_text_ascii(self, value):   # noqa
+        bars = 50
+        # ascii char 'l' takes up least width for most fonts.
+        return ' {} '.format('l' * (value * bars // 100))
+
+    def progress_bar_text_unicode(self, value):    # noqa
+        chars = ['▏', '▎', '▍', '▌', '▋', '▊', '▉', '█']
+
+        # 1 unicode block = 8 percent values. => 13 unicode blocks needed to represent counter 100, with right half of
+        # the last block being empty.
+        # To make it visually symmetric, we add one regular whitespace to the left.
+        unicode_space = ' '
+        ascii_space = ' '
+        if value > 0:
+            progress_text = '{}{}'.format(chars[-1] * (value // 8), chars[value % 8])
+            empty_text = '{}'.format(unicode_space * (13-len(progress_text)))
+            full_text = '{}{}{}'.format(ascii_space, progress_text, empty_text)
+        else:
+            # same 13 chars of unicode blocks, and 1 regular whitespace.
+            full_text = '{}{}'.format(ascii_space, unicode_space * 13)
+        return full_text
 
     def set_button_status(self):
         col_indexes = [x for x, v in enumerate(self.columns.values()) if v['type'] == 'state']
@@ -443,7 +477,7 @@ class App:
             return
 
         # disable the pressed button (only Download buttons)
-        if self.headers[col] in ['Download Video', 'Download Slides']:
+        if self.names[col] in ['Download Video', 'Download Slides']:
             self.disable_button(row, col)
 
         func = self.columns[col]['function']
@@ -472,13 +506,13 @@ class App:
 
     def get_index(self, row):
         # find where is the Index column
-        index_col = self.headers.index('Index')
+        index_col = self.names.index('Index')
         # original row value as per the index column
         return self.sheet.get_cell_data(row, index_col)
 
     def get_row_after_sort(self, index_value):
         # find the new correct location of the row_index
-        col_index = self.headers.index('Index')
+        col_index = self.names.index('Index')
         col_data = self.sheet.get_column_data(col_index)
         return col_data.index(index_value)
 
@@ -513,8 +547,8 @@ class App:
 
         # download complete, enable open / play buttons
         updated_row = self.get_row_after_sort(row_index)
-        self.enable_button(updated_row, self.headers.index('Open Folder'))
-        self.enable_button(updated_row, self.headers.index('Play Video'))
+        self.enable_button(updated_row, self.names.index('Open Folder'))
+        self.enable_button(updated_row, self.names.index('Play Video'))
 
     def download_video(self, row, col):
         """
@@ -540,10 +574,10 @@ class App:
         imp = Impartus(self.impartus.token)
         if imp.download_slides(ttid, file_url, filepath, root_url):
             # download complete, enable show slides buttons
-            self.enable_button(row, self.headers.index('Show Slides'))
+            self.enable_button(row, self.names.index('Show Slides'))
         else:
             tkinter.messagebox.showerror('Error', 'Error downloading slides, see console logs for details.')
-            self.enable_button(row, self.headers.index('Download Slides'))
+            self.enable_button(row, self.names.index('Download Slides'))
 
     def download_slides(self, row, col):
         """
@@ -565,7 +599,7 @@ class App:
         thread.start()
 
     def read_metadata(self, row):
-        metadata_col = self.headers.index('metadata')
+        metadata_col = self.names.index('metadata')
         data = self.sheet.get_cell_data(row, metadata_col)
         return ast.literal_eval(data)
 
