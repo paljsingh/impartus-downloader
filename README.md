@@ -15,7 +15,7 @@ Downloader for impartus streaming videos.
 ___
 
 ### UI
-![Impartus Downloader](impartus-ui-blue.png "Impartus Downloader - color scheme: blue")
+![Impartus Downloader](impartus-ui.gif "Impartus Downloader - color scheme: blue")
 
 
 ### Demo video
@@ -83,7 +83,9 @@ ___
 
 
 ## Configuration
+
 see yaml.conf
+
 also, see color-schemes.conf
 
 
