@@ -28,7 +28,7 @@ class Utils:
         # create new field to show human readable duration of the video.
         duration_hour = int(metadata.get('actualDuration')) // 3600
         duration_min = (int(metadata.get('actualDuration')) % 3600) // 60
-        metadata['actualDurationReadable'] = '{}h{}m'.format(duration_hour, duration_min)
+        metadata['actualDurationReadable'] = '{}:{:02d}h'.format(duration_hour, duration_min)
 
         # create new field to hold shortened subject names.
         metadata['subjectNameShort'] = metadata['subjectName']
