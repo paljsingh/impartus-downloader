@@ -48,34 +48,6 @@ class App:
         self._init_backend()
         self._init_ui()
 
-    def _init_ui(self):
-        """
-        UI initialization.
-        """
-        self.colorscheme_config = Config.load('color-schemes.conf')
-        self.colorscheme = self.colorscheme_config.get(self.colorscheme_config.get('default'))
-
-        self.app = tkinter.Tk()
-        pad = 3
-        self.screen_width = self.app.winfo_screenwidth() - pad
-        self.screen_height = self.app.winfo_screenheight() - pad
-        geometry = '{}x{}+0+0'.format(self.screen_width, self.screen_height)
-        self.app.geometry(geometry)
-        self.app.title('Impartus Downloader')
-        self.app.rowconfigure(0, weight=0)
-        self.app.rowconfigure(1, weight=1)
-        self.app.columnconfigure(0, weight=1)
-        self.app.config(bg=self.colorscheme['root']['bg'])
-
-        default_font = font.nametofont("TkDefaultFont")
-        default_font.configure(family=self.conf.get('content_font'), size=14)
-        text_font = font.nametofont("TkTextFont")
-        text_font.configure(family=self.conf.get('content_font'), size=14)
-
-        self.add_auth_frame(self.app)
-
-        self.app.mainloop()
-
     def _init_backend(self):
         """
         backend initialization.
@@ -125,6 +97,34 @@ class App:
         ])}
         self.headers = [x['header'] for x in self.columns.values()]
         self.names = [x['name'] for x in self.columns.values()]
+
+    def _init_ui(self):
+        """
+        UI initialization.
+        """
+        self.colorscheme_config = Config.load('color-schemes.conf')
+        self.colorscheme = self.colorscheme_config.get(self.colorscheme_config.get('default'))
+
+        self.app = tkinter.Tk()
+        pad = 3
+        self.screen_width = self.app.winfo_screenwidth() - pad
+        self.screen_height = self.app.winfo_screenheight() - pad
+        geometry = '{}x{}+0+0'.format(self.screen_width, self.screen_height)
+        self.app.geometry(geometry)
+        self.app.title('Impartus Downloader')
+        self.app.rowconfigure(0, weight=0)
+        self.app.rowconfigure(1, weight=1)
+        self.app.columnconfigure(0, weight=1)
+        self.app.config(bg=self.colorscheme['root']['bg'])
+
+        default_font = font.nametofont("TkDefaultFont")
+        default_font.configure(family=self.conf.get('content_font'), size=14)
+        text_font = font.nametofont("TkTextFont")
+        text_font.configure(family=self.conf.get('content_font'), size=14)
+
+        self.add_auth_frame(self.app)
+
+        self.app.mainloop()
 
     def add_auth_frame(self, anchor):
         """
@@ -212,6 +212,9 @@ class App:
         self.show_videos_button.config(state='normal', text='Reload')
 
     def sort_table(self, args):
+        """
+        Sorts the table content.
+        """
         col = args[1]
         self.sheet.deselect("all")
         if not self.columns[col].get('sortable'):
@@ -233,6 +236,10 @@ class App:
         self.set_button_status()
 
     def set_display_widgets(self, subjects, root_url, anchor):
+        """
+        Create the table/sheet.
+        Fill in the data for table content, Set the buttons and their states.
+        """
         cs = self.colorscheme
 
         sheet = Sheet(
@@ -343,6 +350,9 @@ class App:
         sheet.grid(row=0, column=0, sticky='nsew')
 
     def set_headers(self, sort_by=None, sort_order=None):
+        """
+        Set the table headers.
+        """
         # set column title to reflect sort status
         headers = self.headers.copy()
         for x, h in enumerate(headers):
@@ -360,10 +370,16 @@ class App:
         self.sheet.headers(headers)
 
     def decorate(self):
+        """
+        calls multiple ui related tweaks.
+        """
         self.odd_even_color()
         self.progress_bar_color()
 
     def progress_bar_color(self):
+        """
+        Set progress bar color.
+        """
         col = self.names.index('Downloaded?')
         num_rows = self.sheet.total_rows()
         cs = self.colorscheme
@@ -375,6 +391,9 @@ class App:
             self.sheet.align_columns(col, 'w')
 
     def odd_even_color(self):
+        """
+        Apply odd/even colors for table for better looking UI.
+        """
         cs = self.colorscheme
         num_rows = self.sheet.total_rows()
 
@@ -390,6 +409,9 @@ class App:
         )
 
     def reset_column_sizes(self):
+        """
+        Adjust column sizes after data has been filled.
+        """
         # resize cells
         self.sheet.set_all_cell_sizes_to_text()
         # reset column widths to fill the screen
@@ -402,38 +424,10 @@ class App:
             if sortable_columns.get(col_num):
                 self.sheet.column_width(col_num, col_width + extra_width // len(sortable_columns))
 
-    def progress_bar_text(self, value):
-        if self.conf.get('progress_bar') == 'unicode':
-            text = self.progress_bar_text_unicode(value)
-        else:
-            text = self.progress_bar_text_ascii(value)
-        percent_text = '{:3d}%'.format(value)
-        pad = ' ' * 4   # to keep the cell wide enough even with all videos at 0%.
-        return '[{}] {}{}'.format(text, percent_text, pad)
-
-    def progress_bar_text_ascii(self, value):   # noqa
-        bars = 50
-        # ascii char 'l' takes up least width for most fonts.
-        return ' {} '.format('l' * (value * bars // 100))
-
-    def progress_bar_text_unicode(self, value):    # noqa
-        chars = ['▏', '▎', '▍', '▌', '▋', '▊', '▉', '█']
-
-        # 1 unicode block = 8 percent values. => 13 unicode blocks needed to represent counter 100, with right half of
-        # the last block being empty.
-        # To make it visually symmetric, we add one regular whitespace to the left.
-        unicode_space = ' '
-        ascii_space = ' '
-        if value > 0:
-            progress_text = '{}{}'.format(chars[-1] * (value // 8), chars[value % 8])
-            empty_text = '{}'.format(unicode_space * (13-len(progress_text)))
-            full_text = '{}{}{}'.format(ascii_space, progress_text, empty_text)
-        else:
-            # same 13 chars of unicode blocks, and 1 regular whitespace.
-            full_text = '{}{}'.format(ascii_space, unicode_space * 13)
-        return full_text
-
     def set_button_status(self):
+        """
+        reads the states of the buttons from the hidden state columns, and sets the button states appropriately.
+        """
         col_indexes = [x for x, v in enumerate(self.columns.values()) if v['type'] == 'state']
         num_buttons = len(col_indexes)
         for row, row_item in enumerate(self.sheet.get_sheet_data()):
@@ -450,6 +444,9 @@ class App:
         self.sheet.redraw()
 
     def get_button_state(self, key, video_exists, slides_exist, slides_exist_on_disk):  # noqa
+        """
+        Checks to identify when certain buttons should be enabled/disabled.
+        """
         state = True
         if key == 'Download Video' and video_exists:
             state = False
@@ -464,6 +461,9 @@ class App:
         return state
 
     def on_click_button_handler(self, args):
+        """
+        On click handler for all the buttons, calls the corresponding function as defined by self.columns
+        """
         (event, row, col) = args
         self.sheet.deselect('all', redraw=True)
 
@@ -484,6 +484,9 @@ class App:
         func(row, col)
 
     def disable_button(self, row, col, redraw=True):
+        """
+        Disable a button given it's row/col position.
+        """
         cs = self.colorscheme
         self.sheet.highlight_cells(
             row, col, bg=cs['disabled']['bg'],
@@ -495,6 +498,9 @@ class App:
         self.sheet.set_cell_data(row, state_button_col, False, redraw=redraw)
 
     def enable_button(self, row, col, redraw=True):
+        """
+        Enable a button given it's row/col position.
+        """
         cs = self.colorscheme
         odd_even_bg = cs['odd_row']['bg'] if row % 2 else cs['even_row']['bg']
         odd_even_fg = cs['odd_row']['fg'] if row % 2 else cs['even_row']['fg']
@@ -505,6 +511,11 @@ class App:
         self.sheet.set_cell_data(row, state_button_col, True, redraw=redraw)
 
     def get_index(self, row):
+        """
+        Find the values stored in the hidden column named 'Index', given a row record.
+        In case the row value has been updated due to sorting the table, Index field helps identify the new location
+        of the associated record.
+        """
         # find where is the Index column
         index_col = self.names.index('Index')
         # original row value as per the index column
@@ -516,7 +527,51 @@ class App:
         col_data = self.sheet.get_column_data(col_index)
         return col_data.index(index_value)
 
+    def progress_bar_text(self, value):
+        """
+        return progress bar text, calls the unicode/ascii implementation.
+        """
+        if self.conf.get('progress_bar') == 'unicode':
+            text = self.progress_bar_text_unicode(value)
+        else:
+            text = self.progress_bar_text_ascii(value)
+        percent_text = '{:3d}%'.format(value)
+        pad = ' ' * 4   # to keep the cell wide enough even with all videos at 0%.
+        return '[{}] {}{}'.format(text, percent_text, pad)
+
+    def progress_bar_text_ascii(self, value):   # noqa
+        """
+        progress bar implementation with ascii characters.
+        """
+        bars = 50
+        # ascii char 'l' takes up least width for most fonts.
+        return ' {} '.format('l' * (value * bars // 100))
+
+    def progress_bar_text_unicode(self, value):    # noqa
+        """
+        progress bar implementation with unicode blocks.
+        """
+        chars = ['▏', '▎', '▍', '▌', '▋', '▊', '▉', '█']
+
+        # 1 unicode block = 8 percent values. => 13 unicode blocks needed to represent counter 100, with right half of
+        # the last block being empty.
+        # To make it visually symmetric, we add one regular whitespace to the left.
+        unicode_space = ' '
+        ascii_space = ' '
+        if value > 0:
+            progress_text = '{}{}'.format(chars[-1] * (value // 8), chars[value % 8])
+            empty_text = '{}'.format(unicode_space * (13-len(progress_text)))
+            full_text = '{}{}{}'.format(ascii_space, progress_text, empty_text)
+        else:
+            # same 13 chars of unicode blocks, and 1 regular whitespace.
+            full_text = '{}{}'.format(ascii_space, unicode_space * 13)
+        return full_text
+
     def progress_bar_callback(self, count, row, col):
+        """
+        Callback function passed to the backend, where it computes the download progress.
+        Every time the function is called, it will update the progress bar value.
+        """
         updated_row = self.get_row_after_sort(row)
         new_text = self.progress_bar_text(count)
         if new_text != self.sheet.get_cell_data(updated_row, col):
@@ -599,20 +654,33 @@ class App:
         thread.start()
 
     def read_metadata(self, row):
+        """
+        We saved a hidden column 'metadata' containing metadata for each record.
+        Extract it, and eval it as python dict.
+        """
         metadata_col = self.names.index('metadata')
         data = self.sheet.get_cell_data(row, metadata_col)
         return ast.literal_eval(data)
 
     def open_folder(self, row, col):
+        """
+        fetch video_path's folder from metadata column's cell and open system launcher with it.
+        """
         data = self.read_metadata(row)
         video_folder_path = os.path.dirname(data.get('video_path'))
         Utils.open_file(video_folder_path)
 
     def play_video(self, row, col):
+        """
+        fetch video_path from metadata column's cell and open system launcher with it.
+        """
         data = self.read_metadata(row)
         Utils.open_file(data.get('video_path'))
 
     def show_slides(self, row, col):
+        """
+        fetch slides_path from metadata column's cell and open system launcher with it.
+        """
         data = self.read_metadata(row)
         Utils.open_file(data.get('slides_path'))
 
