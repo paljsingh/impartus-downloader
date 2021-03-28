@@ -279,6 +279,9 @@ class App:
         anchor.columnconfigure(0, weight=1)
         anchor.rowconfigure(0, weight=1)
 
+        # A mapping dict containing previously downloaded, and possibly moved around / renamed videos.
+        # extract their ttid and map those to the correct records, to avoid forcing the user to re-download.
+        offline_video_ttid_mapping = self.impartus.get_mkv_ttid_map()
         row = 0
         for subject in subjects:
             videos = self.impartus.get_videos(root_url, subject)
@@ -292,9 +295,16 @@ class App:
                 video_metadata = Utils.sanitize(video_metadata)
 
                 video_path = self.impartus.get_mkv_path(video_metadata)
+                if not os.path.exists(video_path):
+                    # or search from the downloaded videos, using video_ttid_map
+                    video_path_moved = offline_video_ttid_mapping.get(str(ttid))
+                    if video_path_moved:
+                        # Use the offline path, if a video found.
+                        video_path = video_path_moved
+
                 slides_path = self.impartus.get_slides_path(video_metadata)
 
-                video_exists = os.path.exists(video_path)
+                video_exists = video_path and os.path.exists(video_path)
                 slides_exist = video_slide_mapping.get(ttid)
                 slides_exist_on_disk, slides_path = self.impartus.slides_exist_on_disk(slides_path)
 

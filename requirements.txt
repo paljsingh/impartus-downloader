@@ -3,3 +3,4 @@ envyaml
 tk
 tksheet
 requests
+enzyme
