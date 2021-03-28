@@ -88,9 +88,10 @@ class Encoder:
                 Encoder.split_track(ts_files, duration, debug)
 
             logger.info("[{}]: encoding output file ..".format(ttid))
+            # adding ttid to metadata.
             (
-                os.system("ffmpeg -y -loglevel {level} {input} -c copy {maps} {output}"
-                          .format(level=log_level, input=' '.join(in_args), maps=' '.join(map_args),
+                os.system("ffmpeg -y -loglevel {level} {input} -metadata ttid={ttid} -c copy {maps} {output}"
+                          .format(level=log_level, ttid=ttid, input=' '.join(in_args), maps=' '.join(map_args),
                                   output=filepath))
             )
         except Exception as ex:

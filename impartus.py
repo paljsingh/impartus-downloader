@@ -3,6 +3,8 @@ import re
 import time
 import requests
 import logging
+from pathlib import Path
+import enzyme
 
 from config import Config
 from utils import Utils
@@ -17,6 +19,9 @@ class Impartus:
         self.token = None
         logging.basicConfig(level=logging.INFO)
         self.logger = logging.getLogger(self.__class__.__name__)
+
+        # enzyme library logs too much, suppress it's logs.
+        logging.getLogger("enzyme").setLevel(logging.FATAL)
 
         # reuse the auth token, if we are already authenticated.
         if token:
@@ -107,7 +112,6 @@ class Impartus:
                     items_processed += 1
                     items_processed_percent = items_processed * 100 // summary.get('media_files')
                     callback_func(items_processed_percent)
-                    # progress_bar_value.set(items_processed * 100 // summary.get('media_files'))
 
                 # All stream files for this track are decrypted, join them.
                 self.logger.info("[{}]: joining streams for track {} ..".format(ttid, track_index))
@@ -132,6 +136,22 @@ class Impartus:
 
     def get_slides_path(self, video_metadata):
         return self.conf.get('slides_path').format(**video_metadata, target_dir=self.download_dir)
+
+    def get_mkv_ttid_map(self):
+        mkv_ttid_map = dict()
+        for path in Path(self.download_dir).rglob('*.mkv'):
+            try:
+                with open(path, 'rb') as f:
+                    mkv = enzyme.MKV(f)
+                    if mkv.tags:
+                        for x in mkv.tags:
+                            for y in x.simpletags:
+                                if y.name == 'TTID':
+                                    mkv_ttid_map[y.string] = str(path)
+                                    raise GetOutOfLoop
+            except GetOutOfLoop:
+                pass
+        return mkv_ttid_map
 
     def slides_exist_on_disk(self, path):
         path_without_ext = path.rsplit('.', 1)[0]
@@ -208,3 +228,6 @@ class Impartus:
             self.logger.error('Error authenticating to {} with username {}.'.format(url, username))
             self.logger.error('Http response code: {}, response body: {}: '.format(response.status_code, response.text))
             return False
+
+class GetOutOfLoop( Exception ):
+    pass
