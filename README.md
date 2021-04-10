@@ -25,6 +25,8 @@ ___
 
 ## Installation / Run
 
+Ensure python version is >= 3.6
+
 #### Setup virtualenv (optional)
 >	$ virtualenv venv
 >
@@ -92,7 +94,9 @@ also, see color-schemes.conf
 
 ## Todo
 * Support downloading flipped lectures.
+* Map manually downloaded slides to videos.
 * Option to download auto-generated slides.
+* Add metadata tags to slides to preserve mapping across lecture topic / video rename.
 * Improve fuzzy matching of videos to slides by making use of slide name and content.
 
 
