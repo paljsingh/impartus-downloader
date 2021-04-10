@@ -483,7 +483,6 @@ class App:
         state_button_col = col + len([x for x, v in self.columns.items() if v['type'] == 'state'])
         state = self.sheet.get_cell_data(row, state_button_col)
         if state == 'False':    # data read from sheet is all string.
-            print("[{},{}] button disabled!".format(row, col))
             return
 
         # disable the pressed button (only Download buttons)
