@@ -58,19 +58,19 @@ class App:
         self.columns = {k: v for k, v in enumerate([
             # data fields
             {'name': 'Subject', 'show': True, 'type': 'data', 'mapping': 'subjectNameShort', 'title_case': False,
-             'sortable': True, 'truncate': False, 'header': 'Subject'},
+             'sortable': True, 'header': 'Subject'},
             {'name': 'Lecture #', 'show': True, 'type': 'data', 'mapping': 'seqNo', 'title_case': False,
-             'sortable': True, 'truncate': False, 'header': 'Lecture #'},
+             'sortable': True, 'header': 'Lecture #'},
             {'name': 'Professor', 'show': True, 'type': 'data', 'mapping': 'professorName_raw', 'title_case': True,
-             'sortable': True, 'truncate': True, 'header': 'Professor'},
+             'sortable': True, 'header': 'Professor'},
             {'name': 'Topic', 'show': True, 'type': 'data', 'mapping': 'topic_raw', 'title_case': True,
-             'sortable': True, 'truncate': True, 'header': 'Topic'},
+             'sortable': True, 'header': 'Topic'},
             {'name': 'Date', 'show': True, 'type': 'data', 'mapping': 'startDate', 'title_case': False,
-             'sortable': True, 'truncate': False, 'header': 'Date'},
+             'sortable': True, 'header': 'Date'},
             {'name': 'Duration', 'show': True, 'type': 'data', 'mapping': 'actualDurationReadable', 'title_case': False,
-             'sortable': True, 'truncate': False, 'header': 'Duration'},
+             'sortable': True, 'header': 'Duration'},
             {'name': 'Tracks', 'show': True, 'type': 'data', 'mapping': 'tapNToggle', 'title_case': False,
-             'sortable': True, 'truncate': False, 'header': 'Tracks'},
+             'sortable': True, 'header': 'Tracks'},
             # progress bar
             {'name': 'Downloaded?', 'show': True, 'type': 'progressbar', 'title_case': False, 'sortable': True,
              'header': 'Downloaded?'},
@@ -254,6 +254,7 @@ class App:
             header_font=(self.conf.get("content_font"), 12, "bold"),
             font=(self.conf.get('content_font'), 14, "normal"),
             align='center',
+            row_height="1",  # str value for row height in number of lines.
             header_grid_fg=cs['table']['grid'],
             index_grid_fg=cs['table']['grid'],
             header_align='center',
@@ -268,8 +269,10 @@ class App:
             "single_select",
             "column_select",
             "column_width_resize",
-            "row_height_resize",
-            "rc_select"
+            # "row_height_resize",
+            # "rc_select",
+            # "row_select",
+            "double_click_column_resize",
         ))
 
         self.set_headers()
@@ -326,11 +329,12 @@ class App:
                     if item['type'] == 'data':
                         text = video_metadata[item['mapping']]
                         # title case
-                        text = text.strip().title() if item.get('title_case') else text
+                        text = " ".join(text.splitlines()).strip().title() if item.get('title_case') else text
+                        # text = text.strip().title() if item.get('title_case') else text
 
-                        # truncate long fields
-                        if item['truncate'] and len(text) > self.conf.get('max_content_chars'):
-                            text = '{}..'.format(text[0:self.conf.get('max_content_chars')])
+                        # # truncate long fields
+                        # if item['truncate'] and len(text) > self.conf.get('max_content_chars'):
+                        #     text = '{}..'.format(text[0:self.conf.get('max_content_chars')])
                     elif item['type'] == 'progressbar':
                         value = 100 if video_exists else 0
                         text = self.progress_bar_text(value)
@@ -423,16 +427,20 @@ class App:
         Adjust column sizes after data has been filled.
         """
         # resize cells
-        self.sheet.set_all_cell_sizes_to_text()
-        # reset column widths to fill the screen
-        pad = 50
-        extra_width = self.frame_videos.winfo_width() - sum(self.sheet.get_column_widths()) - pad
+        self.sheet.set_all_column_widths()
 
-        # adjust extra width only to data columns.
-        sortable_columns = {x: True for x, v in self.columns.items() if v.get('show') and not v['type'] == 'progressbar'}
-        for col_num, col_width in enumerate(self.sheet.get_column_widths()):
-            if sortable_columns.get(col_num):
-                self.sheet.column_width(col_num, col_width + extra_width // len(sortable_columns))
+        # reset column widths to fill the screen
+        pad = 10
+        column_widths = self.sheet.get_column_widths()
+        table_width = self.sheet.RI.current_width + sum(column_widths) + len(column_widths) + pad
+        diff_width = self.frame_videos.winfo_width() - table_width
+
+        # adjust extra width only to top N data columns
+        n = 3
+        data_col_widths = {k: v for k, v in enumerate(column_widths) if self.columns[k]['type'] == 'data'}
+        top_n_cols = sorted(data_col_widths, key=data_col_widths.get, reverse=True)[:n]
+        for i in top_n_cols:
+            self.sheet.column_width(i, column_widths[i] + diff_width // n)
 
     def set_button_status(self):
         """
