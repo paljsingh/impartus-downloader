@@ -475,17 +475,20 @@ class App:
         On click handler for all the buttons, calls the corresponding function as defined by self.columns
         """
         (event, row, col) = args
-        self.sheet.deselect('all', redraw=True)
 
+        # not a button.
         if self.columns[col]['type'] != 'button':
+            self.sheet.deselect('all', redraw=True)
             return
 
+        # disabled button
         state_button_col = col + len([x for x, v in self.columns.items() if v['type'] == 'state'])
         state = self.sheet.get_cell_data(row, state_button_col)
         if state == 'False':    # data read from sheet is all string.
+            self.sheet.deselect('all', redraw=True)
             return
 
-        # disable the pressed button (only Download buttons)
+        # disable the button if it is one of the Download buttons, to prevent a re-download.
         if self.names[col] in ['Download Video', 'Download Slides']:
             self.disable_button(row, col)
 
