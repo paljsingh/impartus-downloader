@@ -58,19 +58,19 @@ class App:
         self.columns = {k: v for k, v in enumerate([
             # data fields
             {'name': 'Subject', 'show': True, 'type': 'data', 'mapping': 'subjectNameShort', 'title_case': False,
-             'sortable': True, 'truncate': False, 'header': 'Subject'},
+             'sortable': True, 'header': 'Subject'},
             {'name': 'Lecture #', 'show': True, 'type': 'data', 'mapping': 'seqNo', 'title_case': False,
-             'sortable': True, 'truncate': False, 'header': 'Lecture #'},
+             'sortable': True, 'header': 'Lecture #'},
             {'name': 'Professor', 'show': True, 'type': 'data', 'mapping': 'professorName_raw', 'title_case': True,
-             'sortable': True, 'truncate': True, 'header': 'Professor'},
+             'sortable': True, 'header': 'Professor'},
             {'name': 'Topic', 'show': True, 'type': 'data', 'mapping': 'topic_raw', 'title_case': True,
-             'sortable': True, 'truncate': True, 'header': 'Topic'},
+             'sortable': True, 'header': 'Topic'},
             {'name': 'Date', 'show': True, 'type': 'data', 'mapping': 'startDate', 'title_case': False,
-             'sortable': True, 'truncate': False, 'header': 'Date'},
+             'sortable': True, 'header': 'Date'},
             {'name': 'Duration', 'show': True, 'type': 'data', 'mapping': 'actualDurationReadable', 'title_case': False,
-             'sortable': True, 'truncate': False, 'header': 'Duration'},
+             'sortable': True, 'header': 'Duration'},
             {'name': 'Tracks', 'show': True, 'type': 'data', 'mapping': 'tapNToggle', 'title_case': False,
-             'sortable': True, 'truncate': False, 'header': 'Tracks'},
+             'sortable': True, 'header': 'Tracks'},
             # progress bar
             {'name': 'Downloaded?', 'show': True, 'type': 'progressbar', 'title_case': False, 'sortable': True,
              'header': 'Downloaded?'},
@@ -253,7 +253,8 @@ class App:
             header_fg=cs['header']['fg'],
             header_font=(self.conf.get("content_font"), 12, "bold"),
             font=(self.conf.get('content_font'), 14, "normal"),
-            align='center',
+            align='w',
+            row_height="1",  # str value for row height in number of lines.
             header_grid_fg=cs['table']['grid'],
             index_grid_fg=cs['table']['grid'],
             header_align='center',
@@ -268,8 +269,7 @@ class App:
             "single_select",
             "column_select",
             "column_width_resize",
-            "row_height_resize",
-            "rc_select"
+            "double_click_column_resize",
         ))
 
         self.set_headers()
@@ -304,15 +304,15 @@ class App:
 
                 slides_path = self.impartus.get_slides_path(video_metadata)
 
-                video_exists = video_path and os.path.exists(video_path)
-                slides_exist = video_slide_mapping.get(ttid)
+                video_exists_on_disk = video_path and os.path.exists(video_path)
+                slides_exist_on_server = video_slide_mapping.get(ttid)
                 slides_exist_on_disk, slides_path = self.impartus.slides_exist_on_disk(slides_path)
 
                 metadata = {
                     'video_metadata': video_metadata,
                     'video_path': video_path,
-                    'video_exists': video_exists,
-                    'slides_exist': slides_exist,
+                    'video_exists_on_disk': video_exists_on_disk,
+                    'slides_exist_on_server': slides_exist_on_server,
                     'slides_exist_on_disk': slides_exist_on_disk,
                     'slides_url': video_slide_mapping.get(ttid),
                     'slides_path': slides_path,
@@ -326,17 +326,21 @@ class App:
                     if item['type'] == 'data':
                         text = video_metadata[item['mapping']]
                         # title case
-                        text = text.strip().title() if item.get('title_case') else text
+                        text = " ".join(text.splitlines()).strip().title() if item.get('title_case') else text
+                        # text = text.strip().title() if item.get('title_case') else text
 
-                        # truncate long fields
-                        if item['truncate'] and len(text) > self.conf.get('max_content_chars'):
-                            text = '{}..'.format(text[0:self.conf.get('max_content_chars')])
+                        # # truncate long fields
+                        # if item['truncate'] and len(text) > self.conf.get('max_content_chars'):
+                        #     text = '{}..'.format(text[0:self.conf.get('max_content_chars')])
                     elif item['type'] == 'progressbar':
-                        value = 100 if video_exists else 0
-                        text = self.progress_bar_text(value)
+                        if video_exists_on_disk:
+                            text = self.progress_bar_text(100, processed=True)
+                        else:
+                            text = self.progress_bar_text(0)
+
                     elif item['type'] == 'button':
                         button_states.append(self.get_button_state(
-                            self.names[col], video_exists, slides_exist, slides_exist_on_disk)
+                            self.names[col], video_exists_on_disk, slides_exist_on_server, slides_exist_on_disk)
                         )
                         text = item.get('text')
                     elif item['type'] == 'state':
@@ -423,16 +427,20 @@ class App:
         Adjust column sizes after data has been filled.
         """
         # resize cells
-        self.sheet.set_all_cell_sizes_to_text()
-        # reset column widths to fill the screen
-        pad = 50
-        extra_width = self.frame_videos.winfo_width() - sum(self.sheet.get_column_widths()) - pad
+        self.sheet.set_all_column_widths()
 
-        # adjust extra width only to data columns.
-        sortable_columns = {x: True for x, v in self.columns.items() if v.get('show') and not v['type'] == 'progressbar'}
-        for col_num, col_width in enumerate(self.sheet.get_column_widths()):
-            if sortable_columns.get(col_num):
-                self.sheet.column_width(col_num, col_width + extra_width // len(sortable_columns))
+        # reset column widths to fill the screen
+        pad = 10
+        column_widths = self.sheet.get_column_widths()
+        table_width = self.sheet.RI.current_width + sum(column_widths) + len(column_widths) + pad
+        diff_width = self.frame_videos.winfo_width() - table_width
+
+        # adjust extra width only to top N data columns
+        n = 3
+        data_col_widths = {k: v for k, v in enumerate(column_widths) if self.columns[k]['type'] == 'data'}
+        top_n_cols = sorted(data_col_widths, key=data_col_widths.get, reverse=True)[:n]
+        for i in top_n_cols:
+            self.sheet.column_width(i, column_widths[i] + diff_width // n)
 
     def set_button_status(self):
         """
@@ -453,18 +461,18 @@ class App:
                     self.disable_button(row, col - num_buttons, redraw=False)
         self.sheet.redraw()
 
-    def get_button_state(self, key, video_exists, slides_exist, slides_exist_on_disk):  # noqa
+    def get_button_state(self, key, video_exists_on_disk, slides_exist_on_server, slides_exist_on_disk):  # noqa
         """
         Checks to identify when certain buttons should be enabled/disabled.
         """
         state = True
-        if key == 'Download Video' and video_exists:
+        if key == 'Download Video' and video_exists_on_disk:
             state = False
-        elif key == 'Open Folder' and not video_exists:
+        elif key == 'Open Folder' and not video_exists_on_disk:
             state = False
-        elif key == 'Play Video' and not video_exists:
+        elif key == 'Play Video' and not video_exists_on_disk:
             state = False
-        elif key == 'Download Slides' and (slides_exist_on_disk or not slides_exist):
+        elif key == 'Download Slides' and (slides_exist_on_disk or not slides_exist_on_server):
             state = False
         elif key == 'Show Slides' and not slides_exist_on_disk:
             state = False
@@ -475,17 +483,20 @@ class App:
         On click handler for all the buttons, calls the corresponding function as defined by self.columns
         """
         (event, row, col) = args
-        self.sheet.deselect('all', redraw=True)
 
+        # not a button.
         if self.columns[col]['type'] != 'button':
+            self.sheet.deselect('all', redraw=True)
             return
 
+        # disabled button
         state_button_col = col + len([x for x, v in self.columns.items() if v['type'] == 'state'])
         state = self.sheet.get_cell_data(row, state_button_col)
         if state == 'False':    # data read from sheet is all string.
+            self.sheet.deselect('all', redraw=True)
             return
 
-        # disable the pressed button (only Download buttons)
+        # disable the button if it is one of the Download buttons, to prevent a re-download.
         if self.names[col] in ['Download Video', 'Download Slides']:
             self.disable_button(row, col)
 
@@ -536,7 +547,7 @@ class App:
         col_data = self.sheet.get_column_data(col_index)
         return col_data.index(index_value)
 
-    def progress_bar_text(self, value):
+    def progress_bar_text(self, value, processed=False):
         """
         return progress bar text, calls the unicode/ascii implementation.
         """
@@ -544,17 +555,34 @@ class App:
             text = self.progress_bar_text_unicode(value)
         else:
             text = self.progress_bar_text_ascii(value)
-        percent_text = '{:3d}%'.format(value)
-        pad = ' ' * 4   # to keep the cell wide enough even with all videos at 0%.
-        return '[{}] {}{}'.format(text, percent_text, pad)
+
+        pad = ' ' * 2
+        if 0 < value < 100:
+            percent_text = '{:2d}%'.format(value)
+            status = percent_text
+        elif value == 0:
+            status = pad + '⃠' + pad
+        else:   # 100 %
+            if processed:
+                status = pad + '✓' + pad
+            else:
+                status = pad + '⧗' + pad
+        return '{} {}{}'.format(text, status, pad)
 
     def progress_bar_text_ascii(self, value):   # noqa
         """
         progress bar implementation with ascii characters.
         """
         bars = 50
-        # ascii char 'l' takes up least width for most fonts.
-        return ' {} '.format('l' * (value * bars // 100))
+        ascii_space = " "
+        if value > 0:
+            progress_text = '{}'.format('❘' * (value * bars // 100))
+            empty_text = '{}'.format(ascii_space * (bars - len(progress_text)))
+            full_text = '{}{} '.format(progress_text, empty_text)
+        else:
+            full_text = '{}'.format(ascii_space * bars)
+
+        return full_text
 
     def progress_bar_text_unicode(self, value):    # noqa
         """
@@ -562,27 +590,26 @@ class App:
         """
         chars = ['▏', '▎', '▍', '▌', '▋', '▊', '▉', '█']
 
-        # 1 unicode block = 8 percent values. => 13 unicode blocks needed to represent counter 100, with right half of
-        # the last block being empty.
-        # To make it visually symmetric, we add one regular whitespace to the left.
+        # 1 full unicode block = 8 percent values
+        # => 13 unicode blocks needed to represent counter 100.
         unicode_space = ' '
-        ascii_space = ' '
         if value > 0:
+            # progress_text: n characters, empty_text: 13-n characters
             progress_text = '{}{}'.format(chars[-1] * (value // 8), chars[value % 8])
             empty_text = '{}'.format(unicode_space * (13-len(progress_text)))
-            full_text = '{}{}{}'.format(ascii_space, progress_text, empty_text)
+            full_text = '{}{}'.format(progress_text, empty_text)
         else:
-            # same 13 chars of unicode blocks, and 1 regular whitespace.
-            full_text = '{}{}'.format(ascii_space, unicode_space * 13)
+            # all 13 unicode whitespace.
+            full_text = '{} '.format(unicode_space * 13)
         return full_text
 
-    def progress_bar_callback(self, count, row, col):
+    def progress_bar_callback(self, count, row, col, processed=False):
         """
         Callback function passed to the backend, where it computes the download progress.
         Every time the function is called, it will update the progress bar value.
         """
         updated_row = self.get_row_after_sort(row)
-        new_text = self.progress_bar_text(count)
+        new_text = self.progress_bar_text(count, processed)
         if new_text != self.sheet.get_cell_data(updated_row, col):
             self.sheet.set_cell_data(updated_row, col, new_text, redraw=True)
 
@@ -611,6 +638,10 @@ class App:
 
         # download complete, enable open / play buttons
         updated_row = self.get_row_after_sort(row_index)
+        # update progress bar status to complete.
+        self.progress_bar_callback(row=row_index, col=pb_col, count=100, processed=True)
+
+        # enable buttons.
         self.enable_button(updated_row, self.names.index('Open Folder'))
         self.enable_button(updated_row, self.names.index('Play Video'))
 
