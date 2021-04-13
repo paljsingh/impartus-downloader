@@ -253,7 +253,7 @@ class App:
             header_fg=cs['header']['fg'],
             header_font=(self.conf.get("content_font"), 12, "bold"),
             font=(self.conf.get('content_font'), 14, "normal"),
-            align='center',
+            align='w',
             row_height="1",  # str value for row height in number of lines.
             header_grid_fg=cs['table']['grid'],
             index_grid_fg=cs['table']['grid'],
@@ -269,9 +269,6 @@ class App:
             "single_select",
             "column_select",
             "column_width_resize",
-            # "row_height_resize",
-            # "rc_select",
-            # "row_select",
             "double_click_column_resize",
         ))
 
