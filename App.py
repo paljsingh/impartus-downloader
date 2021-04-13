@@ -304,15 +304,15 @@ class App:
 
                 slides_path = self.impartus.get_slides_path(video_metadata)
 
-                video_exists = video_path and os.path.exists(video_path)
-                slides_exist = video_slide_mapping.get(ttid)
+                video_exists_on_disk = video_path and os.path.exists(video_path)
+                slides_exist_on_server = video_slide_mapping.get(ttid)
                 slides_exist_on_disk, slides_path = self.impartus.slides_exist_on_disk(slides_path)
 
                 metadata = {
                     'video_metadata': video_metadata,
                     'video_path': video_path,
-                    'video_exists': video_exists,
-                    'slides_exist': slides_exist,
+                    'video_exists_on_disk': video_exists_on_disk,
+                    'slides_exist_on_server': slides_exist_on_server,
                     'slides_exist_on_disk': slides_exist_on_disk,
                     'slides_url': video_slide_mapping.get(ttid),
                     'slides_path': slides_path,
@@ -333,14 +333,14 @@ class App:
                         # if item['truncate'] and len(text) > self.conf.get('max_content_chars'):
                         #     text = '{}..'.format(text[0:self.conf.get('max_content_chars')])
                     elif item['type'] == 'progressbar':
-                        if video_exists:
+                        if video_exists_on_disk:
                             text = self.progress_bar_text(100, processed=True)
                         else:
                             text = self.progress_bar_text(0)
 
                     elif item['type'] == 'button':
                         button_states.append(self.get_button_state(
-                            self.names[col], video_exists, slides_exist, slides_exist_on_disk)
+                            self.names[col], video_exists_on_disk, slides_exist_on_server, slides_exist_on_disk)
                         )
                         text = item.get('text')
                     elif item['type'] == 'state':
@@ -461,18 +461,18 @@ class App:
                     self.disable_button(row, col - num_buttons, redraw=False)
         self.sheet.redraw()
 
-    def get_button_state(self, key, video_exists, slides_exist, slides_exist_on_disk):  # noqa
+    def get_button_state(self, key, video_exists_on_disk, slides_exist_on_server, slides_exist_on_disk):  # noqa
         """
         Checks to identify when certain buttons should be enabled/disabled.
         """
         state = True
-        if key == 'Download Video' and video_exists:
+        if key == 'Download Video' and video_exists_on_disk:
             state = False
-        elif key == 'Open Folder' and not video_exists:
+        elif key == 'Open Folder' and not video_exists_on_disk:
             state = False
-        elif key == 'Play Video' and not video_exists:
+        elif key == 'Play Video' and not video_exists_on_disk:
             state = False
-        elif key == 'Download Slides' and (slides_exist_on_disk or not slides_exist):
+        elif key == 'Download Slides' and (slides_exist_on_disk or not slides_exist_on_server):
             state = False
         elif key == 'Show Slides' and not slides_exist_on_disk:
             state = False
@@ -600,7 +600,7 @@ class App:
             full_text = '{}{}'.format(progress_text, empty_text)
         else:
             # all 13 unicode whitespace.
-            full_text = '{}'.format(unicode_space * 13)
+            full_text = '{} '.format(unicode_space * 13)
         return full_text
 
     def progress_bar_callback(self, count, row, col, processed=False):
