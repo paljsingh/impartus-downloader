@@ -555,9 +555,12 @@ class App:
             text = self.progress_bar_text_unicode(value)
         else:
             text = self.progress_bar_text_ascii(value)
-        percent_text = '{:3d}%'.format(value)
-        pad = ' ' * 4   # to keep the cell wide enough even with all videos at 0%.
-        return '[{}] {}{}'.format(text, percent_text, pad)
+        if 0 < value < 100:
+            percent_text = ' {:3d}%'.format(value)
+        else:
+            percent_text = ' ' * 10
+        # pad = ' ' * 4   # to keep the cell wide enough even with all videos at 0%.
+        return '{}{}'.format(text, percent_text)
 
     def progress_bar_text_ascii(self, value):   # noqa
         """
