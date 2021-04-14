@@ -23,7 +23,10 @@ class App:
 
         # element groups
         self.frame_auth = None
-        self.frame_videos = None
+        self.frame_toolbar = None
+        self.frame_content = None
+
+        # content table
         self.sheet = None
 
         # sort options
@@ -37,13 +40,16 @@ class App:
 
         # backend
         self.impartus = None
-        self.conf = None
 
         # fields
         self.columns = None
 
-        self.colorscheme_config = None
-        self.colorscheme = None
+        # configs
+        self.conf = Config.load('yaml.conf')
+        self.colorscheme_config = Config.load('color-schemes.conf')
+        self.colorscheme = self.colorscheme_config.get(self.colorscheme_config.get('default'))
+        self.colorscheme_buttons = list()
+        self.color_var = None
 
         self._init_backend()
         self._init_ui()
@@ -65,12 +71,12 @@ class App:
              'sortable': True, 'header': 'Professor'},
             {'name': 'Topic', 'show': True, 'type': 'data', 'mapping': 'topic_raw', 'title_case': True,
              'sortable': True, 'header': 'Topic'},
-            {'name': 'Date', 'show': True, 'type': 'data', 'mapping': 'startDate', 'title_case': False,
-             'sortable': True, 'header': 'Date'},
             {'name': 'Duration', 'show': True, 'type': 'data', 'mapping': 'actualDurationReadable', 'title_case': False,
              'sortable': True, 'header': 'Duration'},
             {'name': 'Tracks', 'show': True, 'type': 'data', 'mapping': 'tapNToggle', 'title_case': False,
              'sortable': True, 'header': 'Tracks'},
+            {'name': 'Date', 'show': True, 'type': 'data', 'mapping': 'startDate', 'title_case': False,
+             'sortable': True, 'header': 'Date'},
             # progress bar
             {'name': 'Downloaded?', 'show': True, 'type': 'progressbar', 'title_case': False, 'sortable': True,
              'header': 'Downloaded?'},
@@ -102,10 +108,8 @@ class App:
         """
         UI initialization.
         """
-        self.colorscheme_config = Config.load('color-schemes.conf')
-        self.colorscheme = self.colorscheme_config.get(self.colorscheme_config.get('default'))
-
         self.app = tkinter.Tk()
+
         pad = 3
         self.screen_width = self.app.winfo_screenwidth() - pad
         self.screen_height = self.app.winfo_screenheight() - pad
@@ -115,18 +119,23 @@ class App:
         self.app.rowconfigure(0, weight=0)
         self.app.rowconfigure(1, weight=1)
         self.app.columnconfigure(0, weight=1)
-        self.app.config(bg=self.colorscheme['root']['bg'])
 
         default_font = font.nametofont("TkDefaultFont")
         default_font.configure(family=self.conf.get('content_font'), size=14)
         text_font = font.nametofont("TkTextFont")
         text_font.configure(family=self.conf.get('content_font'), size=14)
 
-        self.add_auth_frame(self.app)
+        self.add_authentication_form(self.app)
+        self.add_toolbar(self.app)
+        self.add_content_frame(self.app)
+        self.app.rowconfigure(0, weight=0)
+        self.app.rowconfigure(1, weight=0)
+        self.app.rowconfigure(2, weight=1)
 
+        self.set_color_scheme(self.colorscheme)
         self.app.mainloop()
 
-    def add_auth_frame(self, anchor):
+    def add_authentication_form(self, anchor):
         """
         Adds authentication widgets and blank frame for holding video/lectures data.
         """
@@ -141,48 +150,133 @@ class App:
             'pady': 5,
         }
 
+        frame_auth = tk.Frame(anchor, padx=0, pady=0)
+        frame_auth.grid(row=0, column=0)
+        self.frame_auth = frame_auth
+
+        # URL Label and Entry box.
+        self.url_label = tk.Label(frame_auth, text='URL')
+        self.url_label.grid(row=0, column=0, **label_options)
+        self.url_box = tk.Entry(frame_auth, width=30)
+        self.url_box.insert(tk.END, self.conf.get('impartus_url'))
+        self.url_box.grid(row=0, column=1, **entry_options)
+
+        # Login Id Label and Entry box.
+        self.user_label = tk.Label(frame_auth, text='Login (email) ')
+        self.user_label.grid(row=1, column=0, **label_options)
+        self.user_box = tk.Entry(frame_auth, width=30)
+        self.user_box.insert(tk.END, self.conf.get('login_email'))
+        self.user_box.grid(row=1, column=1, **entry_options)
+
+        self.pass_label = tk.Label(frame_auth, text='Password ')
+        self.pass_label.grid(row=2, column=0, **label_options)
+        self.pass_box = tk.Entry(frame_auth, text='', show="*", width=30)
+        self.pass_box.bind("<Return>", self.get_videos)
+        self.pass_box.grid(row=2, column=1, **entry_options)
+
+        self.show_videos_button = tk.Button(frame_auth, text='Show Videos', command=self.get_videos)
+        self.show_videos_button.grid(row=2, column=2)
+
+        # set focus to user entry if it is empty, else to password box.
+        if self.user_box.get() == '':
+            self.user_box.focus()
+        else:
+            self.pass_box.focus()
+
+    def add_toolbar(self, anchor):
+        button_options = {
+            'borderwidth': 0
+        }
+        grid_options = {
+            'padx': 0, 'pady': 0, 'ipadx': 0, 'ipady': 0,
+        }
+        self.frame_toolbar = tk.Frame(anchor, padx=0, pady=0)
+
+        refresh_button = tk.Button(self.frame_toolbar, text='Refresh ⟳', **button_options)
+        refresh_button.grid(row=0, column=1, **grid_options)
+
+        display_columns_button = tk.Button(self.frame_toolbar, text='Columns ▼', **button_options)
+        display_columns_button.grid(row=0, column=2, **grid_options)
+
+        add_offline_slides_button = tk.Button(self.frame_toolbar, text='Slides +', **button_options)
+        add_offline_slides_button.grid(row=0, column=3, **grid_options)
+
+        subject_edit_button = tk.Button(self.frame_toolbar, text='Subject ✎', **button_options)
+        subject_edit_button.grid(row=0, column=4, **grid_options)
+
+        path_edit_button = tk.Button(self.frame_toolbar, text='Video/Slides Location  ✎', **button_options)
+        path_edit_button.grid(row=0, column=5, **grid_options)
+
+        # empty column, to keep columns 1-5 centered
+        self.frame_toolbar.columnconfigure(0, weight=1)
+        # move the color scheme buttons to extreme right
+        self.frame_toolbar.columnconfigure(6, weight=1)
+
+        color_var = tk.IntVar()
+        self.color_var = color_var
+        i = 0
+        for k in self.colorscheme_config.keys():
+            # skip non-dict keys, skip nested keys
+            if type(self.colorscheme_config[k]) == dict and '.' not in k:
+                colorscheme_button = tk.Radiobutton(
+                    self.frame_toolbar, var=color_var, value=i, bg=self.colorscheme_config[k].get('theme_color'),
+                    command=partial(self.set_color_scheme, self.colorscheme_config[k])
+                )
+                colorscheme_button.grid(row=0, column=6+i, **grid_options, sticky='e')
+                self.colorscheme_buttons.append(colorscheme_button)
+
+                # Set the radio button to indicate currently active color scheme.
+                if self.colorscheme_config.get('default') == k:
+                    self.color_var.set(i)
+                i += 1
+
+    def set_color_scheme(self, colorscheme):
+        self.colorscheme = colorscheme
+
+        print('setting color scheme: {}'.format(colorscheme))
+        cs = colorscheme
+        self.app.config(bg=cs['root']['bg'])
+        self.frame_auth.configure(bg=cs['root']['bg'])
+        self.frame_content.configure(bg=cs['root']['bg'])
+        self.frame_toolbar.configure(bg=cs['root']['bg'])
+
         color_options = {
             'fg': cs['root']['fg'],
             'bg': cs['root']['bg'],
         }
+        self.url_label.configure(**color_options)
+        self.url_box.configure(**color_options)
+        self.user_label.configure(**color_options)
+        self.user_box.configure(**color_options)
+        self.pass_label.configure(**color_options)
+        self.pass_box.configure(**color_options)
 
-        frame_auth = tk.Frame(anchor, padx=0, pady=0, bg=cs['root']['bg'])
-        frame_auth.grid(row=0, column=0)
-        self.frame_auth = frame_auth
+        if self.sheet:
+            self.sheet.set_options(
+                frame_bg=cs['table']['bg'],
+                table_bg=cs['table']['bg'],
+                table_fg=cs['table']['fg'],
+                header_bg=cs['header']['bg'],
+                header_fg=cs['header']['fg'],
+                header_grid_fg=cs['table']['grid'],
+                index_grid_fg=cs['table']['grid'],
+                header_border_fg=cs['table']['grid'],
+                index_border_fg=cs['table']['grid'],
+                table_grid_fg=cs['table']['grid'],
+                top_left_bg=cs['header']['bg'],
+                top_left_fg=cs['header']['bg']
+            )
 
-        frame_videos = tk.Frame(anchor, padx=0, pady=0, bg=cs['root']['bg'])
-        frame_videos.grid(row=1, column=0, sticky='nsew')
-        self.frame_videos = frame_videos
+            self.odd_even_color()
+            self.progress_bar_color(redraw=False)
+            self.set_button_status()
+            self.sheet.refresh()
 
-        # URL Label and Entry box.
-        tk.Label(frame_auth, text='URL', **color_options).grid(row=0, column=0, **label_options)
-        url_box = tk.Entry(frame_auth, width=30, **color_options)
-        url_box.insert(tk.END, self.conf.get('impartus_url'))
-        url_box.grid(row=0, column=1, **entry_options)
-        self.url_box = url_box
-
-        # Login Id Label and Entry box.
-        tk.Label(frame_auth, text='Login (email) ', **color_options).grid(row=1, column=0, **label_options)
-        user_box = tk.Entry(frame_auth, width=30, **color_options)
-        user_box.insert(tk.END, self.conf.get('login_email'))
-        user_box.grid(row=1, column=1, **entry_options)
-        self.user_box = user_box
-
-        tk.Label(frame_auth, text='Password ', **color_options).grid(row=2, column=0, **label_options)
-        pass_box = tk.Entry(frame_auth, text='', show="*", width=30, **color_options)
-        pass_box.bind("<Return>", self.get_videos)
-        pass_box.grid(row=2, column=1, **entry_options)
-        self.pass_box = pass_box
-
-        show_videos_button = tk.Button(frame_auth, text='Show Videos', command=self.get_videos)
-        show_videos_button.grid(row=2, column=2)
-        self.show_videos_button = show_videos_button
-
-        # set focus to user entry if it is empty, else to password box.
-        if user_box.get() == '':
-            user_box.focus()
-        else:
-            pass_box.focus()
+    def add_content_frame(self, anchor):
+        cs = self.colorscheme
+        frame_content = tk.Frame(anchor, padx=0, pady=0)
+        frame_content.grid(row=2, column=0, sticky='nsew')
+        self.frame_content = frame_content
 
     def get_videos(self, event=None):  # noqa
         """
@@ -204,12 +298,19 @@ class App:
                 tkinter.messagebox.showerror('Error', 'Error authenticating, see console logs for details.')
                 self.show_videos_button.config(state='normal')
                 return
+
         subjects = self.impartus.get_subjects(root_url)
 
-        # show table of videos under frame_videos
-        frame = self.frame_videos
+        # hide the authentication frame.
+        self.frame_auth.grid_forget()
+
+        # show toolbar now.
+        self.frame_toolbar.grid(row=1, column=0, sticky='ew')
+
+        # show table of videos under frame_content
+        frame = self.frame_content
         self.set_display_widgets(subjects, root_url, frame)
-        self.show_videos_button.config(state='normal', text='Reload')
+
 
     def sort_table(self, args):
         """
@@ -243,25 +344,17 @@ class App:
         cs = self.colorscheme
 
         sheet = Sheet(
-            anchor, frame_bg=cs['table']['bg'],
-            table_bg=cs['table']['bg'],
-            table_fg=cs['table']['fg'],
-            table_grid_fg=cs['table']['grid'],
-            top_left_bg=cs['header']['bg'],
-            top_left_fg=cs['header']['bg'],
-            header_bg=cs['header']['bg'],
-            header_fg=cs['header']['fg'],
+            anchor,
             header_font=(self.conf.get("content_font"), 12, "bold"),
             font=(self.conf.get('content_font'), 14, "normal"),
             align='w',
             row_height="1",  # str value for row height in number of lines.
-            header_grid_fg=cs['table']['grid'],
-            index_grid_fg=cs['table']['grid'],
+            row_index_align="w",
+            auto_resize_default_row_index=False,
+            row_index_width=40,
             header_align='center',
             empty_horizontal=0,
             empty_vertical=0,
-            header_border_fg=cs['table']['grid'],
-            index_border_fg=cs['table']['grid'],
         )
         self.sheet = sheet
 
@@ -327,11 +420,6 @@ class App:
                         text = video_metadata[item['mapping']]
                         # title case
                         text = " ".join(text.splitlines()).strip().title() if item.get('title_case') else text
-                        # text = text.strip().title() if item.get('title_case') else text
-
-                        # # truncate long fields
-                        # if item['truncate'] and len(text) > self.conf.get('max_content_chars'):
-                        #     text = '{}..'.format(text[0:self.conf.get('max_content_chars')])
                     elif item['type'] == 'progressbar':
                         if video_exists_on_disk:
                             text = self.progress_bar_text(100, processed=True)
@@ -375,7 +463,6 @@ class App:
                 continue
 
             # only sortable headers.
-            sort_icon = None
             if h == sort_by:
                 sort_icon = '▼' if sort_order == 'desc' else '▲'
             else:
@@ -390,7 +477,7 @@ class App:
         self.odd_even_color()
         self.progress_bar_color()
 
-    def progress_bar_color(self):
+    def progress_bar_color(self, redraw=True):
         """
         Set progress bar color.
         """
@@ -401,8 +488,7 @@ class App:
         for row in range(num_rows):
             odd_even_bg = cs['odd_row']['bg'] if row % 2 else cs['even_row']['bg']
             self.sheet.highlight_cells(
-                row, col, fg=cs['progressbar']['fg'], bg=odd_even_bg, redraw=True)
-            self.sheet.align_columns(col, 'w')
+                row, col, fg=cs['progressbar']['fg'], bg=odd_even_bg, redraw=redraw)
 
     def odd_even_color(self):
         """
@@ -430,19 +516,19 @@ class App:
         self.sheet.set_all_column_widths()
 
         # reset column widths to fill the screen
-        pad = 10
+        pad = 5
         column_widths = self.sheet.get_column_widths()
         table_width = self.sheet.RI.current_width + sum(column_widths) + len(column_widths) + pad
-        diff_width = self.frame_videos.winfo_width() - table_width
+        diff_width = self.frame_content.winfo_width() - table_width
 
         # adjust extra width only to top N data columns
-        n = 3
+        n = 2
         data_col_widths = {k: v for k, v in enumerate(column_widths) if self.columns[k]['type'] == 'data'}
         top_n_cols = sorted(data_col_widths, key=data_col_widths.get, reverse=True)[:n]
         for i in top_n_cols:
             self.sheet.column_width(i, column_widths[i] + diff_width // n)
 
-    def set_button_status(self):
+    def set_button_status(self, redraw=False):
         """
         reads the states of the buttons from the hidden state columns, and sets the button states appropriately.
         """
@@ -456,9 +542,9 @@ class App:
                 state = str(row_item[col])
 
                 if state == 'True':
-                    self.enable_button(row, col - num_buttons, redraw=False)
+                    self.enable_button(row, col - num_buttons, redraw=redraw)
                 elif state == 'False':
-                    self.disable_button(row, col - num_buttons, redraw=False)
+                    self.disable_button(row, col - num_buttons, redraw=redraw)
         self.sheet.redraw()
 
     def get_button_state(self, key, video_exists_on_disk, slides_exist_on_server, slides_exist_on_disk):  # noqa
