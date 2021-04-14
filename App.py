@@ -16,9 +16,12 @@ from utils import Utils
 class App:
     def __init__(self):
         # ui elements
-        self.user_box = None
-        self.pass_box = None
+        self.url_label = None
         self.url_box = None
+        self.user_label = None
+        self.user_box = None
+        self.pass_label = None
+        self.pass_box = None
         self.show_videos_button = None
 
         # element groups
@@ -33,6 +36,7 @@ class App:
         self.sort_by = None
         self.sort_order = None
 
+        # threads for downloading videos / slides.
         self.threads = list()
 
         # root container
@@ -44,12 +48,20 @@ class App:
         # fields
         self.columns = None
 
+        # toolbar buttons
+        self.reload_button = None
+        self.display_columns_dropdown = None
+        self.add_offline_slides_button = None
+        self.edit_subject_button = None
+        self.edit_path_button = None
+        self.colorscheme_buttons = list()
+        self.display_columns_vars = list()
+
         # configs
         self.conf = Config.load('yaml.conf')
         self.colorscheme_config = Config.load('color-schemes.conf')
         self.colorscheme = self.colorscheme_config.get(self.colorscheme_config.get('default'))
-        self.colorscheme_buttons = list()
-        self.color_var = None
+        self.color_var = None   # to hold color-scheme value
 
         self._init_backend()
         self._init_ui()
@@ -132,7 +144,7 @@ class App:
         self.app.rowconfigure(1, weight=0)
         self.app.rowconfigure(2, weight=1)
 
-        self.set_color_scheme(self.colorscheme)
+        self.set_color_scheme()
         self.app.mainloop()
 
     def add_authentication_form(self, anchor):
@@ -188,24 +200,36 @@ class App:
             'borderwidth': 0
         }
         grid_options = {
-            'padx': 0, 'pady': 0, 'ipadx': 0, 'ipady': 0,
+            'padx': 10, 'pady': 0, 'ipadx': 10, 'ipady': 0,
         }
         self.frame_toolbar = tk.Frame(anchor, padx=0, pady=0)
 
-        refresh_button = tk.Button(self.frame_toolbar, text='Refresh ⟳', **button_options)
-        refresh_button.grid(row=0, column=1, **grid_options)
+        self.reload_button = tk.Button(self.frame_toolbar, text='Reload ⟳', command=self.get_videos, **button_options)
+        self.reload_button.grid(row=0, column=1, **grid_options)
 
-        display_columns_button = tk.Button(self.frame_toolbar, text='Columns ▼', **button_options)
-        display_columns_button.grid(row=0, column=2, **grid_options)
+        self.add_offline_slides_button = tk.Button(
+            self.frame_toolbar, text='Slides +', command=self.donothing, **button_options)
+        self.add_offline_slides_button.grid(row=0, column=2, **grid_options)
 
-        add_offline_slides_button = tk.Button(self.frame_toolbar, text='Slides +', **button_options)
-        add_offline_slides_button.grid(row=0, column=3, **grid_options)
+        self.edit_subject_button = tk.Button(self.frame_toolbar, text='Subject ✎', command=self.donothing,
+                                             **button_options)
+        self.edit_subject_button.grid(row=0, column=3, **grid_options)
 
-        subject_edit_button = tk.Button(self.frame_toolbar, text='Subject ✎', **button_options)
-        subject_edit_button.grid(row=0, column=4, **grid_options)
+        self.edit_path_button = tk.Button(self.frame_toolbar, text='Video/Slides Location  ✎', command=self.donothing,
+                                          **button_options)
+        self.edit_path_button.grid(row=0, column=4, **grid_options)
 
-        path_edit_button = tk.Button(self.frame_toolbar, text='Video/Slides Location  ✎', **button_options)
-        path_edit_button.grid(row=0, column=5, **grid_options)
+        dropdown = tk.Menubutton(self.frame_toolbar, text='Columns', **button_options)
+        dropdown.menu = tk.Menu(dropdown, tearoff=1)
+        dropdown['menu'] = dropdown.menu
+        for column in self.columns.values():
+            if column.get('show'):
+                item = tk.IntVar(None, 1)
+                dropdown.menu.add_checkbutton(label=column['header'], variable=item, onvalue=1, offvalue=0,
+                                              command=self.set_display_columns)
+                self.display_columns_vars.append(item)
+        dropdown.grid(row=0, column=5, **grid_options)
+        self.display_columns_dropdown = dropdown
 
         # empty column, to keep columns 1-5 centered
         self.frame_toolbar.columnconfigure(0, weight=1)
@@ -214,6 +238,10 @@ class App:
 
         color_var = tk.IntVar()
         self.color_var = color_var
+        grid_options_cs = {
+            'padx': 0, 'pady': 0, 'ipadx': 0, 'ipady': 0,
+        }
+
         i = 0
         for k in self.colorscheme_config.keys():
             # skip non-dict keys, skip nested keys
@@ -222,7 +250,7 @@ class App:
                     self.frame_toolbar, var=color_var, value=i, bg=self.colorscheme_config[k].get('theme_color'),
                     command=partial(self.set_color_scheme, self.colorscheme_config[k])
                 )
-                colorscheme_button.grid(row=0, column=6+i, **grid_options, sticky='e')
+                colorscheme_button.grid(row=0, column=6+i, **grid_options_cs, sticky='e')
                 self.colorscheme_buttons.append(colorscheme_button)
 
                 # Set the radio button to indicate currently active color scheme.
@@ -230,11 +258,23 @@ class App:
                     self.color_var.set(i)
                 i += 1
 
-    def set_color_scheme(self, colorscheme):
-        self.colorscheme = colorscheme
+    def donothing(self):
+        pass
 
-        print('setting color scheme: {}'.format(colorscheme))
-        cs = colorscheme
+    def set_display_columns(self):
+        column_states = [i for i, v in enumerate(self.display_columns_vars) if v.get() == 1]
+        self.sheet.display_columns(indexes=column_states, enable=True, redraw=False)
+        self.reset_column_sizes()
+        self.sheet.refresh()
+
+    def set_color_scheme(self, colorscheme=None):
+        if colorscheme:
+            self.colorscheme = colorscheme
+
+        if not self.colorscheme:
+            self.colorscheme = self.colorscheme_config.get(self.colorscheme_config.get('default'))
+
+        cs = self.colorscheme
         self.app.config(bg=cs['root']['bg'])
         self.frame_auth.configure(bg=cs['root']['bg'])
         self.frame_content.configure(bg=cs['root']['bg'])
@@ -267,9 +307,9 @@ class App:
                 top_left_fg=cs['header']['bg']
             )
 
-            self.odd_even_color()
+            self.odd_even_color(redraw=False)
             self.progress_bar_color(redraw=False)
-            self.set_button_status()
+            self.set_button_status(redraw=False)
             self.sheet.refresh()
 
     def add_content_frame(self, anchor):
@@ -285,6 +325,7 @@ class App:
         """
 
         self.show_videos_button.config(state='disabled')
+        self.reload_button.config(state='disabled')
         username = self.user_box.get()
         password = self.pass_box.get()
         root_url = self.url_box.get()
@@ -299,8 +340,6 @@ class App:
                 self.show_videos_button.config(state='normal')
                 return
 
-        subjects = self.impartus.get_subjects(root_url)
-
         # hide the authentication frame.
         self.frame_auth.grid_forget()
 
@@ -308,19 +347,22 @@ class App:
         self.frame_toolbar.grid(row=1, column=0, sticky='ew')
 
         # show table of videos under frame_content
-        frame = self.frame_content
-        self.set_display_widgets(subjects, root_url, frame)
-
+        self.set_display_widgets(self.frame_content)
+        self.reload_button.config(state='normal')
 
     def sort_table(self, args):
         """
         Sorts the table content.
         """
         col = args[1]
+        real_col = self.get_real_col(col)
         self.sheet.deselect("all")
-        if not self.columns[col].get('sortable'):
+
+        if not self.columns[real_col].get('sortable'):
             return
-        sort_by = self.names[col]
+
+        sort_by = self.names[real_col]
+
         if sort_by == self.sort_by:
             sort_order = 'asc' if self.sort_order == 'desc' else 'desc'
         else:
@@ -331,18 +373,17 @@ class App:
         reverse = True if sort_order == 'desc' else False
 
         table_data = self.sheet.get_sheet_data()
-        table_data.sort(key=lambda x: x[col], reverse=reverse)
+        table_data.sort(key=lambda x: x[real_col], reverse=reverse)
 
         self.set_headers(sort_by, sort_order)
         self.set_button_status()
+        self.sheet.refresh()
 
-    def set_display_widgets(self, subjects, root_url, anchor):
+    def set_display_widgets(self, anchor):
         """
         Create the table/sheet.
         Fill in the data for table content, Set the buttons and their states.
         """
-        cs = self.colorscheme
-
         sheet = Sheet(
             anchor,
             header_font=(self.conf.get("content_font"), 12, "bold"),
@@ -357,8 +398,9 @@ class App:
             empty_vertical=0,
         )
         self.sheet = sheet
+        self.sheet.grid(row=0, column=0, sticky='nsew')
 
-        sheet.enable_bindings((
+        self.sheet.enable_bindings((
             "single_select",
             "column_select",
             "column_width_resize",
@@ -367,10 +409,16 @@ class App:
 
         self.set_headers()
 
-        indexes = [x for x, v in self.columns.items() if v['show']]
-        sheet.display_columns(indexes=indexes, enable=True)
+        self.set_display_columns()
         anchor.columnconfigure(0, weight=1)
         anchor.rowconfigure(0, weight=1)
+        self.sheet.extra_bindings('column_select', self.sort_table)
+        self.sheet.extra_bindings('cell_select', self.on_click_button_handler)
+        self.fetch_and_fill_content()
+
+    def fetch_and_fill_content(self):
+        root_url = self.url_box.get()
+        subjects = self.impartus.get_subjects(root_url)
 
         # A mapping dict containing previously downloaded, and possibly moved around / renamed videos.
         # extract their ttid and map those to the correct records, to avoid forcing the user to re-download.
@@ -437,19 +485,15 @@ class App:
                         text = metadata
 
                     row_items.append(text)
-                sheet.insert_row(values=row_items, idx='end')
+                self.sheet.insert_row(values=row_items, idx='end')
                 row += 1
 
         self.reset_column_sizes()
         self.decorate()
 
-        sheet.extra_bindings('column_select', self.sort_table)
-        sheet.extra_bindings('cell_select', self.on_click_button_handler)
-
         # update button status
-        self.set_button_status()
-
-        sheet.grid(row=0, column=0, sticky='nsew')
+        self.set_button_status(redraw=True)
+        self.sheet.grid(row=0, column=0, sticky='nsew')
 
     def set_headers(self, sort_by=None, sort_order=None):
         """
@@ -474,6 +518,7 @@ class App:
         """
         calls multiple ui related tweaks.
         """
+        self.set_color_scheme()
         self.odd_even_color()
         self.progress_bar_color()
 
@@ -490,7 +535,7 @@ class App:
             self.sheet.highlight_cells(
                 row, col, fg=cs['progressbar']['fg'], bg=odd_even_bg, redraw=redraw)
 
-    def odd_even_color(self):
+    def odd_even_color(self, redraw=False):
         """
         Apply odd/even colors for table for better looking UI.
         """
@@ -500,12 +545,14 @@ class App:
         self.sheet.highlight_rows(
             list(range(0, num_rows, 2)),
             bg=cs['even_row']['bg'],
-            fg=cs['even_row']['fg']
+            fg=cs['even_row']['fg'],
+            redraw=redraw
         )
         self.sheet.highlight_rows(
             list(range(1, num_rows, 2)),
             bg=cs['odd_row']['bg'],
-            fg=cs['odd_row']['fg']
+            fg=cs['odd_row']['fg'],
+            redraw=redraw
         )
 
     def reset_column_sizes(self):
@@ -545,7 +592,6 @@ class App:
                     self.enable_button(row, col - num_buttons, redraw=redraw)
                 elif state == 'False':
                     self.disable_button(row, col - num_buttons, redraw=redraw)
-        self.sheet.redraw()
 
     def get_button_state(self, key, video_exists_on_disk, slides_exist_on_server, slides_exist_on_disk):  # noqa
         """
@@ -564,30 +610,44 @@ class App:
             state = False
         return state
 
+    def get_real_col(self, col):
+        """
+        with configurable column list, the col number returned by tksheet may not be the same as
+        column no from self.columns. Use self.display_column_vars to identiy and return the correct column.
+        """
+        # find n-th visible column, where n=col
+        i = 0
+        for c, state in enumerate(self.display_columns_vars):
+            if state.get() == 1:
+                if i == col:
+                    return c
+                i += 1
+
     def on_click_button_handler(self, args):
         """
         On click handler for all the buttons, calls the corresponding function as defined by self.columns
         """
         (event, row, col) = args
+        real_col = self.get_real_col(col)
 
         # not a button.
-        if self.columns[col]['type'] != 'button':
+        if self.columns[real_col]['type'] != 'button':
             self.sheet.deselect('all', redraw=True)
             return
 
         # disabled button
-        state_button_col = col + len([x for x, v in self.columns.items() if v['type'] == 'state'])
+        state_button_col = real_col + len([x for x, v in self.columns.items() if v['type'] == 'state'])
         state = self.sheet.get_cell_data(row, state_button_col)
         if state == 'False':    # data read from sheet is all string.
             self.sheet.deselect('all', redraw=True)
             return
 
         # disable the button if it is one of the Download buttons, to prevent a re-download.
-        if self.names[col] in ['Download Video', 'Download Slides']:
-            self.disable_button(row, col)
+        if self.names[real_col] in ['Download Video', 'Download Slides']:
+            self.disable_button(row, real_col)
 
-        func = self.columns[col]['function']
-        func(row, col)
+        func = self.columns[real_col]['function']
+        func(row, real_col)
 
     def disable_button(self, row, col, redraw=True):
         """
