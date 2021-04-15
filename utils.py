@@ -1,5 +1,6 @@
 import os
 import re
+import yaml
 from typing import Dict, List
 from config import Config
 import webbrowser
@@ -9,8 +10,8 @@ from datetime import datetime
 class Utils:
 
     @classmethod
-    def add_fields(cls, metadata, video_slide_mapping):
-        conf = Config.load()
+    def add_new_fields(cls, metadata, video_slide_mapping):
+        conf = Config.load('impartus.conf')
 
         metadata['ext'] = None
         slides = video_slide_mapping.get(metadata['ttid'])
@@ -31,43 +32,29 @@ class Utils:
         metadata['actualDurationReadable'] = '{}:{:02d}h'.format(duration_hour, duration_min)
 
         # create new field to hold shortened subject names.
-        metadata['subjectNameShort'] = metadata['subjectName']
-        for key, val in conf.get('subject_mapping').items():
-            if re.search(key, metadata['subjectName']):
-                metadata['subjectNameShort'] = val
-                break
+        mapping_item = 'subjectName'
+        metadata['subjectNameShort'] = metadata[mapping_item]
+        conf_subject = Config.load('mappings.conf')
+        if conf_subject.get(mapping_item):
+            for key, val in conf_subject.get(mapping_item).items():
+                # escape posix special chars
+                key = re.escape(key)
+                if re.search(key, metadata[mapping_item]):
+                    metadata['subjectNameShort'] = val
+                    break
 
         return metadata
 
     @classmethod
-    def sanitize(cls, metadata: Dict):  # noqa
+    def sanitize(cls, path: str):  # noqa
         """
         Sanitize the fields in the metadata item for better display.
         Also creates a few new fields.
         """
-        if metadata is None:
-            return
-
-        # let the original metadata fields be accessible as field_raw
-        # sanitize the fields...
-        safe_chars = ['subjectName', 'institute', 'sessionName', 'professorName', 'topic', 'subjectDescription']
-
-        for x in safe_chars:
-            # remove leading/trailing spaces, replace other non-alphanum chars with '-'
-            # also replace 2 or more consecutive "-" with single "-"
-
-            # save a copy of the original field as field_raw
-            metadata['{}_raw'.format(x)] = metadata[x]
-            if metadata.get(x):
-                metadata[x] = re.sub(r"[-]{2,}", "-", re.sub(r'[^a-zA-Z0-9_-]', '-', str.strip(metadata[x])))
-
-        fixed_width_numeric = {'seqNo': '{:02d}', 'views': '{:04d}', 'actualDuration': '{:05d}', 'sessionId': '{:04d}'}
-        for key, val in fixed_width_numeric.items():
-            # format these numeric fields to fix width with leading zeros.
-            if metadata[key]:
-                metadata[key] = val.format(metadata[key])
-
-        return metadata
+        path = re.sub(r'[^\\0-9a-zA-Z/:_.]', '-', path)
+        path = re.sub(r"[-]{2,}", "-", path)
+        path = re.sub(r"[^0-9a-zA-Z]+([/\\])", r'\1', path)
+        return path
 
     @classmethod
     def delete_files(cls, files: List):
@@ -93,3 +80,8 @@ class Utils:
         date_format = "%Y-%m-%d"
         delta = datetime.strptime(date1, date_format) - datetime.strptime(date2, date_format)
         return delta.days
+
+    @classmethod
+    def write_config(cls, config, file):
+        with open(file, 'w') as outfile:
+            yaml.dump(config, outfile, default_flow_style=False, default_style="'")
