@@ -132,10 +132,16 @@ class Impartus:
                     os.rmdir(download_dir)
 
     def get_mkv_path(self, video_metadata):
-        return self.conf.get('video_path').format(**video_metadata, target_dir=self.download_dir)
+        mkv_path = self.conf.get('video_path').format(**video_metadata, target_dir=self.download_dir)
+        if self.conf.get('use_safe_paths'):
+            mkv_path = Utils.sanitize(mkv_path)
+        return mkv_path
 
     def get_slides_path(self, video_metadata):
-        return self.conf.get('slides_path').format(**video_metadata, target_dir=self.download_dir)
+        slides_path = self.conf.get('slides_path').format(**video_metadata, target_dir=self.download_dir)
+        if self.conf.get('use_safe_paths'):
+            slides_path = Utils.sanitize(slides_path)
+        return slides_path
 
     def get_mkv_ttid_map(self):
         mkv_ttid_map = dict()

@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+
 import tkinter.messagebox
 import tkinter as tk
 from tkinter import font
@@ -46,7 +47,6 @@ class App:
         self.impartus = None
 
         # fields
-        self.columns = None
 
         # toolbar buttons
         self.reload_button = None
@@ -57,9 +57,13 @@ class App:
         self.colorscheme_buttons = list()
         self.display_columns_vars = list()
 
+        # dialog
+        self.dialog = None
+
         # configs
-        self.conf = Config.load('yaml.conf')
+        self.conf = Config.load('impartus.conf')
         self.colorscheme_config = Config.load('color-schemes.conf')
+        self.subject_mapping_config = Config.load('mappings.conf')
         self.colorscheme = self.colorscheme_config.get(self.colorscheme_config.get('default'))
         self.color_var = None   # to hold color-scheme value
 
@@ -73,48 +77,61 @@ class App:
         self.impartus = Impartus()
         self.conf = Config.load()
 
-        self.columns = {k: v for k, v in enumerate([
-            # data fields
-            {'name': 'Subject', 'show': True, 'type': 'data', 'mapping': 'subjectNameShort', 'title_case': False,
-             'sortable': True, 'header': 'Subject'},
-            {'name': 'Lecture #', 'show': True, 'type': 'data', 'mapping': 'seqNo', 'title_case': False,
-             'sortable': True, 'header': 'Lecture #'},
-            {'name': 'Professor', 'show': True, 'type': 'data', 'mapping': 'professorName_raw', 'title_case': True,
-             'sortable': True, 'header': 'Professor'},
-            {'name': 'Topic', 'show': True, 'type': 'data', 'mapping': 'topic_raw', 'title_case': True,
-             'sortable': True, 'header': 'Topic'},
-            {'name': 'Duration', 'show': True, 'type': 'data', 'mapping': 'actualDurationReadable', 'title_case': False,
-             'sortable': True, 'header': 'Duration'},
-            {'name': 'Tracks', 'show': True, 'type': 'data', 'mapping': 'tapNToggle', 'title_case': False,
-             'sortable': True, 'header': 'Tracks'},
-            {'name': 'Date', 'show': True, 'type': 'data', 'mapping': 'startDate', 'title_case': False,
-             'sortable': True, 'header': 'Date'},
-            # progress bar
-            {'name': 'Downloaded?', 'show': True, 'type': 'progressbar', 'title_case': False, 'sortable': True,
-             'header': 'Downloaded?'},
-            # buttons
-            {'name': 'Download Video', 'show': True, 'type': 'button', 'function': self.download_video,
-             'sortable': False, 'text': '⬇', 'header': 'Video'},
-            {'name': 'Open Folder', 'show': True, 'type': 'button', 'function': self.open_folder,
-             'sortable': False, 'text': '⏏', 'header': 'Folder'},
-            {'name': 'Play Video', 'show': True, 'type': 'button', 'function': self.play_video,
-             'sortable': False, 'text': '▶', 'header': 'Video'},
-            {'name': 'Download Slides', 'show': True, 'type': 'button', 'function': self.download_slides,
-             'sortable': False, 'text': '⬇', 'header': 'Slides'},
-            {'name': 'Show Slides', 'show': True, 'type': 'button', 'function': self.show_slides,
-             'sortable': False, 'text': '▤', 'header':  'Slides'},
-            {'name': 'download_video_state', 'show': False, 'type': 'state', 'header': 'download_video_state'},
-            {'name': 'open_folder_state', 'show': False, 'type': 'state', 'header': 'open_folder_state'},
-            {'name': 'play_video_state', 'show': False, 'type': 'state', 'header': 'play_slides_state'},
-            {'name': 'download_slides_state', 'show': False, 'type': 'state', 'header': 'download_slides_state'},
-            {'name': 'show_slides_state', 'show': False, 'type': 'state', 'header': 'show_slides_state'},
-            # index
-            {'name': 'Index', 'show': False, 'type': 'auto', 'header': 'Index'},
-            # video / slides data
-            {'name': 'metadata', 'show': False, 'type': 'metadata', 'header': 'metadata'},
-        ])}
-        self.headers = [x['header'] for x in self.columns.values()]
-        self.names = [x['name'] for x in self.columns.values()]
+        self.data_columns = {
+            'subjectNameShort': {'display_name': 'Subject', 'title_case': False, 'sortable': True, 'editable': True,
+                                 'original_values_col': 'subjectName', 'type': 'data'},
+            'seqNo': {'display_name': 'Lecture #', 'title_case': False, 'sortable': True, 'editable': False,
+                      'original_values_col': None, 'type': 'data'},
+            'professorName': {'display_name': 'Professor', 'title_case': True, 'sortable': True, 'editable': False,
+                              'original_values_col': None, 'type': 'data'},
+            'topic': {'display_name': 'Topic', 'title_case': True, 'sortable': True, 'editable': False,
+                      'original_values_col': None, 'type': 'data'},
+            'actualDurationReadable': {'display_name': 'Duration', 'title_case': False, 'sortable': True,
+                                       'editable': False, 'original_values_col': None, 'type': 'data'},
+            'tapNToggle': {'display_name': 'Tracks', 'title_case': False, 'sortable': True, 'editable': False,
+                           'original_values_col': None, 'type': 'data'},
+            'startDate': {'display_name': 'Date', 'title_case': False, 'sortable': True, 'editable': False,
+                          'original_values_col': None, 'type': 'data'},
+        }
+        # progress bar
+        self.progressbar_column = {'downloaded': {'display_name': 'Downloaded?', 'title_case': False, 'sortable': True,
+                                                  'type': 'progressbar'}}
+        self.button_columns = {
+            'download_video': {'display_name': 'Video', 'function': self.download_video, 'text': '⬇', 'type': 'button',
+                               'state': 'download_video_state'},
+            'open_folder': {'display_name': 'Folder', 'function': self.open_folder, 'text': '⏏', 'type': 'button',
+                            'state': 'open_folder_state'},
+            'play_video': {'display_name': 'Video', 'function': self.play_video, 'text': '▶', 'type': 'button',
+                           'state': 'play_video_state'},
+            'download_slides': {'display_name': 'Slides', 'function': self.download_slides, 'text': '⬇',
+                                'type': 'button', 'state': 'download_slides_state'},
+            'show_slides': {'display_name': 'Slides', 'function': self.show_slides, 'text': '▤', 'type': 'button',
+                            'state': 'show_slides_state'},
+        }
+
+        self.button_state_columns = {k: {'display_name': k, 'type': 'button_state'} for k in [
+            'download_video_state',
+            'open_folder_state',
+            'play_video_state',
+            'download_slides_state',
+            'show_slides_state',
+        ]}
+
+        # index
+        self.index_column = {'index': {'display_name': 'index', 'type': 'auto'}}
+        self.metadata_column = {'metadata': {'display_name': 'metadata', 'type': 'metadata'}}
+
+        # video / slides data
+        self.orig_value_columns = {k: {'display_name': k, 'type': 'original_value'} for k in [
+            'subjectName',
+        ]}
+
+        self.display_columns = {**self.data_columns, **self.progressbar_column, **self.button_columns}
+        self.all_columns = {**self.data_columns, **self.progressbar_column, **self.button_columns,
+                            **self.button_state_columns, **self.orig_value_columns, **self.index_column,
+                            **self.metadata_column}
+        self.column_names = [k for k in self.all_columns.keys()]
+        self.headers = [v['display_name'] for v in self.display_columns.values()]
 
     def _init_ui(self):
         """
@@ -211,30 +228,25 @@ class App:
             self.frame_toolbar, text='Slides +', command=self.donothing, **button_options)
         self.add_offline_slides_button.grid(row=0, column=2, **grid_options)
 
-        self.edit_subject_button = tk.Button(self.frame_toolbar, text='Subject ✎', command=self.donothing,
-                                             **button_options)
-        self.edit_subject_button.grid(row=0, column=3, **grid_options)
-
         self.edit_path_button = tk.Button(self.frame_toolbar, text='Video/Slides Location  ✎', command=self.donothing,
                                           **button_options)
-        self.edit_path_button.grid(row=0, column=4, **grid_options)
+        self.edit_path_button.grid(row=0, column=3, **grid_options)
 
         dropdown = tk.Menubutton(self.frame_toolbar, text='Columns', **button_options)
         dropdown.menu = tk.Menu(dropdown, tearoff=1)
         dropdown['menu'] = dropdown.menu
-        for column in self.columns.values():
-            if column.get('show'):
-                item = tk.IntVar(None, 1)
-                dropdown.menu.add_checkbutton(label=column['header'], variable=item, onvalue=1, offvalue=0,
-                                              command=self.set_display_columns)
-                self.display_columns_vars.append(item)
-        dropdown.grid(row=0, column=5, **grid_options)
+        for display_name in self.headers:
+            item = tk.IntVar(None, 1)
+            dropdown.menu.add_checkbutton(label=display_name, variable=item, onvalue=1, offvalue=0,
+                                          command=self.set_display_columns)
+            self.display_columns_vars.append(item)
+        dropdown.grid(row=0, column=4, **grid_options)
         self.display_columns_dropdown = dropdown
 
         # empty column, to keep columns 1-5 centered
         self.frame_toolbar.columnconfigure(0, weight=1)
         # move the color scheme buttons to extreme right
-        self.frame_toolbar.columnconfigure(6, weight=1)
+        self.frame_toolbar.columnconfigure(5, weight=1)
 
         color_var = tk.IntVar()
         self.color_var = color_var
@@ -250,13 +262,17 @@ class App:
                     self.frame_toolbar, var=color_var, value=i, bg=self.colorscheme_config[k].get('theme_color'),
                     command=partial(self.set_color_scheme, self.colorscheme_config[k])
                 )
-                colorscheme_button.grid(row=0, column=6+i, **grid_options_cs, sticky='e')
+                colorscheme_button.grid(row=0, column=5+i, **grid_options_cs, sticky='e')
                 self.colorscheme_buttons.append(colorscheme_button)
 
                 # Set the radio button to indicate currently active color scheme.
                 if self.colorscheme_config.get('default') == k:
                     self.color_var.set(i)
                 i += 1
+
+    def on_dialog_close(self):
+        self.dialog.destroy()
+        self.dialog = None
 
     def donothing(self):
         pass
@@ -358,11 +374,11 @@ class App:
         real_col = self.get_real_col(col)
         self.sheet.deselect("all")
 
-        if not self.columns[real_col].get('sortable'):
+        col_name = self.column_names[real_col]
+        if not self.all_columns[col_name].get('sortable'):
             return
 
-        sort_by = self.names[real_col]
-
+        sort_by = col_name
         if sort_by == self.sort_by:
             sort_order = 'asc' if self.sort_order == 'desc' else 'desc'
         else:
@@ -405,6 +421,7 @@ class App:
             "column_select",
             "column_width_resize",
             "double_click_column_resize",
+            "edit_cell"
         ))
 
         self.set_headers()
@@ -432,8 +449,8 @@ class App:
             videos = {x['ttid']:  x for x in videos}
 
             for ttid, video_metadata in videos.items():
-                video_metadata = Utils.add_fields(video_metadata, video_slide_mapping)
-                video_metadata = Utils.sanitize(video_metadata)
+                video_metadata = Utils.add_new_fields(video_metadata, video_slide_mapping)
+                # video_metadata = Utils.sanitize(video_metadata)
 
                 video_path = self.impartus.get_mkv_path(video_metadata)
                 if not os.path.exists(video_path):
@@ -460,31 +477,35 @@ class App:
                 }
                 row_items = list()
                 button_states = list()
-                for col, item in self.columns.items():
+
+                # data items
+                for col, (key, item) in enumerate(self.all_columns.items()):
                     text = ''
-                    if item['type'] == 'auto':
-                        text = row
                     if item['type'] == 'data':
-                        text = video_metadata[item['mapping']]
+                        text = video_metadata[key]
                         # title case
-                        text = " ".join(text.splitlines()).strip().title() if item.get('title_case') else text
+                        if item.get('title_case'):
+                            text = " ".join(text.splitlines()).strip().title()
+                    elif item['type'] == 'auto':
+                        text = row
                     elif item['type'] == 'progressbar':
                         if video_exists_on_disk:
                             text = self.progress_bar_text(100, processed=True)
                         else:
                             text = self.progress_bar_text(0)
-
                     elif item['type'] == 'button':
                         button_states.append(self.get_button_state(
-                            self.names[col], video_exists_on_disk, slides_exist_on_server, slides_exist_on_disk)
+                            key, video_exists_on_disk, slides_exist_on_server, slides_exist_on_disk)
                         )
                         text = item.get('text')
-                    elif item['type'] == 'state':
+                    elif item['type'] == 'button_state':
                         text = button_states.pop(0)
                     elif item['type'] == 'metadata':
                         text = metadata
-
+                    elif item['type'] == 'original_value':
+                        text = video_metadata[key]
                     row_items.append(text)
+
                 self.sheet.insert_row(values=row_items, idx='end')
                 row += 1
 
@@ -500,33 +521,42 @@ class App:
         Set the table headers.
         """
         # set column title to reflect sort status
-        headers = self.headers.copy()
-        for x, h in enumerate(headers):
-            
-            if not self.columns[x].get('sortable'):
-                continue
-
-            # only sortable headers.
-            if h == sort_by:
-                sort_icon = '▼' if sort_order == 'desc' else '▲'
+        headers = list()
+        for name, value in self.display_columns.items():
+            if value.get('sortable'):
+                if name == sort_by:
+                    sort_icon = '▼' if sort_order == 'desc' else '▲'
+                else:
+                    sort_icon = '⇅'
+                text = '{} {}'.format(value['display_name'], sort_icon)
             else:
-                sort_icon = '⇅'
-            headers[x] += ' {}'.format(sort_icon)
+                text = value['display_name']
+
+            if value.get('editable'):
+                text = '✎ {}'.format(text)
+
+            headers.append(text)
         self.sheet.headers(headers)
 
     def decorate(self):
         """
         calls multiple ui related tweaks.
         """
+        self.align_columns()
         self.set_color_scheme()
         self.odd_even_color()
         self.progress_bar_color()
+
+    def align_columns(self):
+        self.sheet.align_columns([k for k, v in self.data_columns.items()], align='w')
+        self.sheet.align_columns([k for k, v in self.progressbar_column.items()], align='w')
+        self.sheet.align_columns([k for k, v in self.button_columns.items()], align='center')
 
     def progress_bar_color(self, redraw=True):
         """
         Set progress bar color.
         """
-        col = self.names.index('Downloaded?')
+        col = self.column_names.index('downloaded')
         num_rows = self.sheet.total_rows()
         cs = self.colorscheme
 
@@ -569,8 +599,17 @@ class App:
         diff_width = self.frame_content.winfo_width() - table_width
 
         # adjust extra width only to top N data columns
-        n = 2
-        data_col_widths = {k: v for k, v in enumerate(column_widths) if self.columns[k]['type'] == 'data'}
+        n = 3
+        data_col_widths = {}
+
+        column_states = [v.get() for v in self.display_columns_vars]
+        count = 0
+        for k, v in enumerate(column_states):
+            if self.column_names[k] == 'downloaded':
+                break
+            count += v
+        # range(0..count) is all data columns.
+        data_col_widths = {k: v for k, v in enumerate(column_widths[:count])}
         top_n_cols = sorted(data_col_widths, key=data_col_widths.get, reverse=True)[:n]
         for i in top_n_cols:
             self.sheet.column_width(i, column_widths[i] + diff_width // n)
@@ -579,7 +618,7 @@ class App:
         """
         reads the states of the buttons from the hidden state columns, and sets the button states appropriately.
         """
-        col_indexes = [x for x, v in enumerate(self.columns.values()) if v['type'] == 'state']
+        col_indexes = [x for x, v in enumerate(self.all_columns.values()) if v['type'] == 'button_state']
         num_buttons = len(col_indexes)
         for row, row_item in enumerate(self.sheet.get_sheet_data()):
             for col in col_indexes:
@@ -598,22 +637,23 @@ class App:
         Checks to identify when certain buttons should be enabled/disabled.
         """
         state = True
-        if key == 'Download Video' and video_exists_on_disk:
+        if key == 'download_video' and video_exists_on_disk:
             state = False
-        elif key == 'Open Folder' and not video_exists_on_disk:
+        elif key == 'open_folder' and not video_exists_on_disk:
             state = False
-        elif key == 'Play Video' and not video_exists_on_disk:
+        elif key == 'play_video' and not video_exists_on_disk:
             state = False
-        elif key == 'Download Slides' and (slides_exist_on_disk or not slides_exist_on_server):
+        elif key == 'download_slides' and (slides_exist_on_disk or not slides_exist_on_server):
             state = False
-        elif key == 'Show Slides' and not slides_exist_on_disk:
+        elif key == 'show_slides' and not slides_exist_on_disk:
             state = False
         return state
 
     def get_real_col(self, col):
         """
         with configurable column list, the col number returned by tksheet may not be the same as
-        column no from self.columns. Use self.display_column_vars to identiy and return the correct column.
+        column no from self.all_columns/self.display_columns. Use self.display_column_vars to identify and return
+        the correct column.
         """
         # find n-th visible column, where n=col
         i = 0
@@ -623,31 +663,80 @@ class App:
                     return c
                 i += 1
 
+    def end_edit_cell(self, old_subject_value, event=None):
+        row, col = (event[0], event[1])
+        new_subject_value = self.sheet.get_text_editor_value(
+            event,
+            r=row,
+            c=col,
+            set_data_ref_on_destroy=True,
+            move_down=True,
+            redraw=True,
+            recreate=True
+        )
+        if not new_subject_value:
+            return
+
+        col_name = self.column_names[self.get_real_col(col)]
+        columns_item = self.data_columns[col_name]
+        orig_values_col_name = columns_item.get('original_values_col')
+        original_value = self.sheet.get_cell_data(row, self.column_names.index(orig_values_col_name))
+        for i, data in enumerate(self.sheet.get_column_data(self.column_names.index(orig_values_col_name))):
+            if data == original_value:
+                self.sheet.set_cell_data(i, col, new_subject_value)
+        self.update_mappings(orig_values_col_name, old_subject_value, new_subject_value)
+        self.reset_column_sizes()
+        self.sheet.refresh()
+
+    def update_mappings(self, mapping_name, old_value, new_value):
+        self.subject_mapping_config.get(mapping_name)[old_value] = new_value
+        Utils.write_config({mapping_name: self.subject_mapping_config.get(mapping_name)}, 'mappings.conf')
+
     def on_click_button_handler(self, args):
         """
-        On click handler for all the buttons, calls the corresponding function as defined by self.columns
+        On click handler for all the buttons, calls the corresponding function as defined by self.button_columns
         """
         (event, row, col) = args
         real_col = self.get_real_col(col)
 
+        # is subject field
+        col_name = self.column_names[real_col]
+        if self.all_columns[col_name].get('editable'):
+            old_value = self.sheet.get_cell_data(row, real_col)
+            self.sheet.create_text_editor(
+                row=row,
+                column=real_col,
+                text=old_value,
+                set_data_ref_on_destroy=False,
+                binding=partial(self.end_edit_cell, old_value)
+            )
+
         # not a button.
-        if self.columns[real_col]['type'] != 'button':
+        if self.all_columns[col_name].get('type') != 'button':
             self.sheet.deselect('all', redraw=True)
             return
 
         # disabled button
-        state_button_col = real_col + len([x for x, v in self.columns.items() if v['type'] == 'state'])
-        state = self.sheet.get_cell_data(row, state_button_col)
+        state_button_col_name, state_button_col_num = self.get_state_button(col_name)
+        state = self.sheet.get_cell_data(row, state_button_col_num)
         if state == 'False':    # data read from sheet is all string.
             self.sheet.deselect('all', redraw=True)
             return
 
         # disable the button if it is one of the Download buttons, to prevent a re-download.
-        if self.names[real_col] in ['Download Video', 'Download Slides']:
+        if col_name in ['download_video', 'download_slides']:
             self.disable_button(row, real_col)
 
-        func = self.columns[real_col]['function']
+        func = self.all_columns[col_name]['function']
         func(row, real_col)
+
+    def get_state_button(self, button_name):
+        if self.all_columns[button_name].get('state'):
+            state_col_name = self.all_columns[button_name].get('state')
+            state_col_number = self.column_names.index(state_col_name)
+            return state_col_name, state_col_number
+        else:
+            return None, None
 
     def disable_button(self, row, col, redraw=True):
         """
@@ -660,8 +749,8 @@ class App:
             redraw=redraw
         )
         # update state field.
-        state_button_col = col + len([x for x, v in self.columns.items() if v['type'] == 'state'])
-        self.sheet.set_cell_data(row, state_button_col, False, redraw=redraw)
+        state_button_col_name, state_button_col_num = self.get_state_button(self.column_names[col])
+        self.sheet.set_cell_data(row, state_button_col_num, False, redraw=redraw)
 
     def enable_button(self, row, col, redraw=True):
         """
@@ -673,8 +762,8 @@ class App:
         self.sheet.highlight_cells(row, col, bg=odd_even_bg, fg=odd_even_fg, redraw=redraw)
 
         # update state field.
-        state_button_col = col + len([x for x, v in self.columns.items() if v['type'] == 'state'])
-        self.sheet.set_cell_data(row, state_button_col, True, redraw=redraw)
+        state_button_col_name, state_button_col_num = self.get_state_button(self.column_names[col])
+        self.sheet.set_cell_data(row, state_button_col_num, True, redraw=redraw)
 
     def get_index(self, row):
         """
@@ -683,13 +772,13 @@ class App:
         of the associated record.
         """
         # find where is the Index column
-        index_col = self.names.index('Index')
+        index_col = self.column_names.index('index')
         # original row value as per the index column
         return self.sheet.get_cell_data(row, index_col)
 
     def get_row_after_sort(self, index_value):
         # find the new correct location of the row_index
-        col_index = self.names.index('Index')
+        col_index = self.column_names.index('index')
         col_data = self.sheet.get_column_data(col_index)
         return col_data.index(index_value)
 
@@ -766,12 +855,9 @@ class App:
 
         # create a new Impartus session reusing existing token.
         imp = Impartus(self.impartus.token)
-        pb_col = None
-        for i, item in enumerate(self.columns.values()):
-            if item['type'] == 'progressbar':
-                pb_col = i
-                break
-        # voodoo alert:
+        pb_col = self.column_names.index('downloaded')
+
+        # # voodoo alert:
         # It is possible for user to sort the table while download is in progress.
         # In such a case, the row index supplied to the function call won't match the row index
         # required to update the correct progressbar/open/play buttons, which now exists at a new
@@ -788,8 +874,8 @@ class App:
         self.progress_bar_callback(row=row_index, col=pb_col, count=100, processed=True)
 
         # enable buttons.
-        self.enable_button(updated_row, self.names.index('Open Folder'))
-        self.enable_button(updated_row, self.names.index('Play Video'))
+        self.enable_button(updated_row, self.column_names.index('open_folder'))
+        self.enable_button(updated_row, self.column_names.index('play_video'))
 
     def download_video(self, row, col):
         """
@@ -815,10 +901,10 @@ class App:
         imp = Impartus(self.impartus.token)
         if imp.download_slides(ttid, file_url, filepath, root_url):
             # download complete, enable show slides buttons
-            self.enable_button(row, self.names.index('Show Slides'))
+            self.enable_button(row, self.column_names.index('show_slides'))
         else:
             tkinter.messagebox.showerror('Error', 'Error downloading slides, see console logs for details.')
-            self.enable_button(row, self.names.index('Download Slides'))
+            self.enable_button(row, self.column_names.index('download_slides'))
 
     def download_slides(self, row, col):
         """
@@ -844,7 +930,7 @@ class App:
         We saved a hidden column 'metadata' containing metadata for each record.
         Extract it, and eval it as python dict.
         """
-        metadata_col = self.names.index('metadata')
+        metadata_col = self.column_names.index('metadata')
         data = self.sheet.get_cell_data(row, metadata_col)
         return ast.literal_eval(data)
 
