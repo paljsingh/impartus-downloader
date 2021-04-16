@@ -1,17 +1,18 @@
 import os
 import re
-import yaml
-from typing import Dict, List
+import shutil
+from typing import List
 from config import Config
 import webbrowser
 from datetime import datetime
+import logging
 
 
 class Utils:
 
     @classmethod
     def add_new_fields(cls, metadata, video_slide_mapping):
-        conf = Config.load('impartus.conf')
+        conf = Config.load('impartus')
 
         metadata['ext'] = None
         slides = video_slide_mapping.get(metadata['ttid'])
@@ -19,6 +20,13 @@ class Utils:
             ext = video_slide_mapping.get(metadata['ttid']).split('.')[-1].lower()
             if ext in conf.get('allowed_ext'):
                 metadata['ext'] = ext
+
+        # pad the following fields
+        fixed_width_numeric = {'seqNo': '{:02d}', 'views': '{:04d}', 'actualDuration': '{:05d}', 'sessionId': '{:04d}'}
+        for key, val in fixed_width_numeric.items():
+            # format these numeric fields to fix width with leading zeros.
+            if metadata[key]:
+                metadata[key] = val.format(metadata[key])
 
         date_fields = {'startTime': 'startDate', 'endTime': 'endDate'}
         for key, val in date_fields.items():
@@ -34,12 +42,10 @@ class Utils:
         # create new field to hold shortened subject names.
         mapping_item = 'subjectName'
         metadata['subjectNameShort'] = metadata[mapping_item]
-        conf_subject = Config.load('mappings.conf')
-        if conf_subject.get(mapping_item):
-            for key, val in conf_subject.get(mapping_item).items():
-                # escape posix special chars
-                key = re.escape(key)
-                if re.search(key, metadata[mapping_item]):
+        mappings_conf = Config.load('mappings')
+        if mappings_conf.get(mapping_item):
+            for key, val in mappings_conf.get(mapping_item).items():
+                if key == metadata[mapping_item]:
                     metadata['subjectNameShort'] = val
                     break
 
@@ -82,6 +88,9 @@ class Utils:
         return delta.days
 
     @classmethod
-    def write_config(cls, config, file):
-        with open(file, 'w') as outfile:
-            yaml.dump(config, outfile, default_flow_style=False, default_style="'")
+    def move_and_rename_file(cls, source, destination):
+        if source != destination:
+            logger = logging.getLogger(cls.__name__)
+            os.makedirs(os.path.dirname(destination), exist_ok=True)
+            shutil.move(source, destination)
+            logger.info('moved {} -> {}'.format(source, destination))
