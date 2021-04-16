@@ -30,7 +30,7 @@ class Impartus:
             self.session.cookies.update({'Bearer': token})
             self.session.headers.update({'Authorization': 'Bearer {}'.format(token)})
 
-        self.conf = Config.load()
+        self.conf = Config.load('impartus')
 
         # save the files here.
         if os.name == 'posix':
@@ -235,5 +235,6 @@ class Impartus:
             self.logger.error('Http response code: {}, response body: {}: '.format(response.status_code, response.text))
             return False
 
-class GetOutOfLoop( Exception ):
+
+class GetOutOfLoop(Exception):
     pass
