@@ -212,8 +212,9 @@ class App:
         self.pass_box.grid(row=2, column=1, **grid_options)
 
         self.save_credentials_var = tk.IntVar()
-        self.save_credentials_button = tk.Checkbutton(frame_auth, text='Save Credentials', bg=cs['root']['bg'],
-                                                      fg=cs['root']['fg'], variable=self.save_credentials_var)
+        self.save_credentials_button = tk.Checkbutton(
+                frame_auth, text='Save Credentials', bg=cs['root']['bg'], fg=cs['root']['fg'],
+                selectcolor="#000000", variable=self.save_credentials_var)
         self.save_credentials_button.grid(row=2, column=2, **grid_options)
 
         self.show_videos_button = tk.Button(frame_auth, text='Show Videos', command=self.get_videos)
@@ -268,7 +269,8 @@ class App:
             # skip non-dict keys, skip nested keys
             if type(self.colorscheme_config[k]) == dict and '.' not in k:
                 colorscheme_button = tk.Radiobutton(
-                    self.frame_toolbar, var=color_var, value=i, bg=self.colorscheme_config[k].get('theme_color'),
+                    self.frame_toolbar, var=color_var, value=i, selectcolor="#000000",
+                    bg=self.colorscheme_config[k].get('theme_color'),
                     command=partial(self.set_color_scheme, self.colorscheme_config[k])
                 )
                 colorscheme_button.grid(row=0, column=4+i, **grid_options_cs, sticky='e')
@@ -1031,7 +1033,7 @@ class App:
             return
         dialog = tk.Toplevel()
         dialog.protocol("WM_DELETE_WINDOW", self.on_dialog_close)
-        dialog.geometry("1000x400+100+100")
+        dialog.geometry("800x500")
         dialog.title('Alert - file rename!')
         dialog.grab_set()
 
