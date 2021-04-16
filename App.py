@@ -10,6 +10,7 @@ import os
 import ast
 import threading
 import shutil
+import logging
 
 from config import Config
 from impartus import Impartus
@@ -50,16 +51,16 @@ class App:
         # backend
         self.impartus = None
 
-        # fields
+        # dialog
+        self.dialog = None
 
         # toolbar buttons
         self.reload_button = None
+        self.move_files_button = None
         self.display_columns_dropdown = None
-        self.add_offline_slides_button = None
-        self.edit_subject_button = None
-        self.edit_path_button = None
         self.colorscheme_buttons = list()
         self.display_columns_vars = list()
+        self.expected_real_paths_differ = False
 
         # configs
         self.conf = Config.load('impartus')
@@ -68,6 +69,11 @@ class App:
         self.mappings_config = Config.load('mappings')
         self.colorscheme = self.colorscheme_config.get(self.colorscheme_config.get('default'))
         self.color_var = None   # to hold color-scheme value
+
+        # content
+        self.videos = None
+        self.video_slide_mapping = None
+        self.offline_video_ttid_mapping = None
 
         self._init_backend()
         self._init_ui()
@@ -231,6 +237,10 @@ class App:
         self.reload_button = tk.Button(self.frame_toolbar, text='Reload ⟳', command=self.get_videos, **button_options)
         self.reload_button.grid(row=0, column=1, **grid_options)
 
+        self.move_files_button = tk.Button(self.frame_toolbar, text='Move / Rename Videos  ⇄', command=self.move_files,
+                                           **button_options)
+        self.move_files_button.grid(row=0, column=2, **grid_options)
+
         dropdown = tk.Menubutton(self.frame_toolbar, text='Columns', **button_options)
         dropdown.menu = tk.Menu(dropdown, tearoff=1)
         dropdown['menu'] = dropdown.menu
@@ -239,13 +249,13 @@ class App:
             dropdown.menu.add_checkbutton(label=display_name, variable=item, onvalue=1, offvalue=0,
                                           command=self.set_display_columns)
             self.display_columns_vars.append(item)
-        dropdown.grid(row=0, column=2, **grid_options)
+        dropdown.grid(row=0, column=3, **grid_options)
         self.display_columns_dropdown = dropdown
 
         # empty column, to keep columns 1-5 centered
         self.frame_toolbar.columnconfigure(0, weight=1)
         # move the color scheme buttons to extreme right
-        self.frame_toolbar.columnconfigure(3, weight=1)
+        self.frame_toolbar.columnconfigure(4, weight=1)
 
         color_var = tk.IntVar()
         self.color_var = color_var
@@ -261,7 +271,7 @@ class App:
                     self.frame_toolbar, var=color_var, value=i, bg=self.colorscheme_config[k].get('theme_color'),
                     command=partial(self.set_color_scheme, self.colorscheme_config[k])
                 )
-                colorscheme_button.grid(row=0, column=3+i, **grid_options_cs, sticky='e')
+                colorscheme_button.grid(row=0, column=4+i, **grid_options_cs, sticky='e')
                 self.colorscheme_buttons.append(colorscheme_button)
 
                 # Set the radio button to indicate currently active color scheme.
@@ -338,6 +348,7 @@ class App:
 
         self.show_videos_button.config(state='disabled')
         self.reload_button.config(state='disabled')
+        self.move_files_button.config(state='disabled')
 
         username = self.user_box.get()
         password = self.pass_box.get()
@@ -362,6 +373,8 @@ class App:
         # show table of videos under frame_content
         self.set_display_widgets(self.frame_content)
         self.reload_button.config(state='normal')
+        if self.expected_real_paths_differ:
+            self.move_files_button.config(state='normal')
 
     def sort_table(self, args):
         """
@@ -428,42 +441,44 @@ class App:
         anchor.rowconfigure(0, weight=1)
         self.sheet.extra_bindings('column_select', self.sort_table)
         self.sheet.extra_bindings('cell_select', self.on_click_button_handler)
-        self.fetch_and_fill_content()
+        self.fetch_content()
+        self.fill_content()
 
-    def fetch_and_fill_content(self):
+    def fetch_content(self):
         root_url = self.url_box.get()
-        subjects = self.impartus.get_subjects(root_url)
+        subject_dicts = self.impartus.get_subjects(root_url)
+        self.videos = dict()
+        self.video_slide_mapping = dict()
+        for subject_dict in subject_dicts:
+            videos_by_subject = self.impartus.get_videos(root_url, subject_dict)
+            slides = self.impartus.get_slides(root_url, subject_dict)
+            self.video_slide_mapping = self.impartus.map_slides_to_videos(videos_by_subject, slides)
+            self.videos[subject_dict.get('subjectId')] = {x['ttid']:  x for x in videos_by_subject}
 
+    def fill_content(self):
         # A mapping dict containing previously downloaded, and possibly moved around / renamed videos.
         # extract their ttid and map those to the correct records, to avoid forcing the user to re-download.
-        offline_video_ttid_mapping = self.impartus.get_mkv_ttid_map()
+        self.offline_video_ttid_mapping = self.impartus.get_mkv_ttid_map()
 
         row = 0
-        for subject in subjects:
-            videos = self.impartus.get_videos(root_url, subject)
-            slides = self.impartus.get_slides(root_url, subject)
-            video_slide_mapping = self.impartus.map_slides_to_videos(videos, slides)
-
-            videos = {x['ttid']:  x for x in videos}
-
+        for subject_id, videos in self.videos.items():
             for ttid, video_metadata in videos.items():
-                video_metadata = Utils.add_new_fields(video_metadata, video_slide_mapping)
+                video_metadata = Utils.add_new_fields(video_metadata, self.video_slide_mapping)
 
                 video_path = self.impartus.get_mkv_path(video_metadata)
                 if not os.path.exists(video_path):
                     # or search from the downloaded videos, using video_ttid_map
-                    video_path_moved = offline_video_ttid_mapping.get(str(ttid))
+                    video_path_moved = self.offline_video_ttid_mapping.get(str(ttid))
+
                     if video_path_moved:
-                        if self.conf.get('auto_move_and_rename_files'):
-                            Utils.move_and_rename_file(video_path_moved, video_path)
-                        else:
-                            # Use the offline path, if a video found and we don't want to rename it.
-                            video_path = video_path_moved
+                        # For now, use the offline path if a video found. Also set the flag to enable move/rename button
+                        video_path = video_path_moved
+                        self.expected_real_paths_differ = True
 
                 slides_path = self.impartus.get_slides_path(video_metadata)
 
                 video_exists_on_disk = video_path and os.path.exists(video_path)
-                slides_exist_on_server = video_slide_mapping.get(ttid)
+                slides_exist_on_server = self.video_slide_mapping.get(ttid)
                 slides_exist_on_disk, slides_path = self.impartus.slides_exist_on_disk(slides_path)
 
                 metadata = {
@@ -472,7 +487,7 @@ class App:
                     'video_exists_on_disk': video_exists_on_disk,
                     'slides_exist_on_server': slides_exist_on_server,
                     'slides_exist_on_disk': slides_exist_on_disk,
-                    'slides_url': video_slide_mapping.get(ttid),
+                    'slides_url': self.video_slide_mapping.get(ttid),
                     'slides_path': slides_path,
                 }
                 row_items = list()
@@ -662,7 +677,7 @@ class App:
                     return c
                 i += 1
 
-    def end_edit_cell(self, event=None):
+    def end_edit_cell(self, old_value, event=None):
         row, col = (event[0], event[1])
         new_value = self.sheet.get_text_editor_value(
             event,
@@ -673,9 +688,17 @@ class App:
             redraw=True,
             recreate=True
         )
-        if not new_value:
+
+        # empty value or escape pressed.
+        if not new_value or new_value == '':
             return
 
+        # no changes made.
+        if old_value == new_value:
+            return
+
+        self.expected_real_paths_differ = True
+        self.move_files_button.config(state='normal')
         col_name = self.column_names[self.get_real_col(col)]
         columns_item = self.data_columns[col_name]
         orig_values_col_name = columns_item.get('original_values_col')
@@ -709,7 +732,7 @@ class App:
                 column=real_col,
                 text=old_value,
                 set_data_ref_on_destroy=False,
-                binding=self.end_edit_cell
+                binding=partial(self.end_edit_cell, old_value)
             )
 
         # not a button.
@@ -965,6 +988,90 @@ class App:
         """
         data = self.read_metadata(row)
         Utils.open_file(data.get('slides_path'))
+
+    def move_files(self):
+        self.move_files_button.config(state='disabled')
+
+        logger = logging.getLogger(self.__class__.__name__)
+        moved_files = dict()
+        for subject_id, videos in self.videos.items():
+            for ttid, video_metadata in videos.items():
+                video_metadata = Utils.add_new_fields(video_metadata, self.video_slide_mapping)
+                # for videos
+                expected_video_path = self.impartus.get_mkv_path(video_metadata)
+                real_video_path = self.offline_video_ttid_mapping.get(str(ttid))
+
+                if real_video_path and expected_video_path != real_video_path and os.path.exists(real_video_path):
+                    Utils.move_and_rename_file(real_video_path, expected_video_path)
+                    logger.info('moved {} -> {}'.format(real_video_path, expected_video_path))
+                    moved_files[real_video_path] = expected_video_path
+
+                    # also check any slides.
+                    for ext in self.conf.get('allowed_ext'):
+                        slides_path = '{}.{}'.format(real_video_path[:-len(".mkv")], ext)
+                        if os.path.exists(slides_path):
+                            expected_slides_path = '{}.{}'.format(expected_video_path[:-len(".mkv")], ext)
+                            Utils.move_and_rename_file(slides_path, expected_slides_path)
+                            logger.info('moved {} -> {}'.format(slides_path, expected_slides_path))
+                            moved_files[slides_path] = expected_slides_path
+
+                    # is the folder empty, remove it.?
+                    old_video_dir = os.path.dirname(real_video_path)
+                    if len(os.listdir(old_video_dir)) == 0:
+                        os.rmdir(old_video_dir)
+                        logger.info('removed empty directory: {}'.format(old_video_dir))
+
+        # show a dialog with the output.
+        self.move_file_info_dialog(moved_files)
+        self.expected_real_paths_differ = False
+
+    def move_file_info_dialog(self, moved_files):
+        # only 1 dialog at a time.
+        if self.dialog:
+            return
+        dialog = tk.Toplevel()
+        dialog.protocol("WM_DELETE_WINDOW", self.on_dialog_close)
+        dialog.geometry("1000x400+100+100")
+        dialog.title('Alert - file rename!')
+        dialog.grab_set()
+
+        title = tk.Label(dialog, text='Following files were moved / renamed -', )
+        title.grid(row=0, column=0, sticky='w', ipadx=10, ipady=10)
+
+        sheet = Sheet(
+            dialog,
+            header_font=(self.conf.get("content_font"), 12, "bold"),
+            font=(self.conf.get('content_font'), 14, "normal"),
+            align='w',
+            row_height="1",  # str value for row height in number of lines.
+            row_index_align="w",
+            auto_resize_default_row_index=False,
+            row_index_width=40,
+            header_align='center',
+            empty_horizontal=0,
+            empty_vertical=0,
+        )
+
+        sheet.headers(['Source', '', 'Destination'])
+        target_parent = os.path.dirname(self.impartus.download_dir)
+        for row, (source, destination) in enumerate(moved_files.items()):
+            source = source[len(target_parent)+1:]
+            destination = destination[len(target_parent)+1:]
+            sheet.insert_row([source, '⇨', destination])
+            dialog.columnconfigure(0, weight=1)
+
+        sheet.set_all_column_widths()
+        sheet.grid(row=1, column=0, sticky='nsew')
+
+        ok_button = tk.Button(dialog, text='OK', command=self.on_dialog_close)
+        ok_button.grid(row=2, column=0, padx=10, pady=10)
+
+        self.dialog = dialog
+
+    def on_dialog_close(self):
+        self.dialog.destroy()
+        self.dialog = None
+        self.get_videos()
 
 
 if __name__ == '__main__':

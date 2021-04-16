@@ -26,7 +26,7 @@ class Utils:
         for key, val in fixed_width_numeric.items():
             # format these numeric fields to fix width with leading zeros.
             if metadata[key]:
-                metadata[key] = val.format(metadata[key])
+                metadata[key] = val.format(int(metadata[key]))
 
         date_fields = {'startTime': 'startDate', 'endTime': 'endDate'}
         for key, val in date_fields.items():
@@ -93,4 +93,3 @@ class Utils:
             logger = logging.getLogger(cls.__name__)
             os.makedirs(os.path.dirname(destination), exist_ok=True)
             shutil.move(source, destination)
-            logger.info('moved {} -> {}'.format(source, destination))
