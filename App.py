@@ -904,7 +904,8 @@ class App:
         self.enable_button(updated_row, self.column_names.index('play_video'))
 
     def add_slides(self, row, col):     # noqa
-        filepaths = tkinter.filedialog.askopenfilenames()
+        file_types = [(str(ext).upper(), '*.{}'.format(ext)) for ext in self.conf.get('allowed_ext')]
+        filepaths = tkinter.filedialog.askopenfilenames(filetypes=file_types)
 
         data = self.read_metadata(row)
         slides_folder_path = os.path.dirname(data.get('video_path'))
