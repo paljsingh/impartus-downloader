@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import tkinter.messagebox
+import tkinter.filedialog
 import tkinter as tk
 from tkinter import font
 from functools import partial
@@ -8,6 +9,7 @@ from tksheet import Sheet
 import os
 import ast
 import threading
+import shutil
 
 from config import Config
 from impartus import Impartus
@@ -24,6 +26,8 @@ class App:
         self.pass_label = None
         self.pass_box = None
         self.show_videos_button = None
+        self.save_credentials_var = None
+        self.save_credentials_button = None
 
         # element groups
         self.frame_auth = None
@@ -57,13 +61,11 @@ class App:
         self.colorscheme_buttons = list()
         self.display_columns_vars = list()
 
-        # dialog
-        self.dialog = None
-
         # configs
-        self.conf = Config.load('impartus.conf')
-        self.colorscheme_config = Config.load('color-schemes.conf')
-        self.subject_mapping_config = Config.load('mappings.conf')
+        self.conf = Config.load('impartus')
+        self.creds_config = Config.load('creds')
+        self.colorscheme_config = Config.load('colorschemes')
+        self.mappings_config = Config.load('mappings')
         self.colorscheme = self.colorscheme_config.get(self.colorscheme_config.get('default'))
         self.color_var = None   # to hold color-scheme value
 
@@ -75,7 +77,7 @@ class App:
         backend initialization.
         """
         self.impartus = Impartus()
-        self.conf = Config.load()
+        self.conf = Config.load('impartus')
 
         self.data_columns = {
             'subjectNameShort': {'display_name': 'Subject', 'title_case': False, 'sortable': True, 'editable': True,
@@ -99,22 +101,25 @@ class App:
         self.button_columns = {
             'download_video': {'display_name': 'Video', 'function': self.download_video, 'text': '⬇', 'type': 'button',
                                'state': 'download_video_state'},
-            'open_folder': {'display_name': 'Folder', 'function': self.open_folder, 'text': '⏏', 'type': 'button',
-                            'state': 'open_folder_state'},
             'play_video': {'display_name': 'Video', 'function': self.play_video, 'text': '▶', 'type': 'button',
                            'state': 'play_video_state'},
+            'open_folder': {'display_name': 'Folder', 'function': self.open_folder, 'text': '⏏', 'type': 'button',
+                            'state': 'open_folder_state'},
             'download_slides': {'display_name': 'Slides', 'function': self.download_slides, 'text': '⬇',
                                 'type': 'button', 'state': 'download_slides_state'},
             'show_slides': {'display_name': 'Slides', 'function': self.show_slides, 'text': '▤', 'type': 'button',
                             'state': 'show_slides_state'},
+            'add_slides': {'display_name': 'Slides', 'function': self.add_slides, 'text': '📎', 'type': 'button',
+                           'state': 'add_slides_state'},
         }
 
         self.button_state_columns = {k: {'display_name': k, 'type': 'button_state'} for k in [
             'download_video_state',
-            'open_folder_state',
             'play_video_state',
+            'open_folder_state',
             'download_slides_state',
             'show_slides_state',
+            'add_slides_state',
         ]}
 
         # index
@@ -169,14 +174,10 @@ class App:
         Adds authentication widgets and blank frame for holding video/lectures data.
         """
         cs = self.colorscheme
-        label_options = {
-            'padx': 5,
+        grid_options = {
+            'padx': 10,
             'pady': 5,
-            'sticky': 'ew',
-        }
-        entry_options = {
-            'padx': 5,
-            'pady': 5,
+            'sticky': 'w',
         }
 
         frame_auth = tk.Frame(anchor, padx=0, pady=0)
@@ -185,26 +186,32 @@ class App:
 
         # URL Label and Entry box.
         self.url_label = tk.Label(frame_auth, text='URL')
-        self.url_label.grid(row=0, column=0, **label_options)
+        self.url_label.grid(row=0, column=0, **grid_options)
         self.url_box = tk.Entry(frame_auth, width=30)
         self.url_box.insert(tk.END, self.conf.get('impartus_url'))
-        self.url_box.grid(row=0, column=1, **entry_options)
+        self.url_box.grid(row=0, column=1, **grid_options)
 
         # Login Id Label and Entry box.
         self.user_label = tk.Label(frame_auth, text='Login (email) ')
-        self.user_label.grid(row=1, column=0, **label_options)
+        self.user_label.grid(row=1, column=0, **grid_options)
         self.user_box = tk.Entry(frame_auth, width=30)
-        self.user_box.insert(tk.END, self.conf.get('login_email'))
-        self.user_box.grid(row=1, column=1, **entry_options)
+        self.user_box.insert(tk.END, self.creds_config.get('login_email'))
+        self.user_box.grid(row=1, column=1, **grid_options)
 
         self.pass_label = tk.Label(frame_auth, text='Password ')
-        self.pass_label.grid(row=2, column=0, **label_options)
-        self.pass_box = tk.Entry(frame_auth, text='', show="*", width=30)
+        self.pass_label.grid(row=2, column=0, **grid_options)
+        self.pass_box = tk.Entry(frame_auth, show="*", width=30)
+        self.pass_box.insert(tk.END, self.creds_config.get('password'))
         self.pass_box.bind("<Return>", self.get_videos)
-        self.pass_box.grid(row=2, column=1, **entry_options)
+        self.pass_box.grid(row=2, column=1, **grid_options)
+
+        self.save_credentials_var = tk.IntVar()
+        self.save_credentials_button = tk.Checkbutton(frame_auth, text='Save Credentials', bg=cs['root']['bg'],
+                                                      fg=cs['root']['fg'], variable=self.save_credentials_var)
+        self.save_credentials_button.grid(row=2, column=2, **grid_options)
 
         self.show_videos_button = tk.Button(frame_auth, text='Show Videos', command=self.get_videos)
-        self.show_videos_button.grid(row=2, column=2)
+        self.show_videos_button.grid(row=3, column=1, **grid_options)
 
         # set focus to user entry if it is empty, else to password box.
         if self.user_box.get() == '':
@@ -224,14 +231,6 @@ class App:
         self.reload_button = tk.Button(self.frame_toolbar, text='Reload ⟳', command=self.get_videos, **button_options)
         self.reload_button.grid(row=0, column=1, **grid_options)
 
-        self.add_offline_slides_button = tk.Button(
-            self.frame_toolbar, text='Slides +', command=self.donothing, **button_options)
-        self.add_offline_slides_button.grid(row=0, column=2, **grid_options)
-
-        self.edit_path_button = tk.Button(self.frame_toolbar, text='Video/Slides Location  ✎', command=self.donothing,
-                                          **button_options)
-        self.edit_path_button.grid(row=0, column=3, **grid_options)
-
         dropdown = tk.Menubutton(self.frame_toolbar, text='Columns', **button_options)
         dropdown.menu = tk.Menu(dropdown, tearoff=1)
         dropdown['menu'] = dropdown.menu
@@ -240,13 +239,13 @@ class App:
             dropdown.menu.add_checkbutton(label=display_name, variable=item, onvalue=1, offvalue=0,
                                           command=self.set_display_columns)
             self.display_columns_vars.append(item)
-        dropdown.grid(row=0, column=4, **grid_options)
+        dropdown.grid(row=0, column=2, **grid_options)
         self.display_columns_dropdown = dropdown
 
         # empty column, to keep columns 1-5 centered
         self.frame_toolbar.columnconfigure(0, weight=1)
         # move the color scheme buttons to extreme right
-        self.frame_toolbar.columnconfigure(5, weight=1)
+        self.frame_toolbar.columnconfigure(3, weight=1)
 
         color_var = tk.IntVar()
         self.color_var = color_var
@@ -262,20 +261,13 @@ class App:
                     self.frame_toolbar, var=color_var, value=i, bg=self.colorscheme_config[k].get('theme_color'),
                     command=partial(self.set_color_scheme, self.colorscheme_config[k])
                 )
-                colorscheme_button.grid(row=0, column=5+i, **grid_options_cs, sticky='e')
+                colorscheme_button.grid(row=0, column=3+i, **grid_options_cs, sticky='e')
                 self.colorscheme_buttons.append(colorscheme_button)
 
                 # Set the radio button to indicate currently active color scheme.
                 if self.colorscheme_config.get('default') == k:
                     self.color_var.set(i)
                 i += 1
-
-    def on_dialog_close(self):
-        self.dialog.destroy()
-        self.dialog = None
-
-    def donothing(self):
-        pass
 
     def set_display_columns(self):
         column_states = [i for i, v in enumerate(self.display_columns_vars) if v.get() == 1]
@@ -329,7 +321,6 @@ class App:
             self.sheet.refresh()
 
     def add_content_frame(self, anchor):
-        cs = self.colorscheme
         frame_content = tk.Frame(anchor, padx=0, pady=0)
         frame_content.grid(row=2, column=0, sticky='nsew')
         self.frame_content = frame_content
@@ -340,8 +331,14 @@ class App:
         Fetch video/lectures available to the user and display on the UI.
         """
 
+        if self.save_credentials_var.get():
+            self.creds_config['login_email'] = self.user_box.get()
+            self.creds_config['password'] = self.pass_box.get()
+            Config.save('creds')
+
         self.show_videos_button.config(state='disabled')
         self.reload_button.config(state='disabled')
+
         username = self.user_box.get()
         password = self.pass_box.get()
         root_url = self.url_box.get()
@@ -440,6 +437,7 @@ class App:
         # A mapping dict containing previously downloaded, and possibly moved around / renamed videos.
         # extract their ttid and map those to the correct records, to avoid forcing the user to re-download.
         offline_video_ttid_mapping = self.impartus.get_mkv_ttid_map()
+
         row = 0
         for subject in subjects:
             videos = self.impartus.get_videos(root_url, subject)
@@ -450,15 +448,17 @@ class App:
 
             for ttid, video_metadata in videos.items():
                 video_metadata = Utils.add_new_fields(video_metadata, video_slide_mapping)
-                # video_metadata = Utils.sanitize(video_metadata)
 
                 video_path = self.impartus.get_mkv_path(video_metadata)
                 if not os.path.exists(video_path):
                     # or search from the downloaded videos, using video_ttid_map
                     video_path_moved = offline_video_ttid_mapping.get(str(ttid))
                     if video_path_moved:
-                        # Use the offline path, if a video found.
-                        video_path = video_path_moved
+                        if self.conf.get('auto_move_and_rename_files'):
+                            Utils.move_and_rename_file(video_path_moved, video_path)
+                        else:
+                            # Use the offline path, if a video found and we don't want to rename it.
+                            video_path = video_path_moved
 
                 slides_path = self.impartus.get_slides_path(video_metadata)
 
@@ -548,9 +548,10 @@ class App:
         self.progress_bar_color()
 
     def align_columns(self):
-        self.sheet.align_columns([k for k, v in self.data_columns.items()], align='w')
-        self.sheet.align_columns([k for k, v in self.progressbar_column.items()], align='w')
-        self.sheet.align_columns([k for k, v in self.button_columns.items()], align='center')
+        # data and progressbar west/left aligned, button center aligned.
+        self.sheet.align_columns([self.column_names.index(k) for k in self.data_columns.keys()], align='w')
+        self.sheet.align_columns([self.column_names.index(k) for k in self.progressbar_column.keys()], align='w')
+        self.sheet.align_columns([self.column_names.index(k) for k in self.button_columns.keys()], align='center')
 
     def progress_bar_color(self, redraw=True):
         """
@@ -600,8 +601,6 @@ class App:
 
         # adjust extra width only to top N data columns
         n = 3
-        data_col_widths = {}
-
         column_states = [v.get() for v in self.display_columns_vars]
         count = 0
         for k, v in enumerate(column_states):
@@ -663,9 +662,9 @@ class App:
                     return c
                 i += 1
 
-    def end_edit_cell(self, old_subject_value, event=None):
+    def end_edit_cell(self, event=None):
         row, col = (event[0], event[1])
-        new_subject_value = self.sheet.get_text_editor_value(
+        new_value = self.sheet.get_text_editor_value(
             event,
             r=row,
             c=col,
@@ -674,7 +673,7 @@ class App:
             redraw=True,
             recreate=True
         )
-        if not new_subject_value:
+        if not new_value:
             return
 
         col_name = self.column_names[self.get_real_col(col)]
@@ -683,14 +682,16 @@ class App:
         original_value = self.sheet.get_cell_data(row, self.column_names.index(orig_values_col_name))
         for i, data in enumerate(self.sheet.get_column_data(self.column_names.index(orig_values_col_name))):
             if data == original_value:
-                self.sheet.set_cell_data(i, col, new_subject_value)
-        self.update_mappings(orig_values_col_name, old_subject_value, new_subject_value)
+                self.sheet.set_cell_data(i, col, new_value)
+        self.update_mappings(orig_values_col_name, original_value, new_value)
         self.reset_column_sizes()
         self.sheet.refresh()
 
     def update_mappings(self, mapping_name, old_value, new_value):
-        self.subject_mapping_config.get(mapping_name)[old_value] = new_value
-        Utils.write_config({mapping_name: self.subject_mapping_config.get(mapping_name)}, 'mappings.conf')
+        if not self.mappings_config.get(mapping_name):
+            self.mappings_config[mapping_name] = {}
+        self.mappings_config.get(mapping_name)[old_value] = new_value
+        Config.save('mappings')
 
     def on_click_button_handler(self, args):
         """
@@ -708,7 +709,7 @@ class App:
                 column=real_col,
                 text=old_value,
                 set_data_ref_on_destroy=False,
-                binding=partial(self.end_edit_cell, old_value)
+                binding=self.end_edit_cell
             )
 
         # not a button.
@@ -848,7 +849,7 @@ class App:
         if new_text != self.sheet.get_cell_data(updated_row, col):
             self.sheet.set_cell_data(updated_row, col, new_text, redraw=True)
 
-    def _download_video(self, video_metadata, filepath, root_url, row, col):
+    def _download_video(self, video_metadata, filepath, root_url, row, col):    # noqa
         """
         Download a video in a thread. Update the UI upon completion.
         """
@@ -876,6 +877,15 @@ class App:
         # enable buttons.
         self.enable_button(updated_row, self.column_names.index('open_folder'))
         self.enable_button(updated_row, self.column_names.index('play_video'))
+
+    def add_slides(self, row, col):     # noqa
+        filepaths = tkinter.filedialog.askopenfilenames()
+
+        data = self.read_metadata(row)
+        slides_folder_path = os.path.dirname(data.get('video_path'))
+
+        for filepath in filepaths:
+            shutil.copy(filepath, slides_folder_path)
 
     def download_video(self, row, col):
         """
@@ -906,7 +916,7 @@ class App:
             tkinter.messagebox.showerror('Error', 'Error downloading slides, see console logs for details.')
             self.enable_button(row, self.column_names.index('download_slides'))
 
-    def download_slides(self, row, col):
+    def download_slides(self, row, col):    # noqa
         """
         callback function for Download button.
         Creates a thread to download the request video.
@@ -934,7 +944,7 @@ class App:
         data = self.sheet.get_cell_data(row, metadata_col)
         return ast.literal_eval(data)
 
-    def open_folder(self, row, col):
+    def open_folder(self, row, col):    # noqa
         """
         fetch video_path's folder from metadata column's cell and open system launcher with it.
         """
@@ -942,14 +952,14 @@ class App:
         video_folder_path = os.path.dirname(data.get('video_path'))
         Utils.open_file(video_folder_path)
 
-    def play_video(self, row, col):
+    def play_video(self, row, col):     # noqa
         """
         fetch video_path from metadata column's cell and open system launcher with it.
         """
         data = self.read_metadata(row)
         Utils.open_file(data.get('video_path'))
 
-    def show_slides(self, row, col):
+    def show_slides(self, row, col):    # noqa
         """
         fetch slides_path from metadata column's cell and open system launcher with it.
         """
