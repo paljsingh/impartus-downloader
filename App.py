@@ -161,9 +161,9 @@ class App:
         self.app.columnconfigure(0, weight=1)
 
         default_font = font.nametofont("TkDefaultFont")
-        default_font.configure(family=self.conf.get('content_font'), size=14)
+        default_font.configure(family=self.conf.get('content_font'), size=self.conf.get('content_font_size'))
         text_font = font.nametofont("TkTextFont")
-        text_font.configure(family=self.conf.get('content_font'), size=14)
+        text_font.configure(family=self.conf.get('content_font'), size=self.conf.get('content_font_size'))
 
         self.add_authentication_form(self.app)
         self.add_toolbar(self.app)
@@ -412,8 +412,8 @@ class App:
         """
         sheet = Sheet(
             anchor,
-            header_font=(self.conf.get("content_font"), 12, "bold"),
-            font=(self.conf.get('content_font'), 14, "normal"),
+            header_font=(self.conf.get("content_font"), self.conf.get('header_font_size'), "bold"),
+            font=(self.conf.get('content_font'), self.conf.get('content_font_size'), "normal"),
             align='w',
             row_height="1",  # str value for row height in number of lines.
             row_index_align="w",
@@ -1040,8 +1040,8 @@ class App:
 
         sheet = Sheet(
             dialog,
-            header_font=(self.conf.get("content_font"), 12, "bold"),
-            font=(self.conf.get('content_font'), 14, "normal"),
+            header_font=(self.conf.get("content_font"), self.conf.get('header_font_size'), "bold"),
+            font=(self.conf.get('content_font'), self.conf.get('content_font_size'), "normal"),
             align='w',
             row_height="1",  # str value for row height in number of lines.
             row_index_align="w",
