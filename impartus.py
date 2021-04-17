@@ -1,10 +1,12 @@
 import os
+import sys
 import re
 import time
 import requests
 import logging
 from pathlib import Path
 import enzyme
+import platform
 
 from config import Config
 from utils import Utils
@@ -30,13 +32,15 @@ class Impartus:
             self.session.cookies.update({'Bearer': token})
             self.session.headers.update({'Authorization': 'Bearer {}'.format(token)})
 
-        self.conf = Config.load()
+        self.conf = Config.load('impartus')
 
         # save the files here.
-        if os.name == 'posix':
-            self.download_dir = self.conf.get('target_dir').get('posix')
-        else:
-            self.download_dir = self.conf.get('target_dir').get('windows')
+        self.download_dir = self.conf.get('target_dir').get(platform.system())
+
+        # export any required variables:
+        if self.conf.get('export_variables') and self.conf['export_variables'].get(platform.system()):
+            for key, value in self.conf['export_variables'].get(platform.system()).items():
+                os.environ[key] = value
 
         self.temp_downloads_dir = os.path.join(Utils.get_temp_dir(), 'impartus.media')
         os.makedirs(self.temp_downloads_dir, exist_ok=True)
@@ -132,10 +136,16 @@ class Impartus:
                     os.rmdir(download_dir)
 
     def get_mkv_path(self, video_metadata):
-        return self.conf.get('video_path').format(**video_metadata, target_dir=self.download_dir)
+        mkv_path = self.conf.get('video_path').format(**video_metadata, target_dir=self.download_dir)
+        if self.conf.get('use_safe_paths'):
+            mkv_path = Utils.sanitize(mkv_path)
+        return mkv_path
 
     def get_slides_path(self, video_metadata):
-        return self.conf.get('slides_path').format(**video_metadata, target_dir=self.download_dir)
+        slides_path = self.conf.get('slides_path').format(**video_metadata, target_dir=self.download_dir)
+        if self.conf.get('use_safe_paths'):
+            slides_path = Utils.sanitize(slides_path)
+        return slides_path
 
     def get_mkv_ttid_map(self):
         mkv_ttid_map = dict()
@@ -229,5 +239,6 @@ class Impartus:
             self.logger.error('Http response code: {}, response body: {}: '.format(response.status_code, response.text))
             return False
 
-class GetOutOfLoop( Exception ):
+
+class GetOutOfLoop(Exception):
     pass

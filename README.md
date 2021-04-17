@@ -105,6 +105,16 @@ also, see color-schemes.conf
 ## Known Issues
 * Lecture slides to video mapping may be incorrect. The impartus platform does not offer a strict video to lecture slides mapping, the application uses the upload dates of the two for a fuzzy match.
 * Impartus site may start throttling the connections if there are too many parallel downloads. The application uses retry logic with induced delay. However, if the issue persists you may need to restart the app.
+* Application crashes on Linux with error 
+>
+> X Error of failed request:  BadLength (poly request too large or internal Xlib length error)`
+>
+
+The issue is caused by a bug in libXft and can be resolved by uninstalling fonts-noto-color-emoji
+>
+> $ sudo apt-get remove fonts-noto-color-emoji
+>
+
 
 
 Drop a mail to paljsingh@gmail.com for any issues/errors.
