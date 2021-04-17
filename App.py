@@ -1039,6 +1039,10 @@ class App:
         # only 1 dialog at a time.
         if self.dialog:
             return
+
+        if len(moved_files) == 0:
+            return
+        
         dialog = tk.Toplevel()
         dialog.protocol("WM_DELETE_WINDOW", self.on_dialog_close)
         dialog.geometry("1000x500+100+100")
