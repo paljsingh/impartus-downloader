@@ -1,10 +1,12 @@
 import os
+import sys
 import re
 import time
 import requests
 import logging
 from pathlib import Path
 import enzyme
+import platform
 
 from config import Config
 from utils import Utils
@@ -33,10 +35,12 @@ class Impartus:
         self.conf = Config.load('impartus')
 
         # save the files here.
-        if os.name == 'posix':
-            self.download_dir = self.conf.get('target_dir').get('posix')
-        else:
-            self.download_dir = self.conf.get('target_dir').get('windows')
+        self.download_dir = self.conf.get('target_dir').get(platform.system())
+
+        # export any required variables:
+        if self.conf.get('export_variables') and self.conf['export_variables'].get(platform.system()):
+            for key, value in self.conf['export_variables'].get(platform.system()).items():
+                os.environ[key] = value
 
         self.temp_downloads_dir = os.path.join(Utils.get_temp_dir(), 'impartus.media')
         os.makedirs(self.temp_downloads_dir, exist_ok=True)
