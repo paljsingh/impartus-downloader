@@ -59,7 +59,7 @@ class Utils:
         """
         path = re.sub(r'[^\\0-9a-zA-Z/:_.]', '-', path)
         path = re.sub(r"[-]{2,}", "-", path)
-        path = re.sub(r"[^0-9a-zA-Z]+([/\\])", r'\1', path)
+        path = re.sub(r"[^0-9a-zA-Z:]+([/\\])", r'\1', path)
         return path
 
     @classmethod
