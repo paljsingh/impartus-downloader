@@ -11,6 +11,7 @@ import ast
 import threading
 import shutil
 import logging
+import platform
 
 from config import Config
 from impartus import Impartus
@@ -74,6 +75,12 @@ class App:
         self.videos = None
         self.video_slide_mapping = None
         self.offline_video_ttid_mapping = None
+
+        self.content_font = self.conf.get('content_font').get(platform.system())
+        self.content_font_size = self.conf.get('content_font_size')
+
+        self.header_font = self.conf.get('header_font').get(platform.system())
+        self.header_font_size = self.conf.get('header_font_size')
 
         self._init_backend()
         self._init_ui()
@@ -166,9 +173,9 @@ class App:
         self.app.columnconfigure(0, weight=1)
 
         default_font = font.nametofont("TkDefaultFont")
-        default_font.configure(family=self.conf.get('content_font'), size=self.conf.get('content_font_size'))
+        default_font.configure(family=self.content_font, size=self.content_font_size)
         text_font = font.nametofont("TkTextFont")
-        text_font.configure(family=self.conf.get('content_font'), size=self.conf.get('content_font_size'))
+        text_font.configure(family=self.content_font, size=self.content_font_size)
 
         self.add_authentication_form(self.app)
         self.add_toolbar(self.app)
@@ -419,8 +426,8 @@ class App:
         """
         sheet = Sheet(
             anchor,
-            header_font=(self.conf.get("content_font"), self.conf.get('header_font_size'), "bold"),
-            font=(self.conf.get('content_font'), self.conf.get('content_font_size'), "normal"),
+            header_font=(self.header_font, self.header_font_size, "bold"),
+            font=(self.content_font, self.content_font_size, "normal"),
             align='w',
             row_height="1",  # str value for row height in number of lines.
             row_index_align="w",
@@ -1054,8 +1061,8 @@ class App:
 
         sheet = Sheet(
             dialog,
-            header_font=(self.conf.get("content_font"), self.conf.get('header_font_size'), "bold"),
-            font=(self.conf.get('content_font'), self.conf.get('content_font_size'), "normal"),
+            header_font=(self.header_font, self.header_font_size, "bold"),
+            font=(self.content_font, self.content_font_size, "normal"),
             align='w',
             row_height="1",  # str value for row height in number of lines.
             row_index_align="w",
