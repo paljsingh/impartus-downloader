@@ -150,6 +150,11 @@ class App:
         """
         self.app = tkinter.Tk()
 
+        # fix: askopenfiles dialog on linux by default shows white fg (foreground) on white bg
+        # explicitely set foreground for TkFDialog to black.
+        self.app.option_add('*TkFDialog*foreground', '#000000')
+        self.app.option_add('*TkFDialog*background', '#dddddd')
+
         pad = 3
         self.screen_width = self.app.winfo_screenwidth() - pad
         self.screen_height = self.app.winfo_screenheight() - pad
