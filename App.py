@@ -454,7 +454,9 @@ class App:
         for subject_dict in subject_dicts:
             videos_by_subject = self.impartus.get_videos(root_url, subject_dict)
             slides = self.impartus.get_slides(root_url, subject_dict)
-            self.video_slide_mapping = self.impartus.map_slides_to_videos(videos_by_subject, slides)
+            mapping_dict = self.impartus.map_slides_to_videos(videos_by_subject, slides)
+            for key, val in mapping_dict.items():
+                self.video_slide_mapping[key] = val
             self.videos[subject_dict.get('subjectId')] = {x['ttid']:  x for x in videos_by_subject}
 
     def fill_content(self):
