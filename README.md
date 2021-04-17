@@ -9,8 +9,16 @@ Downloader for impartus streaming videos.
 - Multi view/track files supported. Tested with files up to 4 tracks.
 - Parallel downloads supported. 
 - Tested on Mac, Linux (ubuntu) and Windows 10.
+- Editable subject field to create short subject name mapping.
+- Auto-detect when the real video path differs from expected video paths,
+due to change in topic on server, new short-subject name mapping or change in video/slides path.
+- Option to add offline slides.
+- Bulk move/rename files when there is a change in the actual vs expected video paths.
 - Sortable content.
 - Customizable color schemes, fonts.
+- Configurable columns.
+- Color scheme change via the UI.
+
 
 ___
 
@@ -88,15 +96,12 @@ Ensure python version is >= 3.6
 
 ## Configuration
 
-see yaml.conf
-
-also, see color-schemes.conf
+see etc/yaml.conf
 
 
 
 ## Todo
 * Support downloading flipped lectures.
-* Map manually downloaded slides to videos.
 * Option to download auto-generated slides.
 * Add metadata tags to slides to preserve mapping across lecture topic / video rename.
 * Improve fuzzy matching of videos to slides by making use of slide name and content.
@@ -106,9 +111,7 @@ also, see color-schemes.conf
 * Lecture slides to video mapping may be incorrect. The impartus platform does not offer a strict video to lecture slides mapping, the application uses the upload dates of the two for a fuzzy match.
 * Impartus site may start throttling the connections if there are too many parallel downloads. The application uses retry logic with induced delay. However, if the issue persists you may need to restart the app.
 * Application crashes on Linux with error 
->
-> X Error of failed request:  BadLength (poly request too large or internal Xlib length error)`
->
+ X Error of failed request:  BadLength (poly request too large or internal Xlib length error)`
 
 The issue is caused by a bug in libXft and can be resolved by uninstalling fonts-noto-color-emoji
 >
