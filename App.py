@@ -1041,7 +1041,7 @@ class App:
             return
         dialog = tk.Toplevel()
         dialog.protocol("WM_DELETE_WINDOW", self.on_dialog_close)
-        dialog.geometry("800x500")
+        dialog.geometry("1000x500+100+100")
         dialog.title('Alert - file rename!')
         dialog.grab_set()
 
