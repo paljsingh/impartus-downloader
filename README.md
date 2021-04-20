@@ -23,7 +23,7 @@ due to change in topic on server, new short-subject name mapping or change in vi
 ___
 
 ### UI
-![Impartus Downloader](impartus-ui.gif "Impartus Downloader - color scheme: blue")
+![Impartus Downloader](impartus-ui.gif "Impartus Downloader")
 
 
 ### Demo video
@@ -96,7 +96,7 @@ Ensure python version is >= 3.6
 
 ## Configuration
 
-see etc/yaml.conf
+see etc/impartus.conf
 
 
 
