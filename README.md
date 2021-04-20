@@ -27,7 +27,7 @@ ___
 
 
 ### Demo video
-[![Impartus v3.0 demo](https://img.youtube.com/vi/o8uYDbbNyGQ/0.jpg)](https://www.youtube.com/watch?v=o8uYDbbNyGQ)
+[![Impartus v3 demo](https://img.youtube.com/vi/LC0QEABmLSc/0.jpg)](https://youtu.be/LC0QEABmLSc)
 
 
 
