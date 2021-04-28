@@ -8,6 +8,7 @@ import logging
 
 from app.config import Config
 
+
 class Utils:
 
     @classmethod
@@ -69,13 +70,12 @@ class Utils:
 
     @classmethod
     def get_temp_dir(cls):
-        if os.environ.get('TMPDIR'):
-            return os.environ.get('TMPDIR')
-        if os.environ.get('TEMP'):
-            return os.environ.get('TEMP')
-        if os.environ.get('TMP'):
-            return os.environ.get('TMP')
-        return '/tmp'
+        for env_var in ['TMPDIR', 'TEMP', 'TMP']:
+            if os.environ.get(env_var):
+                return os.environ.get(env_var)
+        for tmp_path in ['/tmp', '/var/tmp', 'c:\\windows\\temp']:
+            if os.path.exists(tmp_path):
+                return tmp_path
 
     @classmethod
     def open_file(cls, path):
@@ -90,6 +90,5 @@ class Utils:
     @classmethod
     def move_and_rename_file(cls, source, destination):
         if source != destination:
-            logger = logging.getLogger(cls.__name__)
             os.makedirs(os.path.dirname(destination), exist_ok=True)
             shutil.move(source, destination)
