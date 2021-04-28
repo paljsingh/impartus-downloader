@@ -23,7 +23,7 @@ due to change in topic on server, new short-subject name mapping or change in vi
 ___
 
 ### UI
-![Impartus Downloader](impartus-ui.gif "Impartus Downloader")
+![Impartus Downloader](etc/impartus-ui.gif "Impartus Downloader")
 
 
 ### Demo video
