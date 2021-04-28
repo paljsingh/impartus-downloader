@@ -6,3 +6,4 @@ requests
 enzyme
 mock
 pytest
+pytest-mock
