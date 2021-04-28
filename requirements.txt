@@ -4,3 +4,5 @@ tk
 tksheet
 requests
 enzyme
+mock
+pytest

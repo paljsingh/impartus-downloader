@@ -8,11 +8,11 @@ from pathlib import Path
 import enzyme
 import platform
 
-from config import Config
-from utils import Utils
-from encoder import Encoder
-from m3u8parser import M3u8Parser
-from decrypter import Decrypter
+from app.config import Config
+from app.utils import Utils
+from app.media.encoder import Encoder
+from app.media.m3u8parser import M3u8Parser
+from app.media.decrypter import Decrypter
 
 
 class Impartus:

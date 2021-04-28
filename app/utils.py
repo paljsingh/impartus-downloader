@@ -2,11 +2,11 @@ import os
 import re
 import shutil
 from typing import List
-from config import Config
 import webbrowser
 from datetime import datetime
 import logging
 
+from app.config import Config
 
 class Utils:
 

@@ -31,7 +31,7 @@ class Encoder:
         for index in range(1, len(ts_files)):
             start_ss = index * duration
             (
-                os.system("ffmpeg -y -loglevel {level} -i {input} -c copy  -ss {start} -t {duration} {output}"
+                os.system("ffmpeg -y -loglevel {level} -i {input} -c copy -ss {start} -t {duration} {output}"
                           .format(level=loglevel, input=ts_files[0], start=start_ss, duration=duration,
                                   output=ts_files[index]))
             )

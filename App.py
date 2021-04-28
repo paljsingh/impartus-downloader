@@ -13,9 +13,9 @@ import shutil
 import logging
 import platform
 
-from config import Config
-from impartus import Impartus
-from utils import Utils
+from app.config import Config
+from app.impartus import Impartus
+from app.utils import Utils
 
 
 class App:
