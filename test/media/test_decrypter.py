@@ -1,5 +1,5 @@
 import pytest
-from mock import call, mock_open, MagicMock
+from mock import MagicMock
 
 
 @pytest.fixture
