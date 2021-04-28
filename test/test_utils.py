@@ -41,3 +41,37 @@ def test_date_difference():
     for bad_date in bad_dates:
         with pytest.raises(ValueError) as err:
             Utils.date_difference(bad_date, bad_date)
+
+
+def test_get_temp_dir_by_env(mocker):
+    mocker.patch('os.path.exists', return_value=True)
+
+    import os
+    from app.utils import Utils
+
+    # unset all tmp variables
+    for env_var in ['TMPDIR', 'TEMP', 'TMP']:
+        os.environ[env_var] = ''
+
+    for env_var in ['TMPDIR', 'TEMP', 'TMP']:
+        value = '/test/{}/path/'.format(str.lower(env_var))
+        os.environ[env_var] = value
+        assert Utils.get_temp_dir() == value
+        os.environ[env_var] = ''
+
+
+def test_get_temp_dir_fallback(mocker):
+    mock_os_path = mocker.patch('os.path.exists')
+    mock_os_path.side_effect = [True,           # /tmp, return true immediately
+                                False, True,    # /tmp: False, /var/tmp: True
+                                False, False, True  # /tmp: False, /var/tmp: False, c:\\windows\\temp: True
+                                ]
+
+    import os
+    from app.utils import Utils
+
+    for env_var in ['TMPDIR', 'TEMP', 'TMP']:
+        os.environ[env_var] = ''
+
+    for path_val in ['/tmp', '/var/tmp', 'c:\\windows\\temp']:
+        assert Utils.get_temp_dir() == path_val
