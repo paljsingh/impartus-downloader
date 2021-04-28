@@ -1,5 +1,5 @@
 import pytest
-from mock import MagicMock
+from mock import MagicMock, call
 
 
 @pytest.fixture
@@ -41,3 +41,51 @@ def test_date_difference():
     for bad_date in bad_dates:
         with pytest.raises(ValueError) as err:
             Utils.date_difference(bad_date, bad_date)
+
+
+def test_get_temp_dir_by_env(mocker):
+    mocker.patch('os.path.exists', return_value=True)
+
+    import os
+    from app.utils import Utils
+
+    # unset all tmp variables
+    for env_var in ['TMPDIR', 'TEMP', 'TMP']:
+        os.environ[env_var] = ''
+
+    for env_var in ['TMPDIR', 'TEMP', 'TMP']:
+        value = '/test/{}/path/'.format(str.lower(env_var))
+        os.environ[env_var] = value
+        assert Utils.get_temp_dir() == value
+        os.environ[env_var] = ''
+
+
+def test_get_temp_dir_fallback(mocker):
+    mock_os_path = mocker.patch('os.path.exists')
+
+    # os.path.exists shall return one value per call from the following list.
+    mock_os_path.side_effect = [True,               # /tmp: True
+                                False, True,        # /tmp: False, /var/tmp: True
+                                False, False, True  # /tmp: False, /var/tmp: False, c:\\windows\\temp: True
+                                ]
+
+    import os
+    from app.utils import Utils
+
+    for env_var in ['TMPDIR', 'TEMP', 'TMP']:
+        os.environ[env_var] = ''
+
+    for path_val in ['/tmp', '/var/tmp', 'c:\\windows\\temp']:
+        assert Utils.get_temp_dir() == path_val
+
+
+def test_delete_files(mocker):
+    mock_unlink = mocker.patch('os.unlink')
+    from app.utils import Utils
+
+    for files_list in [['0'], ['0', '1'], ['0', '1', '2'], ['0', '1', '2', '3']]:
+        Utils.delete_files(files_list)
+        assert mock_unlink.call_count == len(files_list)
+        mock_unlink.assert_has_calls([call(x) for x in files_list])
+        mock_unlink.reset_mock()
+
