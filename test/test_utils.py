@@ -89,3 +89,68 @@ def test_delete_files(mocker):
         mock_unlink.assert_has_calls([call(x) for x in files_list])
         mock_unlink.reset_mock()
 
+
+def test_sanitize():
+    from app.utils import Utils
+
+    data_items = {
+        'abcdefghijklmnopqrstuvwxyz': 'abcdefghijklmnopqrstuvwxyz',     # alphabets
+        'ABCDEFGHIJKLMNOPQRSTUVWXYZ': 'ABCDEFGHIJKLMNOPQRSTUVWXYZ',     # alphabets
+        '0123456789': '0123456789',                                     # numbers
+        'x.y.z': 'x.y.z',                                               # '.'
+        'x:y:z': 'x:y:z',                                               # ':'
+        'x/y/z': 'x/y/z',                                               # '/'
+        'x\\y\\z': 'x\\y\\z',                                           # '\'
+        'x-y-z': 'x-y-z',                                               # '-'
+        'x_y_z': 'x_y_z',                                               # '_'
+        'x--y---z': 'x-y-z',                                            # multiple '--'
+        'x~!@#$%^&*()+={[}]|";,<>?` \'z': 'x-z',                        # everything else
+        'xz~!@#$%^&*()+={[}]|";,<>?` \'': 'xz',                         # non-alphanum at end
+    }
+
+    for key, val in data_items.items():
+        assert Utils.sanitize(key) == val
+
+
+def test_add_new_fields(mocker):
+    mock_config_load = mocker.patch('app.config.Config.load')
+    mock_config_load.side_effect = [
+        {'allowed_ext': ['ppt', 'pdf']},
+        {'subjectName': {'long_subject_name': 'short_name'}}
+    ]
+
+    metadata_given = {
+        'ttid': '123',
+        'seqNo': 5,
+        'views': 234,
+        'actualDuration': 7260,
+        'sessionId': 987,
+        'startTime': '2021-01-31 09:00:05',
+        'endTime': '2021-01-31 11:05:05',
+        'subjectName': 'long_subject_name',
+    }
+    metadata_processed = {
+        'ttid': '123',
+        'seqNo': '05',                          # 2 digit fixed width string
+        'views': '0234',                        # 4 digit fixed width string
+        'actualDuration': '07260',              # 5 digit fixed width string
+        'actualDurationReadable': '2:01h',      # from actualDuration field
+        'sessionId': '0987',                    # 4 digit fixed width string.
+        'startTime': '2021-01-31 09:00:05',
+        'startDate': '2021-01-31',              # computed from startTime
+        'endTime': '2021-01-31 11:05:05',
+        'endDate': '2021-01-31',                # computed from endTime
+        'subjectName': 'long_subject_name',
+        'subjectNameShort': 'short_name',       # from subjectName mapping
+        'ext': 'pdf'                           # since {'ttid': 123} has a associated attachment as: /foo/bar/baz.pdf
+    }
+
+    video_slide_mapping = {
+        '123': '/foo/bar/baz.pdf',
+        '456': '/foobaz/bar.pptx',
+        '789': '/bazbar/foo.docx',
+        # ...
+    }
+    from app.utils import Utils
+
+    assert Utils.add_new_fields(metadata_given, video_slide_mapping) == metadata_processed
