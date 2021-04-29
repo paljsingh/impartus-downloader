@@ -205,9 +205,15 @@ def test_parse(mocker, m3u8_sample):
     assert len(tracks_object) == 1          # single track
     assert len(tracks_object[0]) == 70      # 70 media files.
 
-    #
-    # # with tracks
-    # m3u8parser = M3u8Parser(m3u8_sample, num_tracks=3)
-    # assert m3u8parser.m3u8_content == m3u8_sample
-    # assert m3u8parser.summary == {}
-    # assert m3u8parser.tracks == [[], [], []]
+    # with tracks
+    summary_object, tracks_object = M3u8Parser(m3u8_sample, num_tracks=3).parse()
+    assert summary_object == {
+            "key_files": 7,
+            "media_files": 70,
+            "total_files": 77,
+            "total_duration": 701,
+        }
+    assert len(tracks_object) == 3          # single track
+    assert len(tracks_object[0]) == 70      # 70 media files.
+    assert len(tracks_object[1]) == 0       # 0 media files.
+    assert len(tracks_object[2]) == 0       # 0 media files.
