@@ -7,3 +7,4 @@ enzyme
 mock
 pytest
 pytest-mock
+PyYAML
