@@ -100,6 +100,11 @@ Ensure python version is >= 3.6
 see etc/impartus.conf
 
 
+## Unit Tests
+
+>
+> $ python3 -m pytest -v test
+>
 
 ## Todo
 * Support downloading flipped lectures.
