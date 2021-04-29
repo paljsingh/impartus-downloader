@@ -213,7 +213,7 @@ def test_parse(mocker, m3u8_sample):
             "total_files": 77,
             "total_duration": 701,
         }
-    assert len(tracks_object) == 3          # single track
-    assert len(tracks_object[0]) == 70      # 70 media files.
-    assert len(tracks_object[1]) == 0       # 0 media files.
-    assert len(tracks_object[2]) == 0       # 0 media files.
+    assert len(tracks_object) == 3          # 3 tracks
+    assert len(tracks_object[0]) == 70      # 70 media files in track 0.
+    assert len(tracks_object[1]) == 0       # 0 media files in track 1.
+    assert len(tracks_object[2]) == 0       # 0 media files in track 2.
