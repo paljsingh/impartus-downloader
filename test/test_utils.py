@@ -1,13 +1,5 @@
 import pytest
-from mock import MagicMock, call
-
-
-@pytest.fixture
-def enc_keys():
-    return [
-        '0123456789abcdef',
-        b'0123456789abcdef',
-    ]
+from mock import call
 
 
 def test_move_and_rename_file(mocker):
