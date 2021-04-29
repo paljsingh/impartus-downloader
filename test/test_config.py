@@ -66,3 +66,6 @@ def test_save(mocker, config_maps_yaml):
         Config.save(filetype)
         mock_yaml_dump.aseert_call_once_with(config_dict, filepath, default_flow_style=False, default_style="'")
         mock_yaml_dump.reset_mock()
+
+    # invalid filetypes should return None
+    assert Config.save('foo') is None
