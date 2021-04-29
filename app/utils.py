@@ -55,12 +55,13 @@ class Utils:
     @classmethod
     def sanitize(cls, path: str):  # noqa
         """
-        Sanitize the fields in the metadata item for better display.
-        Also creates a few new fields.
+        Sanitize the given path for storage.
         """
-        path = re.sub(r'[^\\0-9a-zA-Z/:_.]', '-', path)
-        path = re.sub(r"[-]{2,}", "-", path)
-        path = re.sub(r"[^0-9a-zA-Z:]+([/\\])", r'\1', path)
+
+        path = re.sub(r'[^\\0-9a-zA-Z/:_.]', '-', path)         # replace all bad chars with '-'
+        path = re.sub(r"[-]{2,}", "-", path)                    # truncate multiple '-' with single '-'
+        path = re.sub(r"^(.*)[^a-zA-Z0-9]+$", r'\1', path)       # strip bad chars at end
+        path = re.sub(r"^[^a-zA-Z0-9/]+(.*)$", r'\1', path)      # strip bad chars at beginning
         return path
 
     @classmethod
