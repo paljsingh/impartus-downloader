@@ -59,9 +59,12 @@ class Utils:
         """
 
         path = re.sub(r'[^\\0-9a-zA-Z/:_.]', '-', path)         # replace all bad chars with '-'
-        path = re.sub(r"[-]{2,}", "-", path)                    # truncate multiple '-' with single '-'
-        path = re.sub(r"^(.*)[^a-zA-Z0-9]+$", r'\1', path)       # strip bad chars at end
-        path = re.sub(r"^[^a-zA-Z0-9/]+(.*)$", r'\1', path)      # strip bad chars at beginning
+        path = re.sub(r"[^a-zA-Z0-9/\\]{2,}", '-', path)        # replace consecutive non-alphanum with single '-'
+        path = re.sub(r"^(.*)[^a-zA-Z0-9]+$", r'\1', path)      # strip bad chars at end
+        path = re.sub(r"^[^a-zA-Z0-9/]+(.*)$", r'\1', path)     # strip bad chars at beginning
+        path = re.sub(r'(/|\\)[^a-zA-Z0-9:]+', r'\1', path)     # strip bad chars after '/' or '\'
+        path = re.sub(r"[^a-zA-Z0-9:]+(/|\\)", r'\1', path)     # strip bad chars before '/' or '\'
+        # path = re.sub(r"[-]{2,}", "-", path)                    # truncate multiple '-' with single '-'
         return path
 
     @classmethod

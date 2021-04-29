@@ -98,6 +98,9 @@ def test_sanitize():
         'x--y---z': 'x-y-z',                                            # multiple '--'
         'x~!@#$%^&*()+={[}]|";,<>?` \'z': 'x-z',                        # everything else
         'xz~!@#$%^&*()+={[}]|";,<>?` \'': 'xz',                         # non-alphanum at end
+        '/tmp/foo/ X Y Z /xyz.def` \'': '/tmp/foo/X-Y-Z/xyz.def',                         # non-alphanum around /
+        '/tmp/foo/:-_. X _-_-_- Y  Z .../abc.def` \'': '/tmp/foo/X-Y-Z/abc.def',          # non-alphanum around /
+        'c:\\windows\\tmp\\ _-123.pdf  ': 'c:\\windows\\tmp\\123.pdf',                    # non-alphanum around \
     }
 
     for key, val in data_items.items():
