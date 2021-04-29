@@ -91,6 +91,6 @@ class M3u8Parser:
             "key_files": key_files,
             "media_files": media_files,
             "total_files": key_files + media_files,
-            "total_duration": total_duration,   # combined of all tracks.
+            "total_duration": round(total_duration),   # combined of all tracks.
         }
         return self.summary, self.tracks
