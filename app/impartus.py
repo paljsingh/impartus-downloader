@@ -197,9 +197,10 @@ class Impartus:
             categories = response.json()
             for category in categories:
 
-                # flipped lectures do not have lecture sequence number field, sort them by date (use createdDtTm,
-                # as it has time field value) and assign seq-no=1 to oldest lecture.
-                for seq_no, lecture in enumerate(sorted(category['lectures'], key=lambda x: x['createdDtTm']), 1):
+                # flipped lectures do not have lecture sequence number field, generate seq-no setting the oldest
+                # lecture with seq-no=1. By default impartus portal return lectures with highest ttid/fcid first.
+                num_lectures = len(category['lectures'])
+                for i, lecture in enumerate(category['lectures']):
                     # quick fix: add ttid and other fields that are not present in flipped videos,
                     # but used elsewhere in the code.
                     # TODO: refactor code later.
@@ -207,7 +208,7 @@ class Impartus:
                     # cannot update the original dict while in loop, shallow copy is fine for now.
                     flipped_lecture = lecture.copy()
                     flipped_lecture['ttid'] = lecture['fcid']
-                    flipped_lecture['seqNo'] = seq_no
+                    flipped_lecture['seqNo'] = num_lectures - i
                     flipped_lecture['slideCount'] = 0
                     flipped_lecture['createdBy'] = ''   # duplicate info, present elsewhere.
 
