@@ -48,19 +48,47 @@ class Impartus:
 
     def _download_m3u8(self, root_url, ttid, flipped=False):
         if flipped:
-            url = '{}/api/fetchvideo?fcid={}&token={}&type=index.m3u8'.format(root_url, ttid, self.token)
+            master_url = '{}/api/fetchvideo?fcid={}&token={}&type=index.m3u8'.format(root_url, ttid, self.token)
         else:
-            url = '{}/api/fetchvideo?ttid={}&token={}&type=index.m3u8'.format(root_url, ttid, self.token)
-        response = self.session.get(url)
+            master_url = '{}/api/fetchvideo?ttid={}&token={}&type=index.m3u8'.format(root_url, ttid, self.token)
+        response = self.session.get(master_url)
+        m3u8_urls = []
         if response.status_code == 200:
             lines = response.text.splitlines()
             for line in lines:
                 if re.match('^http', line):
-                    url = line.strip()
-                    response = self.session.get(url)
-                    if response.status_code == 200:
-                        return response.text.splitlines()
+                    m3u8_urls.append(line.strip())
+
+        video_quality = self.conf.get('video_quality')
+        if video_quality == 'highest':
+            url = self.get_url_for_highest_quality_video(m3u8_urls)
+        elif video_quality == 'lowest':
+            url = self.get_url_for_lowest_quality_video(m3u8_urls)
+        else:   # given a specific resolution.
+            url = self.get_url_for_resolution(m3u8_urls, video_quality)
+
+        if url:
+            response = self.session.get(url)
+            if response.status_code == 200:
+                return response.text.splitlines()
         return None
+
+    def get_url_for_highest_quality_video(self, m3u8_urls):
+        for resolution in self.conf.get('video_quality_order'):
+            for url in m3u8_urls:
+                if resolution in url:
+                    return url
+
+    def get_url_for_lowest_quality_video(self, m3u8_urls):
+        for resolution in reversed(self.conf.get('video_quality_order')):
+            for url in m3u8_urls:
+                if resolution in url:
+                    return url
+
+    def get_url_for_resolution(self, m3u8_urls, resolution):    # noqa
+        for url in m3u8_urls:
+            if resolution in url:
+                return url
 
     def process_video(self, video_metadata, mkv_filepath, root_url, progress_bar_value, callback_func):
         """
