@@ -4,7 +4,6 @@ import shutil
 from typing import List
 import webbrowser
 from datetime import datetime
-import logging
 
 from app.config import Config
 

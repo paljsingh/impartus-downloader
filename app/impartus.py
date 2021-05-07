@@ -1,5 +1,4 @@
 import os
-import sys
 import re
 import time
 import requests
@@ -7,6 +6,7 @@ import logging
 from pathlib import Path
 import enzyme
 import platform
+from datetime import datetime, timedelta
 
 from app.config import Config
 from app.utils import Utils
@@ -35,42 +35,80 @@ class Impartus:
         self.conf = Config.load('impartus')
 
         # save the files here.
-        self.download_dir = self.conf.get('target_dir').get(platform.system())
+        platform_name = platform.system()
+        self.download_dir = self.conf.get('target_dir').get(platform_name)
 
         # export any required variables:
-        if self.conf.get('export_variables') and self.conf['export_variables'].get(platform.system()):
-            for key, value in self.conf['export_variables'].get(platform.system()).items():
+        if self.conf.get('export_variables') and self.conf['export_variables'].get(platform_name):
+            for key, value in self.conf['export_variables'].get(platform_name).items():
                 os.environ[key] = value
 
         self.temp_downloads_dir = os.path.join(Utils.get_temp_dir(), 'impartus.media')
         os.makedirs(self.temp_downloads_dir, exist_ok=True)
 
-    def _download_m3u8(self, root_url, ttid):
-        response = self.session.get('{}/api/fetchvideo?ttid={}&token={}&type=index.m3u8'.format(
-            root_url, ttid, self.token))
+    def _download_m3u8(self, root_url, ttid, flipped=False):
+        if flipped:
+            master_url = '{}/api/fetchvideo?fcid={}&token={}&type=index.m3u8'.format(root_url, ttid, self.token)
+        else:
+            master_url = '{}/api/fetchvideo?ttid={}&token={}&type=index.m3u8'.format(root_url, ttid, self.token)
+        response = self.session.get(master_url)
+        m3u8_urls = []
         if response.status_code == 200:
             lines = response.text.splitlines()
             for line in lines:
                 if re.match('^http', line):
-                    url = line.strip()
-                    response = self.session.get(url)
-                    if response.status_code == 200:
-                        return response.text.splitlines()
+                    m3u8_urls.append(line.strip())
+
+        video_quality = self.conf.get('video_quality')
+        if video_quality == 'highest':
+            url = self.get_url_for_highest_quality_video(m3u8_urls)
+        elif video_quality == 'lowest':
+            url = self.get_url_for_lowest_quality_video(m3u8_urls)
+        else:   # given a specific resolution.
+            url = self.get_url_for_resolution(m3u8_urls, video_quality)
+
+        if url:
+            response = self.session.get(url)
+            if response.status_code == 200:
+                return response.text.splitlines()
         return None
+
+    def get_url_for_highest_quality_video(self, m3u8_urls):
+        for resolution in self.conf.get('video_quality_order'):
+            for url in m3u8_urls:
+                if resolution in url:
+                    return url
+
+    def get_url_for_lowest_quality_video(self, m3u8_urls):
+        for resolution in reversed(self.conf.get('video_quality_order')):
+            for url in m3u8_urls:
+                if resolution in url:
+                    return url
+
+    def get_url_for_resolution(self, m3u8_urls, resolution):    # noqa
+        for url in m3u8_urls:
+            if resolution in url:
+                return url
 
     def process_video(self, video_metadata, mkv_filepath, root_url, progress_bar_value, callback_func):
         """
         Download video and decrypt, join, encode to mkv
         :return: 
         """
-        ttid = video_metadata['ttid']
+        if video_metadata.get('fcid'):
+            ttid = video_metadata['fcid']
+            flipped = True
+        else:
+            ttid = video_metadata['ttid']
+            flipped = False
+
         number_of_tracks = int(video_metadata['tapNToggle'])
         duration = int(video_metadata['actualDuration'])
         encryption_keys = dict()
 
         self.logger.info("[{}]: Starting download for {}".format(ttid, mkv_filepath))
         # download media files for this video.
-        m3u8_content = self._download_m3u8(root_url, ttid)
+        m3u8_content = self._download_m3u8(root_url, ttid, flipped)
         if m3u8_content:
             summary, tracks_info = M3u8Parser(m3u8_content, num_tracks=number_of_tracks).parse()
             download_dir = os.path.join(self.temp_downloads_dir, str(ttid))
@@ -171,13 +209,42 @@ class Impartus:
                 return True, path_with_ext
         return False, path
 
-    def get_videos(self, root_url, subject):
+    def get_lectures(self, root_url, subject):
         response = self.session.get('{}/api/subjects/{}/lectures/{}'.format(
             root_url, subject.get('subjectId'), subject.get('sessionId')))
         if response.status_code == 200:
             return response.json()
         else:
             return []
+
+    def get_flipped_lectures(self, root_url, subject):
+        flipped_lectures = []
+        response = self.session.get('{}/api/subjects/flipped/{}/{}'.format(
+            root_url, subject.get('subjectId'), subject.get('sessionId')))
+        if response.status_code == 200:
+            categories = response.json()
+            for category in categories:
+
+                # flipped lectures do not have lecture sequence number field, generate seq-no setting the oldest
+                # lecture with seq-no=1. By default impartus portal return lectures with highest ttid/fcid first.
+                num_lectures = len(category['lectures'])
+                for i, lecture in enumerate(category['lectures']):
+                    # quick fix: add ttid and other fields that are not present in flipped videos,
+                    # but used elsewhere in the code.
+                    # TODO: refactor code later.
+
+                    # cannot update the original dict while in loop, shallow copy is fine for now.
+                    flipped_lecture = lecture.copy()
+                    flipped_lecture['ttid'] = lecture['fcid']
+                    flipped_lecture['seqNo'] = num_lectures - i
+                    flipped_lecture['slideCount'] = 0
+                    flipped_lecture['createdBy'] = ''   # duplicate info, present elsewhere.
+
+                    start_time = datetime.strptime(lecture['startTime'], '%Y-%m-%d %H:%M:%S')
+                    end_time = start_time + timedelta(0, lecture['actualDuration'])
+                    flipped_lecture['endTime'] = end_time.strftime("%Y-%m-%d %H:%M:%S")
+                    flipped_lectures.append(flipped_lecture)
+        return flipped_lectures
 
     def get_slides(self, root_url, subject):
         response = self.session.get('{}/api/subjects/backpack/{}/sessions/{}'.format(
