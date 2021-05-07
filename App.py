@@ -73,6 +73,7 @@ class App:
 
         # content
         self.videos = None
+        self.flipped_videos = None
         self.video_slide_mapping = None
         self.offline_video_ttid_mapping = None
 
@@ -462,14 +463,17 @@ class App:
         root_url = self.url_box.get()
         subject_dicts = self.impartus.get_subjects(root_url)
         self.videos = dict()
+        self.flipped_videos = dict()
         self.video_slide_mapping = dict()
         for subject_dict in subject_dicts:
-            videos_by_subject = self.impartus.get_videos(root_url, subject_dict)
+            videos_by_subject = self.impartus.get_lectures(root_url, subject_dict)
+            flipped_videos_by_subject = self.impartus.get_flipped_lectures(root_url, subject_dict)
+            all_videos_by_subject = [*videos_by_subject, *flipped_videos_by_subject]
             slides = self.impartus.get_slides(root_url, subject_dict)
-            mapping_dict = self.impartus.map_slides_to_videos(videos_by_subject, slides)
+            mapping_dict = self.impartus.map_slides_to_videos(all_videos_by_subject, slides)
             for key, val in mapping_dict.items():
                 self.video_slide_mapping[key] = val
-            self.videos[subject_dict.get('subjectId')] = {x['ttid']:  x for x in videos_by_subject}
+            self.videos[subject_dict.get('subjectId')] = {x['ttid']:  x for x in all_videos_by_subject}
 
     def fill_content(self):
         # A mapping dict containing previously downloaded, and possibly moved around / renamed videos.
