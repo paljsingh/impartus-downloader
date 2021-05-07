@@ -8,7 +8,7 @@ Downloader for impartus streaming videos.
 - Download Lecture slides.
 - Multi view/track files supported. Tested with files up to 4 tracks.
 - Parallel downloads supported. 
-- Support flipped lecture download.
+- Supports flipped lecture download.
 - Tested on Mac, Linux (ubuntu) and Windows 10.
 - Editable subject field to create short subject name mapping.
 - Auto-detect when the real video path differs from expected video paths,
