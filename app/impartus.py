@@ -197,7 +197,9 @@ class Impartus:
             categories = response.json()
             for category in categories:
 
-                for seq_no, lecture in enumerate(sorted(category['lectures'], key=lambda x: x['startTime']), 1):
+                # flipped lectures do not have lecture sequence number field, sort them by date (use createdDtTm,
+                # as it has time field value) and assign seq-no=1 to oldest lecture.
+                for seq_no, lecture in enumerate(sorted(category['lectures'], key=lambda x: x['createdDtTm']), 1):
                     # quick fix: add ttid and other fields that are not present in flipped videos,
                     # but used elsewhere in the code.
                     # TODO: refactor code later.
