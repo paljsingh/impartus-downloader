@@ -59,13 +59,17 @@ class Impartus:
                 if re.match('^http', line):
                     m3u8_urls.append(line.strip())
 
-        video_quality = self.conf.get('video_quality')
-        if video_quality == 'highest':
-            url = self.get_url_for_highest_quality_video(m3u8_urls)
-        elif video_quality == 'lowest':
-            url = self.get_url_for_lowest_quality_video(m3u8_urls)
-        else:   # given a specific resolution.
-            url = self.get_url_for_resolution(m3u8_urls, video_quality)
+        url = None
+        if flipped:
+            video_quality = self.conf.get('video_quality')
+            if video_quality == 'highest':
+                url = self.get_url_for_highest_quality_video(m3u8_urls)
+            elif video_quality == 'lowest':
+                url = self.get_url_for_lowest_quality_video(m3u8_urls)
+            else:   # given a specific resolution.
+                url = self.get_url_for_resolution(m3u8_urls, video_quality)
+        elif len(m3u8_urls) > 0:
+            url = m3u8_urls[0]
 
         if url:
             response = self.session.get(url)
