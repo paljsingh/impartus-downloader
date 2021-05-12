@@ -66,7 +66,7 @@ class Impartus:
                 url = self.get_url_for_highest_quality_video(m3u8_urls)
             elif video_quality == 'lowest':
                 url = self.get_url_for_lowest_quality_video(m3u8_urls)
-            else:   # given a specific resolution.
+            else:  # given a specific resolution.
                 url = self.get_url_for_resolution(m3u8_urls, video_quality)
         elif len(m3u8_urls) > 0:
             url = m3u8_urls[0]
@@ -89,7 +89,7 @@ class Impartus:
                 if resolution in url:
                     return url
 
-    def get_url_for_resolution(self, m3u8_urls, resolution):    # noqa
+    def get_url_for_resolution(self, m3u8_urls, resolution):  # noqa
         for url in m3u8_urls:
             if resolution in url:
                 return url
@@ -146,12 +146,12 @@ class Impartus:
                     else:
                         if not encryption_keys.get(item['encryption_key_id']):
                             key = self.session.get(item['encryption_key_url']).content[2:]
-                            key = key[::-1]     # reverse the bytes.
+                            key = key[::-1]  # reverse the bytes.
                             encryption_keys[item['encryption_key_id']] = key
                         encryption_key = encryption_keys[item['encryption_key_id']]
                         decrypted_stream_filepath = Decrypter.decrypt(
-                                encryption_key, enc_stream_filepath,
-                                download_dir)
+                            encryption_key, enc_stream_filepath,
+                            download_dir)
                         streams_to_join.append(decrypted_stream_filepath)
                         temp_files_to_delete.add(decrypted_stream_filepath)
                     # update progress bar
@@ -216,6 +216,7 @@ class Impartus:
     def get_lectures(self, root_url, subject):
         response = self.session.get('{}/api/subjects/{}/lectures/{}'.format(
             root_url, subject.get('subjectId'), subject.get('sessionId')))
+
         if response.status_code == 200:
             return response.json()
         else:
@@ -242,7 +243,7 @@ class Impartus:
                     flipped_lecture['ttid'] = lecture['fcid']
                     flipped_lecture['seqNo'] = num_lectures - i
                     flipped_lecture['slideCount'] = 0
-                    flipped_lecture['createdBy'] = ''   # duplicate info, present elsewhere.
+                    flipped_lecture['createdBy'] = ''  # duplicate info, present elsewhere.
 
                     start_time = datetime.strptime(lecture['startTime'], '%Y-%m-%d %H:%M:%S')
                     end_time = start_time + timedelta(0, lecture['actualDuration'])
@@ -266,18 +267,31 @@ class Impartus:
             return []
 
     def download_slides(self, ttid, file_url, filepath, root_url):
-        response = requests.get('{}/{}'.format(root_url, file_url), headers={'Cookie': 'Bearer={}'.format(self.token)})
-        if response.status_code == 200:
-            os.makedirs(os.path.dirname(filepath), exist_ok=True)
 
-            with open(filepath, 'wb+') as fh:
-                fh.write(response.content)
-            return True
+        if str(file_url).startswith('http'):
+            urls = re.findall(r'(https?://\S+)', file_url)
         else:
-            self.logger.error('[{}]: Error fetching slides from url: {}'.format(ttid, file_url))
-            self.logger.error('[{}]: Http response code: {}, response body: {}: '.format(
-                ttid, response.status_code, response.text))
-            return False
+            urls = '{}/{}'.format(root_url, file_url)
+
+        download_status = False
+        for url in urls:
+            ext = url.split('.')[-1].lower()
+            if ext not in self.conf.get('allowed_ext'):
+                self.logger.warning('Downloading files with extension {} not allowed, see config.'.format(ext))
+                continue
+
+            response = requests.get(url, headers={'Cookie': 'Bearer={}'.format(self.token)})
+            if response.status_code == 200:
+                os.makedirs(os.path.dirname(filepath), exist_ok=True)
+
+                with open(filepath, 'wb+') as fh:
+                    fh.write(response.content)
+                download_status = True
+            else:
+                self.logger.error('[{}]: Error fetching slides from url: {}'.format(ttid, file_url))
+                self.logger.error('[{}]: Http response code: {}, response body: {}: '.format(
+                    ttid, response.status_code, response.text))
+        return download_status
 
     def map_slides_to_videos(self, videos_metadata, slides_metadata):
         mapping = dict()
