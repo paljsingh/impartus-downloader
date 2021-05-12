@@ -271,13 +271,13 @@ class Impartus:
         if str(file_url).startswith('http'):
             urls = re.findall(r'(https?://\S+)', file_url)
         else:
-            urls = '{}/{}'.format(root_url, file_url)
+            urls = ['{}/{}'.format(root_url, file_url)]
 
         download_status = False
         for url in urls:
             ext = url.split('.')[-1].lower()
             if ext not in self.conf.get('allowed_ext'):
-                self.logger.warning('Downloading files with extension {} not allowed, see config.'.format(ext))
+                self.logger.warning('Downloading {}. Files of type {} not allowed, see config.'.format(url, ext))
                 continue
 
             response = requests.get(url, headers={'Cookie': 'Bearer={}'.format(self.token)})
