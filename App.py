@@ -16,6 +16,7 @@ import platform
 from app.config import Config
 from app.impartus import Impartus
 from app.utils import Utils
+from pathlib import Path
 
 
 class App:
@@ -1036,11 +1037,25 @@ class App:
                             logger.info('moved {} -> {}'.format(slides_path, expected_slides_path))
                             moved_files[slides_path] = expected_slides_path
 
-                    # is the folder empty, remove it.?
+                    # is the folder empty, remove it.? [also any empty parent folders]
                     old_video_dir = os.path.dirname(real_video_path)
-                    if len(os.listdir(old_video_dir)) == 0:
+                    sys_name = platform.system()
+                    if self.conf.get('ignore_files').get(sys_name):
+                        ignore_files = self.conf.get('ignore_files')[sys_name]
+                    else:
+                        ignore_files = []
+                    while True:
+                        dir_files = [x for x in os.listdir(old_video_dir) if x not in ignore_files]
+                        if len(dir_files) > 0:
+                            break
+                        for file in ignore_files:
+                            filepath = os.path.join(old_video_dir, file)
+                            if os.path.exists(filepath):
+                                os.unlink(filepath)
                         os.rmdir(old_video_dir)
                         logger.info('removed empty directory: {}'.format(old_video_dir))
+                        # parent path.
+                        old_video_dir = Path(old_video_dir).parent.absolute()
 
         # show a dialog with the output.
         self.move_file_info_dialog(moved_files)
