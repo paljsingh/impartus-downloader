@@ -46,7 +46,7 @@ class Impartus:
         self.temp_downloads_dir = os.path.join(Utils.get_temp_dir(), 'impartus.media')
         os.makedirs(self.temp_downloads_dir, exist_ok=True)
 
-    def _download_m3u8(self, root_url, ttid, flipped=False):
+    def _download_m3u8(self, root_url, ttid, flipped=False, video_quality='highest'):
         if flipped:
             master_url = '{}/api/fetchvideo?fcid={}&token={}&type=index.m3u8'.format(root_url, ttid, self.token)
         else:
@@ -61,7 +61,6 @@ class Impartus:
 
         url = None
         if flipped:
-            video_quality = self.conf.get('video_quality')
             if video_quality == 'highest':
                 url = self.get_url_for_highest_quality_video(m3u8_urls)
             elif video_quality == 'lowest':
@@ -94,7 +93,8 @@ class Impartus:
             if resolution in url:
                 return url
 
-    def process_video(self, video_metadata, mkv_filepath, root_url, progress_bar_value, callback_func):
+    def process_video(self, video_metadata, mkv_filepath, root_url, progress_bar_value, callback_func,
+                      video_quality='highest'):
         """
         Download video and decrypt, join, encode to mkv
         :return: 
@@ -112,7 +112,7 @@ class Impartus:
 
         self.logger.info("[{}]: Starting download for {}".format(ttid, mkv_filepath))
         # download media files for this video.
-        m3u8_content = self._download_m3u8(root_url, ttid, flipped)
+        m3u8_content = self._download_m3u8(root_url, ttid, flipped, video_quality)
         if m3u8_content:
             summary, tracks_info = M3u8Parser(m3u8_content, num_tracks=number_of_tracks).parse()
             download_dir = os.path.join(self.temp_downloads_dir, str(ttid))

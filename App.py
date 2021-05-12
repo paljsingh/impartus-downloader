@@ -60,8 +60,10 @@ class App:
         self.reload_button = None
         self.move_files_button = None
         self.display_columns_dropdown = None
-        self.colorscheme_buttons = list()
         self.display_columns_vars = list()
+        self.colorscheme_buttons = list()
+        self.flipped_video_quality_dropdown = None
+        self.flipped_video_quality_var = None
         self.expected_real_paths_differ = False
 
         # configs
@@ -74,7 +76,6 @@ class App:
 
         # content
         self.videos = None
-        self.flipped_videos = None
         self.video_slide_mapping = None
         self.offline_video_ttid_mapping = None
 
@@ -228,7 +229,8 @@ class App:
         self.save_credentials_var = tk.IntVar()
         self.save_credentials_button = tk.Checkbutton(
                 frame_auth, text='Save Credentials', bg=cs['root']['bg'], fg=cs['root']['fg'],
-                selectcolor="#000000", variable=self.save_credentials_var)
+                selectcolor="#000000", variable=self.save_credentials_var
+        )
         self.save_credentials_button.grid(row=2, column=2, **grid_options)
 
         self.show_videos_button = tk.Button(frame_auth, text='Show Videos', command=self.get_videos)
@@ -249,28 +251,40 @@ class App:
         }
         self.frame_toolbar = tk.Frame(anchor, padx=0, pady=0)
 
-        self.reload_button = tk.Button(self.frame_toolbar, text='Reload ⟳', command=self.get_videos, **button_options)
+        self.reload_button = tk.Button(self.frame_toolbar, text='Reload ⟳',
+                                       command=self.get_videos, **button_options)
         self.reload_button.grid(row=0, column=1, **grid_options)
 
-        self.move_files_button = tk.Button(self.frame_toolbar, text='Move / Rename Videos  ⇄', command=self.move_files,
-                                           **button_options)
+        self.move_files_button = tk.Button(self.frame_toolbar, text='Auto Organize Lectures  ⇄',
+                                           command=self.move_files, **button_options)
         self.move_files_button.grid(row=0, column=2, **grid_options)
 
-        dropdown = tk.Menubutton(self.frame_toolbar, text='Columns', **button_options)
-        dropdown.menu = tk.Menu(dropdown, tearoff=1)
-        dropdown['menu'] = dropdown.menu
+        columns_dropdown = tk.Menubutton(self.frame_toolbar, text='Columns', **button_options)
+        columns_dropdown.menu = tk.Menu(columns_dropdown, tearoff=1)
+        columns_dropdown['menu'] = columns_dropdown.menu
         for display_name in self.headers:
             item = tk.IntVar(None, 1)
-            dropdown.menu.add_checkbutton(label=display_name, variable=item, onvalue=1, offvalue=0,
-                                          command=self.set_display_columns)
+            columns_dropdown.menu.add_checkbutton(label=display_name, variable=item, onvalue=1, offvalue=0,
+                                                  command=self.set_display_columns)
             self.display_columns_vars.append(item)
-        dropdown.grid(row=0, column=3, **grid_options)
-        self.display_columns_dropdown = dropdown
+        columns_dropdown.grid(row=0, column=3, **grid_options)
+        self.display_columns_dropdown = columns_dropdown
+
+        video_quality_dropdown = tk.Menubutton(self.frame_toolbar, text='Flipped Lecture Quality', **button_options)
+        video_quality_dropdown.menu = tk.Menu(video_quality_dropdown, tearoff=1)
+        video_quality_dropdown['menu'] = video_quality_dropdown.menu
+
+        self.flipped_video_quality_var = tk.StringVar(None, self.conf.get('video_quality'))
+        for display_name in ['highest', *self.conf.get('video_quality_order'), 'lowest']:
+            video_quality_dropdown.menu.add_radiobutton(label=display_name, variable=self.flipped_video_quality_var)
+
+        video_quality_dropdown.grid(row=0, column=4, **grid_options)
+        self.flipped_video_quality_dropdown = video_quality_dropdown
 
         # empty column, to keep columns 1-5 centered
         self.frame_toolbar.columnconfigure(0, weight=1)
         # move the color scheme buttons to extreme right
-        self.frame_toolbar.columnconfigure(4, weight=1)
+        self.frame_toolbar.columnconfigure(5, weight=1)
 
         color_var = tk.IntVar()
         self.color_var = color_var
@@ -287,7 +301,7 @@ class App:
                     bg=self.colorscheme_config[k].get('theme_color'),
                     command=partial(self.set_color_scheme, self.colorscheme_config[k])
                 )
-                colorscheme_button.grid(row=0, column=4+i, **grid_options_cs, sticky='e')
+                colorscheme_button.grid(row=0, column=5+i, **grid_options_cs, sticky='e')
                 self.colorscheme_buttons.append(colorscheme_button)
 
                 # Set the radio button to indicate currently active color scheme.
@@ -464,17 +478,23 @@ class App:
         root_url = self.url_box.get()
         subject_dicts = self.impartus.get_subjects(root_url)
         self.videos = dict()
-        self.flipped_videos = dict()
         self.video_slide_mapping = dict()
+        has_flipped_lectures = False
         for subject_dict in subject_dicts:
             videos_by_subject = self.impartus.get_lectures(root_url, subject_dict)
             flipped_videos_by_subject = self.impartus.get_flipped_lectures(root_url, subject_dict)
+            if len(flipped_videos_by_subject):
+                has_flipped_lectures = True
             all_videos_by_subject = [*videos_by_subject, *flipped_videos_by_subject]
             slides = self.impartus.get_slides(root_url, subject_dict)
             mapping_dict = self.impartus.map_slides_to_videos(all_videos_by_subject, slides)
             for key, val in mapping_dict.items():
                 self.video_slide_mapping[key] = val
             self.videos[subject_dict.get('subjectId')] = {x['ttid']:  x for x in all_videos_by_subject}
+        if not has_flipped_lectures:
+            self.flipped_video_quality_dropdown.configure(state='disabled')
+        else:
+            self.flipped_video_quality_dropdown.configure(state='normal')
 
     def fill_content(self):
         # A mapping dict containing previously downloaded, and possibly moved around / renamed videos.
@@ -911,7 +931,8 @@ class App:
         # Use row_index to identify the new correct location of the progress bar.
         row_index = self.get_index(row)
         imp.process_video(video_metadata, filepath, root_url, 0,
-                          partial(self.progress_bar_callback, row=row_index, col=pb_col))
+                          partial(self.progress_bar_callback, row=row_index, col=pb_col),
+                          video_quality=self.flipped_video_quality_var.get())
 
         # download complete, enable open / play buttons
         updated_row = self.get_row_after_sort(row_index)
