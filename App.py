@@ -999,7 +999,7 @@ class App:
         if self.threads.get(real_row):
             pause_ev = self.threads.get(real_row)['pause_event']
             resume_ev = self.threads.get(real_row)['resume_event']
-            self.pause_resume_button_click(real_row, col, pause_ev, resume_ev)
+            self.pause_resume_button_click(row, col, pause_ev, resume_ev)
             return
 
         from threading import Event
