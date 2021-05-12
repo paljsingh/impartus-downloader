@@ -93,8 +93,8 @@ class Impartus:
             if resolution in url:
                 return url
 
-    def process_video(self, video_metadata, mkv_filepath, root_url, progress_bar_value, callback_func,
-                      video_quality='highest'):
+    def process_video(self, video_metadata, mkv_filepath, root_url, progress_bar_value, pause_ev, resume_ev,
+                      progress_callback_func, video_quality='highest'):
         """
         Download video and decrypt, join, encode to mkv
         :return: 
@@ -130,6 +130,11 @@ class Impartus:
                     temp_files_to_delete.add(enc_stream_filepath)
                     download_flag = False
                     while not download_flag:
+                        if pause_ev.is_set():
+                            self.logger.info("[{}]: Pausing download for {}".format(ttid, mkv_filepath))
+                            resume_ev.wait()
+                            self.logger.info("[{}]: Resuming download for {}".format(ttid, mkv_filepath))
+                            resume_ev.clear()
                         try:
                             with open(enc_stream_filepath, 'wb') as fh:
                                 content = requests.get(item['url']).content
@@ -157,7 +162,7 @@ class Impartus:
                     # update progress bar
                     items_processed += 1
                     items_processed_percent = items_processed * 100 // summary.get('media_files')
-                    callback_func(items_processed_percent)
+                    progress_callback_func(items_processed_percent)
 
                 # All stream files for this track are decrypted, join them.
                 self.logger.info("[{}]: joining streams for track {} ..".format(ttid, track_index))

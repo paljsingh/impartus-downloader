@@ -45,7 +45,7 @@ class App:
         self.sort_order = None
 
         # threads for downloading videos / slides.
-        self.threads = list()
+        self.threads = dict()
 
         # root container
         self.app = None
@@ -85,6 +85,8 @@ class App:
         self.header_font = self.conf.get('header_font').get(platform.system())
         self.header_font_size = self.conf.get('header_font_size')
 
+        self.download_paused = False
+
         self._init_backend()
         self._init_ui()
 
@@ -113,20 +115,20 @@ class App:
         }
         # progress bar
         self.progressbar_column = {'downloaded': {'display_name': 'Downloaded?', 'title_case': False, 'sortable': True,
-                                                  'type': 'progressbar'}}
+                                                  'editable': False, 'type': 'progressbar'}}
         self.button_columns = {
             'download_video': {'display_name': 'Video', 'function': self.download_video, 'text': '⬇', 'type': 'button',
-                               'state': 'download_video_state'},
+                               'editable': False, 'state': 'download_video_state'},
             'play_video': {'display_name': 'Video', 'function': self.play_video, 'text': '▶', 'type': 'button',
-                           'state': 'play_video_state'},
+                           'editable': False, 'state': 'play_video_state'},
             'open_folder': {'display_name': 'Folder', 'function': self.open_folder, 'text': '⏏', 'type': 'button',
-                            'state': 'open_folder_state'},
+                            'editable': False, 'state': 'open_folder_state'},
             'download_slides': {'display_name': 'Slides', 'function': self.download_slides, 'text': '⬇',
-                                'type': 'button', 'state': 'download_slides_state'},
+                                'editable': False, 'type': 'button', 'state': 'download_slides_state'},
             'show_slides': {'display_name': 'Slides', 'function': self.show_slides, 'text': '▤', 'type': 'button',
-                            'state': 'show_slides_state'},
+                            'editable': False, 'state': 'show_slides_state'},
             'add_slides': {'display_name': 'Slides', 'function': self.add_slides, 'text': '📎', 'type': 'button',
-                           'state': 'add_slides_state'},
+                           'editable': False, 'state': 'add_slides_state'},
         }
 
         self.button_state_columns = {k: {'display_name': k, 'type': 'button_state'} for k in [
@@ -358,7 +360,12 @@ class App:
             self.odd_even_color(redraw=False)
             self.progress_bar_color(redraw=False)
             self.set_button_status(redraw=False)
+            self.set_readonly_columns(redraw=False)
             self.sheet.refresh()
+
+    def set_readonly_columns(self, redraw=False):
+        readonly_cols = [i for i, (k, v) in enumerate(self.all_columns.items()) if not v.get('editable')]
+        self.sheet.readonly_columns(columns=readonly_cols, readonly=True, redraw=redraw)
 
     def add_content_frame(self, anchor):
         frame_content = tk.Frame(anchor, padx=0, pady=0)
@@ -461,7 +468,8 @@ class App:
             "column_select",
             "column_width_resize",
             "double_click_column_resize",
-            "edit_cell"
+            "edit_cell",
+            "copy",
         ))
 
         self.set_headers()
@@ -686,6 +694,7 @@ class App:
                     self.enable_button(row, col - num_buttons, redraw=redraw)
                 elif state == 'False':
                     self.disable_button(row, col - num_buttons, redraw=redraw)
+        return
 
     def get_button_state(self, key, video_exists_on_disk, slides_exist_on_server, slides_exist_on_disk):  # noqa
         """
@@ -764,6 +773,10 @@ class App:
         (event, row, col) = args
         real_col = self.get_real_col(col)
 
+        # self.sheet.deselect('all', redraw=False)
+        self.sheet.highlight_rows(rows=[row], redraw=False)
+        self.sheet.highlight_columns(columns=[col], redraw=False)
+
         # is subject field
         col_name = self.column_names[real_col]
         if self.all_columns[col_name].get('editable'):
@@ -778,18 +791,19 @@ class App:
 
         # not a button.
         if self.all_columns[col_name].get('type') != 'button':
-            self.sheet.deselect('all', redraw=True)
+            self.sheet.refresh()
             return
 
-        # disabled button
         state_button_col_name, state_button_col_num = self.get_state_button(col_name)
         state = self.sheet.get_cell_data(row, state_button_col_num)
         if state == 'False':    # data read from sheet is all string.
-            self.sheet.deselect('all', redraw=True)
+            self.sheet.refresh()
             return
 
         # disable the button if it is one of the Download buttons, to prevent a re-download.
-        if col_name in ['download_video', 'download_slides']:
+        if col_name == 'download_video':
+            self.sheet.set_cell_data(row, real_col, '❘❘', redraw=False)
+        elif col_name == 'download_slides':
             self.disable_button(row, real_col)
 
         func = self.all_columns[col_name]['function']
@@ -803,7 +817,7 @@ class App:
         else:
             return None, None
 
-    def disable_button(self, row, col, redraw=True):
+    def disable_button(self, row, col, redraw=False):
         """
         Disable a button given it's row/col position.
         """
@@ -813,11 +827,12 @@ class App:
             fg=cs['disabled']['fg'],
             redraw=redraw
         )
+
         # update state field.
         state_button_col_name, state_button_col_num = self.get_state_button(self.column_names[col])
         self.sheet.set_cell_data(row, state_button_col_num, False, redraw=redraw)
 
-    def enable_button(self, row, col, redraw=True):
+    def enable_button(self, row, col, redraw=False):
         """
         Enable a button given it's row/col position.
         """
@@ -839,13 +854,13 @@ class App:
         # find where is the Index column
         index_col = self.column_names.index('index')
         # original row value as per the index column
-        return self.sheet.get_cell_data(row, index_col)
+        return int(self.sheet.get_cell_data(row, index_col))
 
     def get_row_after_sort(self, index_value):
         # find the new correct location of the row_index
         col_index = self.column_names.index('index')
         col_data = self.sheet.get_column_data(col_index)
-        return col_data.index(index_value)
+        return col_data.index(str(index_value))
 
     def progress_bar_text(self, value, processed=False):
         """
@@ -913,11 +928,10 @@ class App:
         if new_text != self.sheet.get_cell_data(updated_row, col):
             self.sheet.set_cell_data(updated_row, col, new_text, redraw=True)
 
-    def _download_video(self, video_metadata, filepath, root_url, row, col):    # noqa
+    def _download_video(self, video_metadata, filepath, root_url, row, col, pause_ev, resume_ev):    # noqa
         """
         Download a video in a thread. Update the UI upon completion.
         """
-
         # create a new Impartus session reusing existing token.
         imp = Impartus(self.impartus.token)
         pb_col = self.column_names.index('downloaded')
@@ -930,7 +944,8 @@ class App:
         # The hidden column index keeps the initial row index, and remains unchanged.
         # Use row_index to identify the new correct location of the progress bar.
         row_index = self.get_index(row)
-        imp.process_video(video_metadata, filepath, root_url, 0,
+
+        imp.process_video(video_metadata, filepath, root_url, 0, pause_ev, resume_ev,
                           partial(self.progress_bar_callback, row=row_index, col=pb_col),
                           video_quality=self.flipped_video_quality_var.get())
 
@@ -939,6 +954,8 @@ class App:
         # update progress bar status to complete.
         self.progress_bar_callback(row=row_index, col=pb_col, count=100, processed=True)
 
+        self.sheet.set_cell_data(updated_row, self.column_names.index('download_video'), '⬇')
+        self.disable_button(updated_row, self.column_names.index('download_video'))
         # enable buttons.
         self.enable_button(updated_row, self.column_names.index('open_folder'))
         self.enable_button(updated_row, self.column_names.index('play_video'))
@@ -953,6 +970,19 @@ class App:
         for filepath in filepaths:
             shutil.copy(filepath, slides_folder_path)
 
+    def pause_resume_button_click(self, row, col, pause_event, resume_event):
+        row_index = self.get_index(row)
+        updated_row = self.get_row_after_sort(row_index)
+
+        if pause_event.is_set():
+            self.sheet.set_cell_data(updated_row, col, '❘❘', redraw=True)
+            resume_event.set()
+            pause_event.clear()
+        else:
+            self.sheet.set_cell_data(updated_row, col, '❘❘▶', redraw=True)
+            pause_event.set()
+            resume_event.clear()
+
     def download_video(self, row, col):
         """
         callback function for Download button.
@@ -964,9 +994,27 @@ class App:
         filepath = data.get('video_path')
         root_url = self.url_box.get()
 
+        real_row = self.get_index(row)
+
+        if self.threads.get(real_row):
+            pause_ev = self.threads.get(real_row)['pause_event']
+            resume_ev = self.threads.get(real_row)['resume_event']
+            self.pause_resume_button_click(real_row, col, pause_ev, resume_ev)
+            return
+
+        from threading import Event
+
+        pause_event = Event()
+        resume_event = Event()
+
         # note: args is a tuple.
-        thread = threading.Thread(target=self._download_video, args=(video_metadata, filepath, root_url, row, col,))
-        self.threads.append(thread)
+        thread = threading.Thread(target=self._download_video, args=(video_metadata, filepath, root_url, row, col,
+                                                                     pause_event, resume_event,))
+        self.threads[real_row] = {
+            'thread': thread,
+            'pause_event': pause_event,
+            'resume_event': resume_event,
+        }
         thread.start()
 
     def _download_slides(self, ttid, file_url, filepath, root_url, row):
@@ -998,7 +1046,7 @@ class App:
         # note: args is a tuple.
         thread = threading.Thread(target=self._download_slides,
                                   args=(ttid, file_url, filepath, root_url, row,))
-        self.threads.append(thread)
+        # self.threads.append(thread)
         thread.start()
 
     def read_metadata(self, row):
