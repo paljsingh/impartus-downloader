@@ -97,6 +97,30 @@ class App:
         self.impartus = Impartus()
         self.conf = Config.load('impartus')
 
+        self.icons = {
+            'download_video': '⬇',
+            'play_video': '▶',
+            'open_folder': '⏏',
+            'download_slides': '⬇',
+            'show_slides': '▤',
+            'add_slides': '📎',
+            'pause_download': '❘❘',
+            'resume_download': '❘❘▶',
+            'video_processing': '⧗',
+            'video_downloaded': '✓',
+            'video_not_downloaded': '⃠',
+            'sort_desc': '▼',
+            'sort_asc': '▲',
+            'unsorted': '⇅',
+            'editable': '✎',
+            'moved_to': '⇨',
+        }
+        self.toolbar_labels = {
+            'reload': 'Reload ⟳',
+            'auto_organize': 'Auto Organize Lectures  ⇄',
+            'columns': 'Columns',
+            'flipped_quality': 'Flipped Lecture Quality',
+        }
         self.data_columns = {
             'subjectNameShort': {'display_name': 'Subject', 'title_case': False, 'sortable': True, 'editable': True,
                                  'original_values_col': 'subjectName', 'type': 'data'},
@@ -115,20 +139,33 @@ class App:
         }
         # progress bar
         self.progressbar_column = {'downloaded': {'display_name': 'Downloaded?', 'title_case': False, 'sortable': True,
-                                                  'editable': False, 'type': 'progressbar'}}
+                                                  'editable': False, 'type': 'progressbar'}
+                                   }
         self.button_columns = {
-            'download_video': {'display_name': 'Video', 'function': self.download_video, 'text': '⬇', 'type': 'button',
-                               'editable': False, 'state': 'download_video_state'},
-            'play_video': {'display_name': 'Video', 'function': self.play_video, 'text': '▶', 'type': 'button',
-                           'editable': False, 'state': 'play_video_state'},
-            'open_folder': {'display_name': 'Folder', 'function': self.open_folder, 'text': '⏏', 'type': 'button',
-                            'editable': False, 'state': 'open_folder_state'},
-            'download_slides': {'display_name': 'Slides', 'function': self.download_slides, 'text': '⬇',
-                                'editable': False, 'type': 'button', 'state': 'download_slides_state'},
-            'show_slides': {'display_name': 'Slides', 'function': self.show_slides, 'text': '▤', 'type': 'button',
-                            'editable': False, 'state': 'show_slides_state'},
-            'add_slides': {'display_name': 'Slides', 'function': self.add_slides, 'text': '📎', 'type': 'button',
-                           'editable': False, 'state': 'add_slides_state'},
+            'download_video': {'type': 'button', 'editable': False, 'display_name': 'Video',
+                               'function': self.download_video, 'text': self.icons['download_video'],
+                               'state': 'download_video_state'
+                               },
+            'play_video': {'type': 'button', 'editable': False, 'display_name': 'Video',
+                           'function': self.play_video, 'text': self.icons['play_video'],
+                           'state': 'play_video_state'
+                           },
+            'open_folder': {'type': 'button', 'editable': False, 'display_name': 'Folder',
+                            'function': self.open_folder, 'text': self.icons['open_folder'],
+                            'state': 'open_folder_state'
+                            },
+            'download_slides': {'type': 'button', 'editable': False, 'display_name': 'Slides',
+                                'function': self.download_slides, 'text': self.icons['download_slides'],
+                                'state': 'download_slides_state'
+                                },
+            'show_slides': {'type': 'button', 'editable': False, 'display_name': 'Slides',
+                            'function': self.show_slides, 'text': self.icons['show_slides'],
+                            'state': 'show_slides_state'
+                            },
+            'add_slides': {'type': 'button', 'editable': False, 'display_name': 'Slides',
+                           'function': self.add_slides, 'text': self.icons['add_slides'],
+                           'state': 'add_slides_state'
+                           },
         }
 
         self.button_state_columns = {k: {'display_name': k, 'type': 'button_state'} for k in [
@@ -231,8 +268,10 @@ class App:
         self.save_credentials_var = tk.IntVar()
         self.save_credentials_button = tk.Checkbutton(
                 frame_auth, text='Save Credentials', bg=cs['root']['bg'], fg=cs['root']['fg'],
-                selectcolor="#000000", variable=self.save_credentials_var
+                selectcolor="#000000", variable=self.save_credentials_var,
         )
+        if self.creds_config.get('login_email') and self.creds_config.get('password'):
+            self.save_credentials_var.set(1)   # select the checkbox if credentials already saved.
         self.save_credentials_button.grid(row=2, column=2, **grid_options)
 
         self.show_videos_button = tk.Button(frame_auth, text='Show Videos', command=self.get_videos)
@@ -253,15 +292,16 @@ class App:
         }
         self.frame_toolbar = tk.Frame(anchor, padx=0, pady=0)
 
-        self.reload_button = tk.Button(self.frame_toolbar, text='Reload ⟳',
+        self.reload_button = tk.Button(self.frame_toolbar, text=self.toolbar_labels.get('reload'),
                                        command=self.get_videos, **button_options)
         self.reload_button.grid(row=0, column=1, **grid_options)
 
-        self.move_files_button = tk.Button(self.frame_toolbar, text='Auto Organize Lectures  ⇄',
+        self.move_files_button = tk.Button(self.frame_toolbar, text=self.toolbar_labels.get('auto_organize'),
                                            command=self.move_files, **button_options)
         self.move_files_button.grid(row=0, column=2, **grid_options)
 
-        columns_dropdown = tk.Menubutton(self.frame_toolbar, text='Columns', **button_options)
+        columns_dropdown = tk.Menubutton(self.frame_toolbar, text=self.toolbar_labels.get('columns'),
+                                         **button_options)
         columns_dropdown.menu = tk.Menu(columns_dropdown, tearoff=1)
         columns_dropdown['menu'] = columns_dropdown.menu
         for display_name in self.headers:
@@ -272,7 +312,8 @@ class App:
         columns_dropdown.grid(row=0, column=3, **grid_options)
         self.display_columns_dropdown = columns_dropdown
 
-        video_quality_dropdown = tk.Menubutton(self.frame_toolbar, text='Flipped Lecture Quality', **button_options)
+        video_quality_dropdown = tk.Menubutton(self.frame_toolbar, text=self.toolbar_labels.get('flipped_quality'),
+                                               **button_options)
         video_quality_dropdown.menu = tk.Menu(video_quality_dropdown, tearoff=1)
         video_quality_dropdown['menu'] = video_quality_dropdown.menu
 
@@ -381,7 +422,10 @@ class App:
         if self.save_credentials_var.get():
             self.creds_config['login_email'] = self.user_box.get()
             self.creds_config['password'] = self.pass_box.get()
-            Config.save('creds')
+        else:
+            self.creds_config['login_email'] = ''
+            self.creds_config['password'] = ''
+        Config.save('creds')
 
         self.show_videos_button.config(state='disabled')
         self.reload_button.config(state='disabled')
@@ -589,15 +633,15 @@ class App:
         for name, value in self.display_columns.items():
             if value.get('sortable'):
                 if name == sort_by:
-                    sort_icon = '▼' if sort_order == 'desc' else '▲'
+                    sort_icon = self.icons.get('sort_desc') if sort_order == 'desc' else self.icons.get('sort_asc')
                 else:
-                    sort_icon = '⇅'
+                    sort_icon = self.icons.get('unsorted')
                 text = '{} {}'.format(value['display_name'], sort_icon)
             else:
                 text = value['display_name']
 
             if value.get('editable'):
-                text = '✎ {}'.format(text)
+                text = '{} {}'.format(self.icons.get('editable'), text)
 
             headers.append(text)
         self.sheet.headers(headers)
@@ -802,7 +846,7 @@ class App:
 
         # disable the button if it is one of the Download buttons, to prevent a re-download.
         if col_name == 'download_video':
-            self.sheet.set_cell_data(row, real_col, '❘❘', redraw=False)
+            self.sheet.set_cell_data(row, real_col, self.icons.get('pause_download'), redraw=False)
         elif col_name == 'download_slides':
             self.disable_button(row, real_col)
 
@@ -876,12 +920,12 @@ class App:
             percent_text = '{:2d}%'.format(value)
             status = percent_text
         elif value == 0:
-            status = pad + '⃠' + pad
+            status = pad + self.icons.get('video_not_downloaded') + pad
         else:   # 100 %
             if processed:
-                status = pad + '✓' + pad
+                status = pad + self.icons.get('video_downloaded') + pad
             else:
-                status = pad + '⧗' + pad
+                status = pad + self.icons.get('video_processing') + pad
         return '{} {}{}'.format(text, status, pad)
 
     def progress_bar_text_ascii(self, value):   # noqa
@@ -975,11 +1019,11 @@ class App:
         updated_row = self.get_row_after_sort(row_index)
 
         if pause_event.is_set():
-            self.sheet.set_cell_data(updated_row, col, '❘❘', redraw=True)
+            self.sheet.set_cell_data(updated_row, col, self.icons.get('pause_download'), redraw=True)
             resume_event.set()
             pause_event.clear()
         else:
-            self.sheet.set_cell_data(updated_row, col, '❘❘▶', redraw=True)
+            self.sheet.set_cell_data(updated_row, col, self.icons.get('resume_download'), redraw=True)
             pause_event.set()
             resume_event.clear()
 
@@ -1166,7 +1210,7 @@ class App:
         for row, (source, destination) in enumerate(moved_files.items()):
             source = source[len(target_parent)+1:]
             destination = destination[len(target_parent)+1:]
-            sheet.insert_row([source, '⇨', destination])
+            sheet.insert_row([source, self.icons.get('moved_to'), destination])
             dialog.columnconfigure(0, weight=1)
 
         sheet.set_all_column_widths()
