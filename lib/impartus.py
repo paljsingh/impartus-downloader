@@ -8,11 +8,11 @@ import enzyme
 import platform
 from datetime import datetime, timedelta
 
-from app.config import Config
-from app.utils import Utils
-from app.media.encoder import Encoder
-from app.media.m3u8parser import M3u8Parser
-from app.media.decrypter import Decrypter
+from lib.config import Config, ConfigType
+from lib.utils import Utils
+from lib.media.encoder import Encoder
+from lib.media.m3u8parser import M3u8Parser
+from lib.media.decrypter import Decrypter
 
 
 class Impartus:
@@ -32,7 +32,7 @@ class Impartus:
             self.session.cookies.update({'Bearer': token})
             self.session.headers.update({'Authorization': 'Bearer {}'.format(token)})
 
-        self.conf = Config.load('impartus')
+        self.conf = Config.load(ConfigType.IMPARTUS)
 
         # save the files here.
         platform_name = platform.system()
@@ -93,8 +93,8 @@ class Impartus:
             if resolution in url:
                 return url
 
-    def process_video(self, video_metadata, mkv_filepath, root_url, progress_bar_value, pause_ev, resume_ev,
-                      progress_callback_func, video_quality='highest'):
+    def process_video(self, video_metadata, mkv_filepath, root_url, pause_ev, resume_ev, progress_callback_func,
+                      video_quality='highest'):
         """
         Download video and decrypt, join, encode to mkv
         :return: 
