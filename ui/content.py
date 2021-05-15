@@ -845,7 +845,7 @@ class Content:
         self.sheet.align_columns([Columns.column_names.index(k) for k in Columns.progressbar_column.keys()], align='w')
         self.sheet.align_columns([Columns.column_names.index(k) for k in Columns.button_columns.keys()], align='center')
 
-    def show_video_callback(self, impartus: Impartus):
+    def show_video_callback(self, impartus: Impartus, event=None):
         if threading.activeCount() > 1:     # 1. main thread, 2,3... download threads.
             response = tk.messagebox.askquestion(
                 'Download(s) in progress!',
