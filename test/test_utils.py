@@ -7,7 +7,7 @@ def test_move_and_rename_file(mocker):
     mocker.patch('os.path.dirname')
     mock_move = mocker.patch('shutil.move')
 
-    from app.utils import Utils
+    from lib.utils import Utils
 
     source = '/tmp/1'
     dest = '/tmp/2'
@@ -22,7 +22,7 @@ def test_move_and_rename_file(mocker):
 
 
 def test_date_difference():
-    from app.utils import Utils
+    from lib.utils import Utils
 
     date1 = '2020-01-31'
     date2 = '2020-01-01'
@@ -39,7 +39,7 @@ def test_get_temp_dir_by_env(mocker):
     mocker.patch('os.path.exists', return_value=True)
 
     import os
-    from app.utils import Utils
+    from lib.utils import Utils
 
     # unset all tmp variables
     for env_var in ['TMPDIR', 'TEMP', 'TMP']:
@@ -62,7 +62,7 @@ def test_get_temp_dir_fallback(mocker):
                                 ]
 
     import os
-    from app.utils import Utils
+    from lib.utils import Utils
 
     for env_var in ['TMPDIR', 'TEMP', 'TMP']:
         os.environ[env_var] = ''
@@ -73,7 +73,7 @@ def test_get_temp_dir_fallback(mocker):
 
 def test_delete_files(mocker):
     mock_unlink = mocker.patch('os.unlink')
-    from app.utils import Utils
+    from lib.utils import Utils
 
     for files_list in [['0'], ['0', '1'], ['0', '1', '2'], ['0', '1', '2', '3']]:
         Utils.delete_files(files_list)
@@ -83,7 +83,7 @@ def test_delete_files(mocker):
 
 
 def test_sanitize():
-    from app.utils import Utils
+    from lib.utils import Utils
 
     data_items = {
         'abcdefghijklmnopqrstuvwxyz': 'abcdefghijklmnopqrstuvwxyz',     # alphabets
@@ -108,7 +108,7 @@ def test_sanitize():
 
 
 def test_add_new_fields(mocker):
-    mock_config_load = mocker.patch('app.config.Config.load')
+    mock_config_load = mocker.patch('lib.config.Config.load')
     mock_config_load.side_effect = [
         {'allowed_ext': ['ppt', 'pdf']},
         {'subjectName': {'long_subject_name': 'short_name'}}
@@ -146,6 +146,6 @@ def test_add_new_fields(mocker):
         '789': '/bazbar/foo.docx',
         # ...
     }
-    from app.utils import Utils
+    from lib.utils import Utils
 
     assert Utils.add_new_fields(metadata_given, video_slide_mapping) == metadata_processed

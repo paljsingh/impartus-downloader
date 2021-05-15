@@ -5,14 +5,14 @@ from typing import List
 import webbrowser
 from datetime import datetime
 
-from app.config import Config
+from lib.config import Config, ConfigType
 
 
 class Utils:
 
     @classmethod
     def add_new_fields(cls, metadata, video_slide_mapping):
-        conf = Config.load('impartus')
+        conf = Config.load(ConfigType.IMPARTUS)
 
         metadata['ext'] = None
         slides = video_slide_mapping.get(metadata['ttid'])
@@ -42,7 +42,7 @@ class Utils:
         # create new field to hold shortened subject names.
         mapping_item = 'subjectName'
         metadata['subjectNameShort'] = metadata[mapping_item]
-        mappings_conf = Config.load('mappings')
+        mappings_conf = Config.load(ConfigType.MAPPINGS)
         if mappings_conf.get(mapping_item):
             for key, val in mappings_conf.get(mapping_item).items():
                 if key == metadata[mapping_item]:
@@ -61,8 +61,8 @@ class Utils:
         path = re.sub(r"[^a-zA-Z0-9/\\]{2,}", '-', path)        # replace consecutive non-alphanum with single '-'
         path = re.sub(r"^(.*)[^a-zA-Z0-9]+$", r'\1', path)      # strip bad chars at end
         path = re.sub(r"^[^a-zA-Z0-9/]+(.*)$", r'\1', path)     # strip bad chars at beginning
-        path = re.sub(r'(/|\\)[^a-zA-Z0-9:]+', r'\1', path)     # strip bad chars after '/' or '\'
-        path = re.sub(r"[^a-zA-Z0-9:]+(/|\\)", r'\1', path)     # strip bad chars before '/' or '\'
+        path = re.sub(r'([/\\])[^a-zA-Z0-9:]+', r'\1', path)     # strip bad chars after '/' or '\'
+        path = re.sub(r"[^a-zA-Z0-9:]+([/\\])", r'\1', path)     # strip bad chars before '/' or '\'
         return path
 
     @classmethod

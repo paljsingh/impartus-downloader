@@ -22,7 +22,7 @@ def test_load_yaml(mocker, config_maps_yaml, config_maps_envyaml):
     mock_builtins_open = mocker.patch('builtins.open')
     mock_builtins_open.return_value.side_effect = [v for v in config_maps_yaml.values()]
 
-    from app.config import Config
+    from lib.config import Config
     import yaml
 
     for filetype, filepath in config_maps_yaml.items():
@@ -60,7 +60,7 @@ def test_save(mocker, config_maps_yaml):
     # duplicate each element in list, as we are calling open twice (first with Config.load(), later with Config.save()
     mock_builtins_open.return_value.__enter__.side_effect = [v for v in config_maps_yaml.values() for _ in (0, 1)]
 
-    from app.config import Config
+    from lib.config import Config
     for filetype, filepath in config_maps_yaml.items():
         Config.load(filetype)
         Config.save(filetype)
