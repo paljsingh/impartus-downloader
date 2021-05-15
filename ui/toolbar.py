@@ -94,9 +94,3 @@ class Toolbar:
 
     def set_colorscheme(self, cs):
         self.frame_toolbar.configure(bg=cs['root']['bg'])
-
-    def update(self, flipped=False):
-        if flipped:
-            self.flipped_video_quality_dropdown.configure(state='normal')
-        else:
-            self.flipped_video_quality_dropdown.configure(state='disabled')

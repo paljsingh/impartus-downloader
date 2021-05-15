@@ -17,6 +17,11 @@ class Menubar:
 
     def __init__(self):
         self.dialog = None
+        self.main_menu = None
+        self.help_menu = None
+        self.video_menu = None
+        self.view_menu = None
+        self.actions_menu = None
 
     def add_menu(self, anchor, callbacks: Dict):
         variables = Variables()
@@ -63,6 +68,11 @@ class Menubar:
         menubar.add_cascade(label=Labels.HELP, menu=helpmenu)
 
         anchor.config(menu=menubar)
+        self.main_menu = menubar
+        self.help_menu = helpmenu
+        self.video_menu = video_menu
+        self.view_menu = view_menu
+        self.actions_menu = actions_menu
         return menubar
 
     def about_dialog(self):
@@ -81,6 +91,3 @@ class Menubar:
         tk.Label(dialog, text='Check for updates', ).grid(row=1, column=0, sticky='w', ipadx=10, ipady=10)
         self.dialog = dialog
 
-    def on_about_dialog_close(self):
-        self.dialog.destroy()
-        self.dialog = None
