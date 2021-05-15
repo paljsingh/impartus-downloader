@@ -24,8 +24,6 @@ class LoginForm:
         """
         Adds authentication widgets and blank frame for holding video/lectures data.
         """
-        colorschemes_config = Config.load(ConfigType.COLORSCHEMES)
-        cs = colorschemes_config[colorschemes_config['default']]
         grid_options = {
             'padx': 10,
             'pady': 5,

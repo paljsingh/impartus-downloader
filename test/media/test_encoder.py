@@ -51,7 +51,7 @@ def tests_data():
 def test_split_track(mocker, tests_data):
     mocker.patch('shutil.move')
     os_system = mocker.patch('os.system')
-    from app.media.encoder import Encoder
+    from lib.media.encoder import Encoder
 
     for test_data in tests_data:
         Encoder.split_track(test_data['files'], test_data['duration'])
@@ -63,7 +63,7 @@ def test_split_track(mocker, tests_data):
 def test_encode_mkv_no_split(mocker, tests_data):
     os_system = mocker.patch('os.system')
     mocker.patch('os.stat')
-    from app.media.encoder import Encoder
+    from lib.media.encoder import Encoder
 
     for test_data in tests_data:
         Encoder.encode_mkv(1234, test_data['files'], test_data['filepath'], test_data['duration'], debug=False)
@@ -79,7 +79,7 @@ def test_encode_mkv_with_split(mocker, tests_data):
     os_stat = mocker.patch('os.stat')
     type(os_stat.return_value).st_size = PropertyMock(return_value=0)
 
-    from app.media.encoder import Encoder
+    from lib.media.encoder import Encoder
 
     for test_data in tests_data:
         Encoder.encode_mkv(1234, test_data['files'], test_data['filepath'], test_data['duration'], debug=False)
@@ -95,7 +95,7 @@ def test_encode_mkv_with_exception(mocker, tests_data, caplog):
 
     mocker.patch('os.stat')
 
-    from app.media.encoder import Encoder
+    from lib.media.encoder import Encoder
 
     for test_data in tests_data:
         output = Encoder.encode_mkv(1234, test_data['files'], test_data['filepath'], test_data['duration'], debug=False)
@@ -120,7 +120,7 @@ def test_join(mocker, tests_data):
     mocker.patch('os.path.join')
     mock_open = mocker.patch("builtins.open")
 
-    from app.media.encoder import Encoder
+    from lib.media.encoder import Encoder
 
     stream_files = ["1", "2", "3", "4"]
     Encoder.join(stream_files, "/tmp", 0)

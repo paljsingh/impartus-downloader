@@ -160,7 +160,7 @@ https://impartusmedia.oss-ap-south-1.aliyuncs.com/download1/4168424_hls/854x480_
 
 
 def test_init(mocker, m3u8_sample):
-    from app.media.m3u8parser import M3u8Parser
+    from lib.media.m3u8parser import M3u8Parser
 
     # with no parameters
     m3u8parser = M3u8Parser()
@@ -182,7 +182,7 @@ def test_init(mocker, m3u8_sample):
 
 
 def test_parse(mocker, m3u8_sample):
-    from app.media.m3u8parser import M3u8Parser
+    from lib.media.m3u8parser import M3u8Parser
 
     # with no parameters
     summary_object, tracks_object = M3u8Parser().parse()

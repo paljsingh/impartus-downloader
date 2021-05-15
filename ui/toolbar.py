@@ -2,16 +2,14 @@ from functools import partial
 import tkinter as tk
 
 from lib.config import ConfigType, Config
-from lib.impartus import Impartus
 from ui.colorschemes import ColorSchemes
-from ui.columns import Columns
-from ui.login_form import LoginForm
+from ui.data import Columns, Labels
 from ui.vars import Variables
 
 
 class Toolbar:
 
-    def __init__(self, app: tk.Tk, login: LoginForm, impartus: Impartus):
+    def __init__(self, app: tk.Tk):
 
         self.app = app
 
@@ -24,14 +22,7 @@ class Toolbar:
 
         self.frame_toolbar = None
 
-        self.labels = {
-            'reload': '⟳  Reload',
-            'auto_organize': '⇄  Auto Organize Lectures',
-            'columns': '❘❘❘  Columns',
-            'flipped_quality': '☇  Flipped Lecture Quality',
-        }
-
-    def add_toolbar(self, anchor, login, content, impartus, callback_functions):
+    def add_toolbar(self, anchor, callback_functions):
         variables = Variables()
 
         button_options = {
@@ -43,17 +34,17 @@ class Toolbar:
         self.frame_toolbar = tk.Frame(anchor, padx=0, pady=0)
 
         # reload button
-        self.reload_button = tk.Button(self.frame_toolbar, text=self.labels.get('reload'),
+        self.reload_button = tk.Button(self.frame_toolbar, text=Labels.RELOAD,
                                        command=callback_functions['authentication_callback'], **button_options)
         self.reload_button.grid(row=0, column=1, **grid_options)
 
         # auto organize button
-        self.auto_organize_button = tk.Button(self.frame_toolbar, text=self.labels.get('auto_organize'),
+        self.auto_organize_button = tk.Button(self.frame_toolbar, text=Labels.AUTO_ORGANIZE,
                                               command=callback_functions['auto_organize_callback'], **button_options)
         self.auto_organize_button.grid(row=0, column=2, **grid_options)
 
         # columns dropdown
-        columns_dropdown = tk.Menubutton(self.frame_toolbar, text=self.labels.get('columns'),
+        columns_dropdown = tk.Menubutton(self.frame_toolbar, text=Labels.COLUMNS,
                                          **button_options)
         columns_dropdown.menu = tk.Menu(columns_dropdown, tearoff=1)
         columns_dropdown['menu'] = columns_dropdown.menu
@@ -68,7 +59,7 @@ class Toolbar:
 
         # flipped lecture quality dropdown.
         lecture_quality_dropdown = tk.Menubutton(
-            self.frame_toolbar, text=self.labels.get('flipped_quality'), **button_options
+            self.frame_toolbar, text=Labels.FLIPPED_QUALITY, **button_options
         )
         lecture_quality_dropdown.menu = tk.Menu(lecture_quality_dropdown, tearoff=1)
         lecture_quality_dropdown['menu'] = lecture_quality_dropdown.menu

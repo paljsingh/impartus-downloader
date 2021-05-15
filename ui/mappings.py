@@ -10,4 +10,3 @@ class Mappings:
             mappings_config[mapping_name] = {}
         mappings_config.get(mapping_name)[old_value] = new_value
         Config.save(ConfigType.MAPPINGS)
-

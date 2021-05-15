@@ -97,7 +97,7 @@ class Impartus:
                       video_quality='highest'):
         """
         Download video and decrypt, join, encode to mkv
-        :return: 
+        :return:
         """
         if video_metadata.get('fcid'):
             ttid = video_metadata['fcid']

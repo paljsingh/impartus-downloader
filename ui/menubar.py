@@ -9,8 +9,7 @@ from typing import Dict
 from lib.config import Config, ConfigType
 from lib.utils import Utils
 from ui.colorschemes import ColorSchemes
-from ui.columns import Columns
-from ui.toolbar import Toolbar
+from ui.data import Columns, Labels
 from ui.vars import Variables
 
 
@@ -19,19 +18,19 @@ class Menubar:
     def __init__(self):
         self.dialog = None
 
-    def add_menu(self, anchor, toolbar: Toolbar, callbacks: Dict):
+    def add_menu(self, anchor, callbacks: Dict):
         variables = Variables()
         menubar = tkinter.Menu(anchor)
         actions_menu = tkinter.Menu(menubar, tearoff=0)
-        actions_menu.add_command(label=toolbar.labels.get('reload'), command=callbacks['authentication_callback'])
-        actions_menu.add_command(label=toolbar.labels.get('auto_organize'), command=callbacks['auto_organize_callback'])
+        actions_menu.add_command(label=Labels.RELOAD, command=callbacks['authentication_callback'])
+        actions_menu.add_command(label=Labels.AUTO_ORGANIZE, command=callbacks['auto_organize_callback'])
         actions_menu.add_separator()
         actions_menu.add_command(label="Quit", command=partial(sys.exit, 0))
 
         menubar.add_cascade(label="Actions", menu=actions_menu)
 
         view_menu = tkinter.Menu(menubar, tearoff=0)
-        view_menu.add_command(label=toolbar.labels.get('columns'), state=tk.DISABLED)
+        view_menu.add_command(label=Labels.COLUMNS, state=tk.DISABLED)
         for key, item in Columns.display_columns.items():
             view_menu.add_checkbutton(
                 label=item.get('display_name'), variable=variables.display_columns_vars(key),
@@ -48,7 +47,7 @@ class Menubar:
         menubar.add_cascade(label="View", menu=view_menu)
 
         video_menu = tkinter.Menu(menubar, tearoff=0)
-        video_menu.add_command(label=toolbar.labels.get('flipped_quality'), state=tk.DISABLED)
+        video_menu.add_command(label=Labels.FLIPPED_QUALITY, state=tk.DISABLED)
 
         conf = Config.load(ConfigType.IMPARTUS)
         for item in ['highest', *conf.get('video_quality_order'), 'lowest']:

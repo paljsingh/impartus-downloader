@@ -16,9 +16,8 @@ import tkinter.messagebox
 from lib.config import ConfigType, Config
 from lib.impartus import Impartus
 from lib.utils import Utils
-from ui.colorschemes import ColorSchemes
-from ui.columns import Columns
-from ui.icons import Icons
+from ui.data import Columns
+from ui.data import Icons
 from ui.login_form import LoginForm
 from ui.mappings import Mappings
 from ui.toolbar import Toolbar
@@ -893,10 +892,6 @@ class Content:
         self.toolbar.frame_toolbar.grid(row=1, column=0, sticky='ew')
 
         self.login.authenticate(impartus)
-
-        cs = Config.load(ConfigType.COLORSCHEMES)[Variables().colorscheme_var().get()]
         self.set_display_widgets()
-
         self.toolbar.reload_button.config(state='normal')
-
         self.toolbar.auto_organize_button.config(state='normal')

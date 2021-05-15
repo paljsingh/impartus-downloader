@@ -1,7 +1,7 @@
 import tkinter as tk
 
 from lib.config import Config, ConfigType
-from ui.columns import Columns
+from ui.data import Columns
 
 
 class Variables(object):

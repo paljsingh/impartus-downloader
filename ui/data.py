@@ -1,4 +1,31 @@
-from ui.icons import Icons
+import enum
+
+
+class Icons(enum.Enum):
+
+    DOWNLOAD_VIDEO = '⬇'
+    PLAY_VIDEO = '▶'
+    OPEN_FOLDER = '⏏'
+    DOWNLOAD_SLIDES = '⬇'
+    SHOW_SLIDES = '▤'
+    ADD_SLIDES = '📎'
+    PAUSE_DOWNLOAD = '❘❘'
+    RESUME_DOWNLOAD = '❘❘▶'
+    VIDEO_PROCESSING = '⧗'
+    VIDEO_DOWNLOADED = '✓'
+    VIDEO_NOT_DOWNLOADED = '⃠'
+    SORT_DESC = '▼'
+    SORT_ASC = '▲'
+    UNSORTED = '⇅'
+    EDITABLE = '✎'
+    MOVED_TO = '⇨'
+
+
+class Labels(enum.Enum):
+    RELOAD = '⟳  Reload',
+    AUTO_ORGANIZE = '⇄  Auto Organize Lectures',
+    COLUMNS = '❘❘❘  Columns',
+    FLIPPED_QUALITY = '☇  Flipped Lecture Quality',
 
 
 class Columns:

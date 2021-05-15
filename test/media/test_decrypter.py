@@ -39,7 +39,7 @@ def test_decrypt_with_encryption_key(mocker, enc_keys):
 
     mocker.patch('os.path.join')
 
-    from app.media.decrypter import Decrypter
+    from lib.media.decrypter import Decrypter
 
     for enc_key in enc_keys:
         Decrypter.decrypt(enc_key, infile, '/tmp')
@@ -52,7 +52,7 @@ def test_decrypt_with_bad_encryption_key_types(mocker, bad_enc_key_types):
     infile = '/tmp/1'
     mocker.patch('os.path.join')
 
-    from app.media.decrypter import Decrypter
+    from lib.media.decrypter import Decrypter
 
     for enc_key in bad_enc_key_types:
         with pytest.raises(AssertionError) as err:
@@ -65,7 +65,7 @@ def test_decrypt_with_bad_encryption_key_lengths(mocker, bad_enc_key_lengths):
     mocker.patch('os.path.join')
     mock_file = mocker.patch('builtins.open', mocker.mock_open(read_data='encrypted content'))
 
-    from app.media.decrypter import Decrypter
+    from lib.media.decrypter import Decrypter
 
     for enc_key in bad_enc_key_lengths:
         with pytest.raises(ValueError) as err:
