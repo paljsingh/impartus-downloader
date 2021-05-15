@@ -42,7 +42,6 @@ class Labels(enum.Enum):
         return str(self.value)
 
 
-
 class Columns:
     data_columns = {
         'subjectNameShort': {'display_name': 'Subject', 'title_case': False, 'sortable': True, 'editable': True,
