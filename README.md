@@ -5,16 +5,16 @@ Impartus Downloader
 Downloader for impartus streaming videos.
 
 - Convert impartus lectures to mkv files.
-- Download Lecture slides.
+- Supports downloading regular and flipped lecture.
+- Tested on Mac, Linux (ubuntu) and Windows 10.
 - Multi view/track files supported. Tested with files up to 4 tracks.
 - Parallel downloads supported. 
-- Supports flipped lecture download.
-- Tested on Mac, Linux (ubuntu) and Windows 10.
-- Editable subject field to create short subject name mapping.
-- Auto-detect when the real video path differs from expected video paths,
+- Pause / Resume individual downloads.
+- Editable subject field to use shorter subject names and better organize the folders.
+- Auto Organize lecture videos by moving / renaming to match the lecture topic, subject (nick)name or the path structure.
 due to change in topic on server, new short-subject name mapping or change in video/slides path.
-- Option to add offline slides.
-- Bulk move/rename files when there is a change in the actual vs expected video paths.
+- Download Lecture slides.
+- Attach slides downloaded manually (from other sources) to the lecture folder.
 - Sortable content.
 - Customizable color schemes, fonts.
 - Configurable columns.
