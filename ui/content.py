@@ -1,5 +1,6 @@
 import logging
 import os
+import pathlib
 import platform
 import shutil
 import threading
@@ -655,7 +656,9 @@ class Content:
                 expected_video_path = self.impartus.get_mkv_path(video_metadata)
                 real_video_path = self.offline_video_ttid_mapping.get(str(ttid))
 
-                if real_video_path and expected_video_path != real_video_path and os.path.exists(real_video_path):
+                if real_video_path and \
+                        pathlib.PurePath(expected_video_path) != pathlib.PurePath(real_video_path) \
+                        and os.path.exists(real_video_path):
                     Utils.move_and_rename_file(real_video_path, expected_video_path)
                     self.logger.info('moved {} -> {}'.format(real_video_path, expected_video_path))
                     moved_files[real_video_path] = expected_video_path
