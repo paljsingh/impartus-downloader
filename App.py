@@ -59,10 +59,10 @@ class App:
         """
         UI initialization.
         """
-        self.menu = Menubar()
+        self.menubar = Menubar()
         self.login = LoginForm()
         self.toolbar = Toolbar(self.app)
-        self.content = Content(self.app, self.login, self.toolbar, self.impartus)
+        self.content = Content(self.app, self.login, self.toolbar, self.menubar, self.impartus)
         self.colorschemes = ColorSchemes()
 
         callbacks_functions = {
@@ -71,7 +71,7 @@ class App:
             'set_display_columns_callback': self.content.set_display_columns,
             'set_colorscheme_callback': self.colorschemes.set_colorscheme,
         }
-        self.menu.add_menu(self.app, callbacks_functions)
+        self.menubar.add_menu(self.app, callbacks_functions)
         self.toolbar.add_toolbar(self.app, callbacks_functions)
         self.login.add_login_form(self.app, partial(self.content.show_video_callback, self.impartus))
 

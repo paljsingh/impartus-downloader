@@ -10,27 +10,29 @@ from typing import Dict
 
 import tkinter as tk
 from tksheet import Sheet
-import tkinter.filedialog
 import tkinter.messagebox
 
 from lib.config import ConfigType, Config
 from lib.impartus import Impartus
 from lib.utils import Utils
-from ui.data import Columns
+from ui.data import Columns, Labels
 from ui.data import Icons
+from ui.dialogs import Dialogs
 from ui.login_form import LoginForm
 from ui.mappings import Mappings
+from ui.menubar import Menubar
 from ui.toolbar import Toolbar
 from ui.vars import Variables
 
 
 class Content:
 
-    def __init__(self, app: tk.Tk, login: LoginForm, toolbar: Toolbar, impartus: Impartus):
+    def __init__(self, app: tk.Tk, login: LoginForm, toolbar: Toolbar, menubar: Menubar, impartus: Impartus):
 
         self.app = app
         self.login = login
         self.toolbar = toolbar
+        self.menubar = menubar
         self.impartus = impartus
 
         conf = Config.load(ConfigType.IMPARTUS)
@@ -55,7 +57,8 @@ class Content:
 
         # threads for downloading videos / slides.
         self.threads = None
-        self.dialog = None
+
+        self.logger = logging.getLogger(self.__class__.__name__)
 
     def _init_content(self):
         if self.frame_content:
@@ -100,7 +103,6 @@ class Content:
 
         # threads for downloading videos / slides.
         self.threads = dict()
-        self.dialog = None
 
 
     def add_content_frame(self, anchor) -> tk.Frame:    # noqa
@@ -196,7 +198,7 @@ class Content:
             r=row,
             c=col,
             set_data_ref_on_destroy=True,
-            move_down=True,
+            move_down=False,
             redraw=True,
             recreate=True
         )
@@ -209,8 +211,6 @@ class Content:
         if old_value == new_value:
             return
 
-        self.expected_real_paths_differ = True
-        self.toolbar.auto_organize_button.config(state='normal')
         col_name = Columns.column_names[self.get_real_col(col)]
         columns_item = Columns.data_columns[col_name]
         orig_values_col_name = columns_item.get('original_values_col')
@@ -218,11 +218,15 @@ class Content:
         for i, data in enumerate(self.sheet.get_column_data(Columns.column_names.index(orig_values_col_name))):
             if data == original_value:
                 self.sheet.set_cell_data(i, col, new_value)
+                self.expected_real_paths_differ = True
 
         Mappings.update_mappings(orig_values_col_name, original_value, new_value)
-
         self.reset_column_sizes()
+        self.sheet.deselect(row=row, column=col, redraw=False)
         self.sheet.refresh()
+        if self.expected_real_paths_differ:
+            self.toolbar.auto_organize_button.config(state='normal')
+            self.menubar.actions_menu.entryconfig(Labels.AUTO_ORGANIZE, state='normal')
 
     def reset_column_sizes(self):
         """
@@ -370,7 +374,9 @@ class Content:
                 self.video_slide_mapping[key] = val
             self.videos[subject_dict.get('subjectId')] = {x['ttid']: x for x in all_videos_by_subject}
 
-        self.toolbar.update(flipped=has_flipped_lectures)
+        state = 'normal' if has_flipped_lectures else 'disabled'
+        self.toolbar.flipped_video_quality_dropdown.configure(state=state)
+        self.menubar.main_menu.entryconfig(Labels.VIDEO, state=state)
 
     def fill_content(self):
         # A mapping dict containing previously downloaded, and possibly moved around / renamed videos.
@@ -637,6 +643,7 @@ class Content:
 
     def auto_organize(self):
         self.toolbar.auto_organize_button.config(state='disabled')
+        self.menubar.actions_menu.entryconfig(Labels.AUTO_ORGANIZE, state='disabled')
 
         logger = logging.getLogger(self.__class__.__name__)
         moved_files = dict()
@@ -683,61 +690,12 @@ class Content:
                         # parent path.
                         old_video_dir = Path(old_video_dir).parent.absolute()
 
-        # show a dialog with the output.
-        self.move_file_info_dialog(moved_files)
-        self.expected_real_paths_differ = False
+        if len(moved_files) > 0:
+            self.auto_organize_dialog(moved_files)
 
-    def move_file_info_dialog(self, moved_files):
-        # only 1 dialog at a time.
-        if self.dialog:
-            return
-
-        if len(moved_files) == 0:
-            return
-
-        dialog = tk.Toplevel()
-        dialog.protocol("WM_DELETE_WINDOW", self.on_move_file_dialog_close)
-        dialog.geometry("1000x500+100+100")
-        dialog.title('Alert - file rename!')
-        dialog.grab_set()
-
-        title = tk.Label(dialog, text='Following files were moved / renamed -', )
-        title.grid(row=0, column=0, sticky='w', ipadx=10, ipady=10)
-
-        sheet = Sheet(
-            dialog,
-            header_font=(self.header_font, self.header_font_size, "bold"),
-            font=(self.content_font, self.content_font_size, "normal"),
-            align='w',
-            row_height="1",  # str value for row height in number of lines.
-            row_index_align="w",
-            auto_resize_default_row_index=False,
-            row_index_width=40,
-            header_align='center',
-            empty_horizontal=0,
-            empty_vertical=0,
-        )
-
-        sheet.headers(['Source', '', 'Destination'])
-        target_parent = os.path.dirname(self.impartus.download_dir)
-        for row, (source, destination) in enumerate(moved_files.items()):
-            source = source[len(target_parent) + 1:]
-            destination = destination[len(target_parent) + 1:]
-            sheet.insert_row([source, Icons.MOVED_TO, destination])
-            dialog.columnconfigure(0, weight=1)
-
-        sheet.set_all_column_widths()
-        sheet.grid(row=1, column=0, sticky='nsew')
-
-        ok_button = tk.Button(dialog, text='OK', command=self.on_move_file_dialog_close)
-        ok_button.grid(row=2, column=0, padx=10, pady=10)
-
-        self.dialog = dialog
-
-    def on_move_file_dialog_close(self):
-        self.dialog.destroy()
-        self.dialog = None
-        self.login.authenticate(self.impartus)
+            # update ttid / offlince video mapping.
+            self.offline_video_ttid_mapping = self.impartus.get_mkv_ttid_map()
+            self.expected_real_paths_differ = False
 
     def set_display_columns(self):
         column_states = [i for i, v in enumerate(Variables().display_columns_vars().values()) if v.get() == 1]
@@ -887,11 +845,71 @@ class Content:
         self.sheet.align_columns([Columns.column_names.index(k) for k in Columns.button_columns.keys()], align='center')
 
     def show_video_callback(self, impartus: Impartus):
+        for x in threading.enumerate():
+            self.logger.info(x)
+        self.logger.info(threading.activeCount())
+        if threading.activeCount() > 1:     # main thread
+            response = tk.messagebox.askquestion(
+                'Download(s) in progress!',
+                "Reloading the content will lose the downloads in progress.\n"
+                + "Do you want to continue?",
+                icon='warning'
+            )
+            if response != 'yes':
+                return
+
         self.toolbar.reload_button.config(state='disabled')
+        self.menubar.actions_menu.entryconfig(Labels.RELOAD, state='disabled')
+
         self.toolbar.auto_organize_button.config(state='disabled')
+        self.menubar.actions_menu.entryconfig(Labels.AUTO_ORGANIZE, state='disabled')
+
         self.toolbar.frame_toolbar.grid(row=1, column=0, sticky='ew')
 
         self.login.authenticate(impartus)
         self.set_display_widgets()
         self.toolbar.reload_button.config(state='normal')
-        self.toolbar.auto_organize_button.config(state='normal')
+        self.menubar.actions_menu.entryconfig(Labels.RELOAD, state='normal')
+
+        auto_organize_button_state = 'normal' if self.expected_real_paths_differ else 'disabled'
+        self.toolbar.auto_organize_button.config(state=auto_organize_button_state)
+        self.menubar.actions_menu.entryconfig(Labels.AUTO_ORGANIZE, state=state)
+
+    def on_auto_organize_dialog_close(self):
+        self.login.authenticate(self.impartus)
+        Dialogs.on_dialog_close()
+
+    def auto_organize_dialog(self, moved_files):    # noqa
+        dialog = Dialogs.create_dialog(on_close_callback=self.on_auto_organize_dialog_close,
+                                       title='Auto Organize')
+        label = tk.Label(dialog, text='Following files were moved / renamed -', )
+        label.grid(row=0, column=0, sticky='w', ipadx=10, ipady=10)
+        dialog.columnconfigure(0, weight=1)
+
+        # show a dialog with the output.
+        sheet = Sheet(
+            Dialogs.dialog,
+            header_font=(self.header_font, self.header_font_size, "bold"),
+            font=(self.content_font, self.content_font_size, "normal"),
+            align='w',
+            row_height="1",  # str value for row height in number of lines.
+            row_index_align="w",
+            auto_resize_default_row_index=False,
+            row_index_width=40,
+            header_align='center',
+            empty_horizontal=0,
+            empty_vertical=0,
+        )
+
+        sheet.headers(['Source', '', 'Destination'])
+        target_parent = os.path.dirname(self.impartus.download_dir)
+        for row, (source, destination) in enumerate(moved_files.items()):
+            source = source[len(target_parent) + 1:]
+            destination = destination[len(target_parent) + 1:]
+            sheet.insert_row([source, Icons.MOVED_TO, destination])
+
+        sheet.set_all_column_widths()
+        sheet.grid(row=1, column=0, sticky='nsew')
+
+        ok_button = tk.Button(dialog, text='OK', command=self.on_auto_organize_dialog_close)
+        ok_button.grid(row=2, column=0, padx=10, pady=10)
