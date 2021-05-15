@@ -18,11 +18,9 @@ from ui.toolbar import Toolbar
 
 class App:
     def __init__(self):
-        # backend
         self.impartus = Impartus()
-
-        # root container
         self.app = self.create_app()
+
         self._init_ui()
 
     def create_app(self):   # noqa

@@ -117,15 +117,15 @@ class Content:
         for name, value in Columns.display_columns.items():
             if value.get('sortable'):
                 if name == sort_by:
-                    sort_icon = Icons.SORT_DESC.value if sort_order == 'desc' else Icons.SORT_ASC.value
+                    sort_icon = Icons.SORT_DESC if sort_order == 'desc' else Icons.SORT_ASC
                 else:
-                    sort_icon = Icons.UNSORTED.value
+                    sort_icon = Icons.UNSORTED
                 text = '{} {}'.format(value['display_name'], sort_icon)
             else:
                 text = value['display_name']
 
             if value.get('editable'):
-                text = '{} {}'.format(Icons.EDITABLE.value, text)
+                text = '{} {}'.format(Icons.EDITABLE, text)
 
             headers.append(text)
         self.sheet.headers(headers)
@@ -173,7 +173,7 @@ class Content:
 
         # disable the button if it is one of the Download buttons, to prevent a re-download.
         if col_name == 'download_video':
-            self.sheet.set_cell_data(row, real_col, Icons.PAUSE_DOWNLOAD.value, redraw=False)
+            self.sheet.set_cell_data(row, real_col, Icons.PAUSE_DOWNLOAD, redraw=False)
         elif col_name == 'download_slides':
             cs = Config.load(ConfigType.COLORSCHEMES)[Variables().colorscheme_var().get()]
             self.disable_button(row, real_col, cs)
@@ -283,12 +283,12 @@ class Content:
             percent_text = '{:2d}%'.format(value)
             status = percent_text
         elif value == 0:
-            status = pad + Icons.VIDEO_NOT_DOWNLOADED.value + pad
+            status = '{}{}{}'.format(pad, Icons.VIDEO_NOT_DOWNLOADED, pad)
         else:  # 100 %
             if processed:
-                status = pad + Icons.VIDEO_DOWNLOADED.value + pad
+                status = '{}{}{}'.format(pad, Icons.VIDEO_DOWNLOADED, pad)
             else:
-                status = pad + Icons.VIDEO_PROCESSING.value + pad
+                status = '{}{}{}'.format(pad, Icons.VIDEO_PROCESSING, pad)
         return '{} {}{}'.format(text, status, pad)
 
     def progress_bar_text_ascii(self, value):  # noqa
@@ -507,7 +507,7 @@ class Content:
         # update progress bar status to complete.
         self.progress_bar_callback(row=row_index, col=pb_col, count=100, processed=True)
 
-        self.sheet.set_cell_data(updated_row, Columns.column_names.index('download_video'), Icons.DOWNLOAD_VIDEO.value)
+        self.sheet.set_cell_data(updated_row, Columns.column_names.index('download_video'), Icons.DOWNLOAD_VIDEO)
 
         self.disable_button(updated_row, Columns.column_names.index('download_video'))
         # enable buttons.
@@ -530,11 +530,11 @@ class Content:
         updated_row = self.get_row_after_sort(row_index)
 
         if pause_event.is_set():
-            self.sheet.set_cell_data(updated_row, col, Icons.PAUSE_DOWNLOAD.value, redraw=True)
+            self.sheet.set_cell_data(updated_row, col, Icons.PAUSE_DOWNLOAD, redraw=True)
             resume_event.set()
             pause_event.clear()
         else:
-            self.sheet.set_cell_data(updated_row, col, Icons.RESUME_DOWNLOAD.value, redraw=True)
+            self.sheet.set_cell_data(updated_row, col, Icons.RESUME_DOWNLOAD, redraw=True)
             pause_event.set()
             resume_event.clear()
 
@@ -723,7 +723,7 @@ class Content:
         for row, (source, destination) in enumerate(moved_files.items()):
             source = source[len(target_parent) + 1:]
             destination = destination[len(target_parent) + 1:]
-            sheet.insert_row([source, Icons.MOVED_TO.value, destination])
+            sheet.insert_row([source, Icons.MOVED_TO, destination])
             dialog.columnconfigure(0, weight=1)
 
         sheet.set_all_column_widths()

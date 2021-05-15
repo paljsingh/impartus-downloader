@@ -25,9 +25,9 @@ class Menubar:
         actions_menu.add_command(label=Labels.RELOAD, command=callbacks['authentication_callback'])
         actions_menu.add_command(label=Labels.AUTO_ORGANIZE, command=callbacks['auto_organize_callback'])
         actions_menu.add_separator()
-        actions_menu.add_command(label="Quit", command=partial(sys.exit, 0))
+        actions_menu.add_command(label=Labels.QUIT, command=partial(sys.exit, 0))
 
-        menubar.add_cascade(label="Actions", menu=actions_menu)
+        menubar.add_cascade(label=Labels.ACTIONS, menu=actions_menu)
 
         view_menu = tkinter.Menu(menubar, tearoff=0)
         view_menu.add_command(label=Labels.COLUMNS, state=tk.DISABLED)
@@ -38,35 +38,34 @@ class Menubar:
             )
 
         view_menu.add_separator()
-        view_menu.add_command(label='Color Scheme', state=tk.DISABLED)
+        view_menu.add_command(label=Labels.COLORSCHEME, state=tk.DISABLED)
         for name, item in ColorSchemes.get_color_schemes().items():
             view_menu.add_radiobutton(label='⦿ {}'.format(name), variable=variables.colorscheme_var(), value=name,
                                       command=partial(callbacks['set_colorscheme_callback'], item),
                                       )
         view_menu.add_separator()
-        menubar.add_cascade(label="View", menu=view_menu)
+        menubar.add_cascade(label=Labels.VIEW, menu=view_menu)
 
         video_menu = tkinter.Menu(menubar, tearoff=0)
-        video_menu.add_command(label=Labels.FLIPPED_QUALITY, state=tk.DISABLED)
+        video_menu.add_command(label=str(Labels.FLIPPED_QUALITY), state=tk.DISABLED)
 
         conf = Config.load(ConfigType.IMPARTUS)
         for item in ['highest', *conf.get('video_quality_order'), 'lowest']:
             video_menu.add_radiobutton(label=item, variable=variables.lecture_quality_var())
-        menubar.add_cascade(label="Video", menu=video_menu)
+        menubar.add_cascade(label=Labels.VIDEO, menu=video_menu)
 
         helpmenu = tkinter.Menu(menubar, tearoff=0)
         helpmenu.add_command(
-            label="Documentation...",
+            label=Labels.DOCUMENTATION,
             command=partial(Utils.open_file, os.path.join(os.path.abspath(os.curdir), 'etc/helpdoc.pdf'))
         )
-        helpmenu.add_command(label="About...", command=self.about_dialog)
-        menubar.add_cascade(label="Help", menu=helpmenu)
+        helpmenu.add_command(label=Labels.ABOUT, command=self.about_dialog)
+        menubar.add_cascade(label=Labels.HELP, menu=helpmenu)
 
         anchor.config(menu=menubar)
         return menubar
 
     def about_dialog(self):
-        # only 1 dialog at a time.
         if self.dialog:
             return
 

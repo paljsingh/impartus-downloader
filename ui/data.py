@@ -20,12 +20,27 @@ class Icons(enum.Enum):
     EDITABLE = '✎'
     MOVED_TO = '⇨'
 
+    def __str__(self):
+        return str(self.value)
+
 
 class Labels(enum.Enum):
-    RELOAD = '⟳  Reload',
-    AUTO_ORGANIZE = '⇄  Auto Organize Lectures',
-    COLUMNS = '❘❘❘  Columns',
-    FLIPPED_QUALITY = '☇  Flipped Lecture Quality',
+    RELOAD = '⟳  Reload'
+    AUTO_ORGANIZE = '⇄  Auto Organize Lectures'
+    COLUMNS = '❘❘❘  Columns'
+    FLIPPED_QUALITY = '☇  Flipped Lecture Quality'
+    QUIT = 'Quit'
+    ACTIONS = 'Actions'
+    COLORSCHEME = 'Color Scheme'
+    VIEW = 'View'
+    VIDEO = 'Video'
+    DOCUMENTATION = 'Documentation...'
+    ABOUT = 'About...'
+    HELP = 'Help'
+
+    def __str__(self):
+        return str(self.value)
+
 
 
 class Columns:
