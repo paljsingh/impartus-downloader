@@ -660,6 +660,8 @@ class Content:
                     Utils.move_and_rename_file(real_video_path, expected_video_path)
                     logger.info('moved {} -> {}'.format(real_video_path, expected_video_path))
                     moved_files[real_video_path] = expected_video_path
+                    # also update the offline_video_ttid_mapping
+                    self.offline_video_ttid_mapping[str(ttid)] = expected_video_path
 
                     # also check any slides.
                     for ext in conf.get('allowed_ext'):
@@ -692,9 +694,6 @@ class Content:
 
         if len(moved_files) > 0:
             self.auto_organize_dialog(moved_files)
-
-            # update ttid / offlince video mapping.
-            self.offline_video_ttid_mapping = self.impartus.get_mkv_ttid_map()
             self.expected_real_paths_differ = False
 
     def set_display_columns(self):
@@ -873,11 +872,12 @@ class Content:
 
         auto_organize_button_state = 'normal' if self.expected_real_paths_differ else 'disabled'
         self.toolbar.auto_organize_button.config(state=auto_organize_button_state)
-        self.menubar.actions_menu.entryconfig(Labels.AUTO_ORGANIZE, state=state)
+        self.menubar.actions_menu.entryconfig(Labels.AUTO_ORGANIZE, state=auto_organize_button_state)
 
     def on_auto_organize_dialog_close(self):
         self.login.authenticate(self.impartus)
         Dialogs.on_dialog_close()
+        self.show_video_callback(self.impartus)
 
     def auto_organize_dialog(self, moved_files):    # noqa
         dialog = Dialogs.create_dialog(on_close_callback=self.on_auto_organize_dialog_close,
