@@ -645,7 +645,6 @@ class Content:
         self.toolbar.auto_organize_button.config(state='disabled')
         self.menubar.actions_menu.entryconfig(Labels.AUTO_ORGANIZE, state='disabled')
 
-        logger = logging.getLogger(self.__class__.__name__)
         moved_files = dict()
 
         conf = Config.load(ConfigType.IMPARTUS)
@@ -658,7 +657,7 @@ class Content:
 
                 if real_video_path and expected_video_path != real_video_path and os.path.exists(real_video_path):
                     Utils.move_and_rename_file(real_video_path, expected_video_path)
-                    logger.info('moved {} -> {}'.format(real_video_path, expected_video_path))
+                    self.logger.info('moved {} -> {}'.format(real_video_path, expected_video_path))
                     moved_files[real_video_path] = expected_video_path
                     # also update the offline_video_ttid_mapping
                     self.offline_video_ttid_mapping[str(ttid)] = expected_video_path
@@ -669,7 +668,7 @@ class Content:
                         if os.path.exists(slides_path):
                             expected_slides_path = '{}.{}'.format(expected_video_path[:-len(".mkv")], ext)
                             Utils.move_and_rename_file(slides_path, expected_slides_path)
-                            logger.info('moved {} -> {}'.format(slides_path, expected_slides_path))
+                            self.logger.info('moved {} -> {}'.format(slides_path, expected_slides_path))
                             moved_files[slides_path] = expected_slides_path
 
                     # is the folder empty, remove it.? [also any empty parent folders]
@@ -688,7 +687,7 @@ class Content:
                             if os.path.exists(filepath):
                                 os.unlink(filepath)
                         os.rmdir(old_video_dir)
-                        logger.info('removed empty directory: {}'.format(old_video_dir))
+                        self.logger.info('removed empty directory: {}'.format(old_video_dir))
                         # parent path.
                         old_video_dir = Path(old_video_dir).parent.absolute()
 
@@ -844,10 +843,7 @@ class Content:
         self.sheet.align_columns([Columns.column_names.index(k) for k in Columns.button_columns.keys()], align='center')
 
     def show_video_callback(self, impartus: Impartus):
-        for x in threading.enumerate():
-            self.logger.info(x)
-        self.logger.info(threading.activeCount())
-        if threading.activeCount() > 1:     # main thread
+        if threading.activeCount() > 1:     # 1. main thread, 2,3... download threads.
             response = tk.messagebox.askquestion(
                 'Download(s) in progress!',
                 "Reloading the content will lose the downloads in progress.\n"

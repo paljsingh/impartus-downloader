@@ -35,6 +35,6 @@ class Dialogs:
         return cls.dialog
 
     @classmethod
-    def on_dialog_close(cls):
+    def on_dialog_close(cls, event=None):
         cls.dialog.destroy()
         cls.dialog = None

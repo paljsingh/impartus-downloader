@@ -6,11 +6,17 @@ from functools import partial
 import tkinter as tk
 from typing import Dict
 
+import requests
+
 from lib.config import Config, ConfigType
 from lib.utils import Utils
 from ui.colorschemes import ColorSchemes
 from ui.data import Columns, Labels
+from ui.dialogs import Dialogs
 from ui.vars import Variables
+
+from lib import version
+
 
 
 class Menubar:
@@ -22,6 +28,8 @@ class Menubar:
         self.video_menu = None
         self.view_menu = None
         self.actions_menu = None
+
+        self.img = None
 
     def add_menu(self, anchor, callbacks: Dict):
         variables = Variables()
@@ -64,7 +72,7 @@ class Menubar:
             label=Labels.DOCUMENTATION,
             command=partial(Utils.open_file, os.path.join(os.path.abspath(os.curdir), 'etc/helpdoc.pdf'))
         )
-        helpmenu.add_command(label=Labels.ABOUT, command=self.about_dialog)
+        helpmenu.add_command(label=Labels.CHECK_FOR_UPDATES, command=self.about_dialog)
         menubar.add_cascade(label=Labels.HELP, menu=helpmenu)
 
         anchor.config(menu=menubar)
@@ -76,18 +84,63 @@ class Menubar:
         return menubar
 
     def about_dialog(self):
-        if self.dialog:
-            return
+        current_version = version.__version_info__
+        dialog = Dialogs.create_dialog(title='About...', size="600x600+100+100")
 
-        dialog = tk.Toplevel()
-        dialog.protocol("WM_DELETE_WINDOW", self.on_about_dialog_close)
-        dialog.geometry("600x400+100+100")
-        dialog.title('About...')
-        dialog.grab_set()
+        frame1 = tk.Frame(dialog)
+        frame1.grid(row=0, column=0, sticky='nsew', ipadx=10, ipady=10)
 
-        tk.Label(dialog, text='Version').grid(row=0, column=0, sticky='w', ipadx=10, ipady=10)
-        tk.Label(dialog, text='foo').grid(row=0, column=1, sticky='w', ipadx=10, ipady=10)
+        # Logo
+        self.img = tk.PhotoImage(file='etc/id.png')
+        self.img = self.img.subsample(4, 4)
+        lbl = tk.Label(frame1, image=self.img)
+        lbl.grid(row=0, column=1, sticky='e', ipadx=10, ipady=10)
 
-        tk.Label(dialog, text='Check for updates', ).grid(row=1, column=0, sticky='w', ipadx=10, ipady=10)
+        # App title
+        tk.Label(frame1, text='Impartus Downloader', font=("Arial Bold Italic", 16)).grid(
+            row=0, column=3, sticky='w', ipadx=0, ipady=0)
+
+        # current version
+        tk.Label(frame1, text='version - {}'.format(current_version)).grid(
+            row=1, column=2, sticky='ew', ipadx=10, ipady=10)
+
+        releases = self.get_releases()
+        latest_version = releases[0]['tag_name']
+        if latest_version > current_version:
+            download_link1 = tk.Label(frame1, text="latest - {}".format(latest_version), fg="yellow", cursor="hand2")
+            download_link1.grid(row=2, column=2, sticky='ew', ipadx=10, ipady=10)
+            download_link1.bind("<Button-1>", partial(Utils.open_file, releases[0]['zipball_url']))
+        else:
+            tk.Label(frame1, text="(latest)").grid(row=2, column=2, sticky='ew', ipadx=10, ipady=10)
+
+        frame1.columnconfigure(0, weight=1)
+        frame1.columnconfigure(3, weight=1)
+
+        frame2 = tk.Frame(dialog)
+        frame2.grid(row=1, column=0, sticky='nsew', ipadx=10, ipady=10)
+
+        textbox = tk.Text(frame2)
+        for rel in releases:
+            textbox.insert(tk.END, '{}: {}\n\n'.format(rel['tag_name'], rel['name']))
+            textbox.insert(tk.END, 'Published on: {}\n\n'.format(rel['published_at']))
+            textbox.insert(tk.END, 'Changelist:\n\n{}\n\n'.format(rel['body'].strip()))
+            textbox.insert(tk.END, '---------------\n\n')
+
+        textbox.configure(state=tk.DISABLED)
+        textbox.grid(row=0, column=0, sticky='nsew', ipadx=10, ipady=10)
+
+        frame2.columnconfigure(0, weight=1)
+        frame2.columnconfigure(2, weight=1)
+
+        tk.Button(frame2, text='Close', command=Dialogs.on_dialog_close).grid(row=1, column=0, sticky='ew')
+        dialog.bind("<Escape>", Dialogs.on_dialog_close)
+
         self.dialog = dialog
+
+    def get_releases(self):
+        url = 'https://api.github.com/repos/paljsingh/impartus-downloader/releases'
+        response = requests.get(url)
+        if response.status_code == 200:
+            return response.json()
+
 

@@ -35,7 +35,7 @@ class Labels(enum.Enum):
     VIEW = 'View'
     VIDEO = 'Video'
     DOCUMENTATION = 'Documentation...'
-    ABOUT = 'About...'
+    CHECK_FOR_UPDATES = 'Check for updates...'
     HELP = 'Help'
 
     def __str__(self):
