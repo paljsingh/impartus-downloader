@@ -208,6 +208,12 @@ class Impartus:
                                     raise GetOutOfLoop
             except GetOutOfLoop:
                 pass
+            except enzyme.MalformedMKVError as ex:
+                self.logger.warning("Exception while parsing file {}".format(str(path)))
+                self.logger.warning("You may want to delete and re-download this file.")
+                self.logger.warning("Exception: {}".format(ex))
+                pass
+
         return mkv_ttid_map
 
     def slides_exist_on_disk(self, path):
