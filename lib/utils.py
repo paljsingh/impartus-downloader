@@ -80,8 +80,11 @@ class Utils:
                 return tmp_path
 
     @classmethod
-    def open_file(cls, path):
-        webbrowser.open('file://{}'.format(path))
+    def open_file(cls, path, event=None):
+        if re.match('https?', path) or re.match('file:', path):
+            webbrowser.open('{}'.format(path))
+        else:
+            webbrowser.open('file://{}'.format(path))
 
     @classmethod
     def date_difference(cls, date1, date2):
