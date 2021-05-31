@@ -155,6 +155,11 @@ see etc/impartus.conf
 >  Save and restart VLC.
 > 
 ![Setting background opacity in VLC](etc/vlc-bg-opacity.png "Setting background opacity in VLC")
+>
+> Below is a sample output of the opacity change.
+>
+![Background Opacity](etc/bg-opacity.png "Background Opacity")
+
 >  
 ---
 
