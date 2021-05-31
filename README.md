@@ -115,25 +115,44 @@ see etc/impartus.conf
 ---
 
 ## Known Issues
-> * Lecture slides to video mapping may be incorrect. The impartus platform does not offer a strict video to lecture slides mapping, the application uses the upload dates of the two for a fuzzy match.
->
-> * Impartus site may start throttling the connections if there are too many parallel downloads. The application uses retry logic with induced delay. However, if the issue persists you may need to restart the app.
+**Incorrect lecture slide associated to a video**
+
+> The impartus platform does not offer a strict video to lecture slides mapping, the application uses the upload dates of the two for a fuzzy match. 
 > 
-> * Application crashes on Linux with error: 
- `X Error of failed request:  BadLength (poly request too large or internal Xlib length error)`
+> You may try changing (decreasing) the value of `slides_upload_window` value in `etc/impartus.conf`, which may work better in case you have more than one lectures for a subject within a week's duration.
 >
->  The issue is caused by a bug in libXft and can be resolved by uninstalling `fonts-noto-color-emoji`
+---
+
+**Connection issues when downloading**
 >
->  $ sudo apt-get remove fonts-noto-color-emoji
+> Impartus site may start throttling the connections if there are too many parallel downloads. The application uses retry logic with induced delay. However, if the issue persists you may need to restart the app.
+> 
+---
+
+**Application crashes on Linux**
+
+> On some systems the application crashes with error:
+> `X Error of failed request:  BadLength (poly request too large or internal Xlib length error)`
 >
-> * Difficult to read closed captions on white background.
->   
+> The issue is caused by a bug in libXft and can be resolved by uninstalling `fonts-noto-color-emoji`
+>
+>  `$ sudo apt-get remove fonts-noto-color-emoji`
+>
+
+**Hard to read closed captions on white background**
+> 
 > With VLC, you can set the background opacity value to 255.
+> 
 >  Go to Preferences.
+> 
 >  Select 'All' settings
+> 
 >  Navigate to Video > Subtitle / OSD > Text renderer   
+> 
 >  Change 'Background Opacity' to 255
+> 
 >  Save and restart VLC.
+> 
 ![Setting background opacity in VLC](etc/vlc-bg-opacity.png "Setting background opacity in VLC")
 >  
 > 

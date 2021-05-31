@@ -505,6 +505,8 @@ class Content:
             Captions.save_vtt(vtt_content, captions_path)
         except CaptionsNotFound as ex:
             self.logger.info("no lecture chat found for {}".format(captions_path))
+            return
+        return True
 
     def _download_video(self, video_metadata, filepath, captions_path, root_url, row, col, pause_ev, resume_ev):  # noqa
         """
@@ -720,8 +722,8 @@ class Content:
                 # captions
                 expected_captions_path = self.impartus.get_captions_path(video_metadata)
                 if not os.path.exists(expected_captions_path):
-                    self.save_captions_if_needed(video_metadata, self.login.url_box.get(), expected_captions_path)
-                    self.logger.info('downloaded captions: {}'.format(expected_captions_path))
+                    if self.save_captions_if_needed(video_metadata, self.login.url_box.get(), expected_captions_path):
+                        self.logger.info('downloaded captions: {}'.format(expected_captions_path))
 
         self.all_captions_found = True
         if len(moved_files) > 0:
