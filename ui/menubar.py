@@ -70,7 +70,7 @@ class Menubar:
         helpmenu = tkinter.Menu(menubar, tearoff=0)
         helpmenu.add_command(
             label=Labels.DOCUMENTATION,
-            command=partial(Utils.open_file, os.path.join(os.path.abspath(os.curdir), 'etc/helpdoc.pdf'))
+            command=partial(Utils.open_file, os.path.join(os.path.abspath(os.curdir), 'docs/helpdoc.pdf'))
         )
         helpmenu.add_command(label=Labels.CHECK_FOR_UPDATES, command=self.about_dialog)
         menubar.add_cascade(label=Labels.HELP, menu=helpmenu)
