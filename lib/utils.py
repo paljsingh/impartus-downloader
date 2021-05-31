@@ -80,7 +80,7 @@ class Utils:
                 return tmp_path
 
     @classmethod
-    def open_file(cls, path, event=None):
+    def open_file(cls, path, event=None):   # noqa
         if re.match('https?', path) or re.match('file:', path):
             webbrowser.open('{}'.format(path))
         else:

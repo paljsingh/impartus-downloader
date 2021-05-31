@@ -5,6 +5,7 @@ import platform
 import shutil
 import threading
 import ast
+from datetime import datetime
 from functools import partial
 from pathlib import Path
 from typing import Dict
@@ -15,6 +16,7 @@ import tkinter.messagebox
 
 from lib.config import ConfigType, Config
 from lib.impartus import Impartus
+from lib.captions import Captions, CaptionsNotFound
 from lib.utils import Utils
 from ui.data import Columns, Labels
 from ui.data import Icons
@@ -50,6 +52,7 @@ class Content:
         self.video_slide_mapping = None
 
         self.expected_real_paths_differ = False
+        self.all_captions_found = True
         self.offline_video_ttid_mapping = None
 
         # sort options
@@ -225,7 +228,7 @@ class Content:
         self.reset_column_sizes()
         self.sheet.deselect(row=row, column=col, redraw=False)
         self.sheet.refresh()
-        if self.expected_real_paths_differ:
+        if self.expected_real_paths_differ or not self.all_captions_found:
             self.toolbar.auto_organize_button.config(state='normal')
             self.menubar.actions_menu.entryconfig(Labels.AUTO_ORGANIZE, state='normal')
 
@@ -400,6 +403,10 @@ class Content:
                         video_path = video_path_moved
                         self.expected_real_paths_differ = True
 
+                captions_path = self.impartus.get_captions_path(video_metadata)
+                if not os.path.exists(captions_path):
+                    self.all_captions_found = False
+
                 slides_path = self.impartus.get_slides_path(video_metadata)
 
                 video_exists_on_disk = video_path and os.path.exists(video_path)
@@ -414,6 +421,7 @@ class Content:
                     'slides_exist_on_disk': slides_exist_on_disk,
                     'slides_url': self.video_slide_mapping.get(ttid),
                     'slides_path': slides_path,
+                    'captions_path': captions_path,
                 }
                 row_items = list()
                 button_states = list()
@@ -488,7 +496,17 @@ class Content:
         self.set_button_status()
         self.sheet.refresh()
 
-    def _download_video(self, video_metadata, filepath, root_url, row, col, pause_ev, resume_ev):  # noqa
+    def save_captions_if_needed(self, video_metadata, root_url, captions_path):
+        chat_msgs = self.impartus.get_chats(video_metadata, root_url)
+        date_format = "%Y-%m-%d %H:%M:%S"
+        start_epoch = int(datetime.strptime(video_metadata['startTime'], date_format).strftime('%s'))
+        try:
+            vtt_content = Captions.get_vtt(chat_msgs, start_epoch)
+            Captions.save_vtt(vtt_content, captions_path)
+        except CaptionsNotFound as ex:
+            self.logger.info("no lecture chat found for {}".format(captions_path))
+
+    def _download_video(self, video_metadata, filepath, captions_path, root_url, row, col, pause_ev, resume_ev):  # noqa
         """
         Download a video in a thread. Update the UI upon completion.
         """
@@ -508,6 +526,9 @@ class Content:
         imp.process_video(video_metadata, filepath, root_url, pause_ev, resume_ev,
                           partial(self.progress_bar_callback, row=row_index, col=pb_col),
                           video_quality=Variables().lecture_quality_var())
+
+        # also download lecture chats, and create a webvtt subtitles file.
+        self.save_captions_if_needed(video_metadata, root_url, captions_path)
 
         # download complete, enable open / play buttons
         updated_row = self.get_row_after_sort(row_index)
@@ -554,6 +575,7 @@ class Content:
 
         video_metadata = data.get('video_metadata')
         filepath = data.get('video_path')
+        captions_path = data.get('captions_path')
         root_url = self.login.url_box.get()
 
         real_row = self.get_index(row)
@@ -570,8 +592,9 @@ class Content:
         resume_event = Event()
 
         # note: args is a tuple.
-        thread = threading.Thread(target=self._download_video, args=(video_metadata, filepath, root_url, row, col,
-                                                                     pause_event, resume_event,))
+        thread = threading.Thread(target=self._download_video,
+                                  args=(video_metadata, filepath, captions_path, root_url, row, col,
+                                        pause_event, resume_event,))
         self.threads[real_row] = {
             'thread': thread,
             'pause_event': pause_event,
@@ -652,10 +675,10 @@ class Content:
         for subject_id, videos in self.videos.items():
             for ttid, video_metadata in videos.items():
                 video_metadata = Utils.add_new_fields(video_metadata, self.video_slide_mapping)
+
                 # for videos
                 expected_video_path = self.impartus.get_mkv_path(video_metadata)
                 real_video_path = self.offline_video_ttid_mapping.get(str(ttid))
-
                 if real_video_path and \
                         pathlib.PurePath(expected_video_path) != pathlib.PurePath(real_video_path) \
                         and os.path.exists(real_video_path):
@@ -694,6 +717,13 @@ class Content:
                         # parent path.
                         old_video_dir = Path(old_video_dir).parent.absolute()
 
+                # captions
+                expected_captions_path = self.impartus.get_captions_path(video_metadata)
+                if not os.path.exists(expected_captions_path):
+                    self.save_captions_if_needed(video_metadata, self.login.url_box.get(), expected_captions_path)
+                    self.logger.info('downloaded captions: {}'.format(expected_captions_path))
+
+        self.all_captions_found = True
         if len(moved_files) > 0:
             self.auto_organize_dialog(moved_files)
             self.expected_real_paths_differ = False
@@ -845,7 +875,7 @@ class Content:
         self.sheet.align_columns([Columns.column_names.index(k) for k in Columns.progressbar_column.keys()], align='w')
         self.sheet.align_columns([Columns.column_names.index(k) for k in Columns.button_columns.keys()], align='center')
 
-    def show_video_callback(self, impartus: Impartus, event=None):
+    def show_video_callback(self, impartus: Impartus, event=None):  # noqa
         if threading.activeCount() > 1:     # 1. main thread, 2,3... download threads.
             response = tk.messagebox.askquestion(
                 'Download(s) in progress!',
@@ -869,7 +899,10 @@ class Content:
         self.toolbar.reload_button.config(state='normal')
         self.menubar.actions_menu.entryconfig(Labels.RELOAD, state='normal')
 
-        auto_organize_button_state = 'normal' if self.expected_real_paths_differ else 'disabled'
+        if self.expected_real_paths_differ or not self.all_captions_found:
+            auto_organize_button_state = 'normal'
+        else:
+            auto_organize_button_state = 'disabled'
         self.toolbar.auto_organize_button.config(state=auto_organize_button_state)
         self.menubar.actions_menu.entryconfig(Labels.AUTO_ORGANIZE, state=auto_organize_button_state)
 

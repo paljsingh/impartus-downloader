@@ -182,17 +182,22 @@ class Impartus:
                     Utils.delete_files(list(temp_files_to_delete))
                     os.rmdir(download_dir)
 
+    def _get_sanitized_path(self, filepath):
+        if self.conf.get('use_safe_paths'):
+            filepath = Utils.sanitize(filepath)
+        return filepath
+
     def get_mkv_path(self, video_metadata):
         mkv_path = self.conf.get('video_path').format(**video_metadata, target_dir=self.download_dir)
-        if self.conf.get('use_safe_paths'):
-            mkv_path = Utils.sanitize(mkv_path)
-        return mkv_path
+        return self._get_sanitized_path(mkv_path)
 
     def get_slides_path(self, video_metadata):
         slides_path = self.conf.get('slides_path').format(**video_metadata, target_dir=self.download_dir)
-        if self.conf.get('use_safe_paths'):
-            slides_path = Utils.sanitize(slides_path)
-        return slides_path
+        return self._get_sanitized_path(slides_path)
+
+    def get_captions_path(self, video_metadata):
+        captions_path = self.conf.get('captions_path').format(**video_metadata, target_dir=self.download_dir)
+        return self._get_sanitized_path(captions_path)
 
     def get_mkv_ttid_map(self):
         mkv_ttid_map = dict()
@@ -272,6 +277,15 @@ class Impartus:
 
     def get_subjects(self, root_url):
         response = self.session.get('{}/api/subjects'.format(root_url))
+        if response.status_code == 200:
+            return response.json()
+        else:
+            return []
+
+    def get_chats(self, video_metadata, root_url):
+        response = self.session.get('{}/api/videos/{}/chat'.format(
+            root_url, video_metadata['ttid']))
+
         if response.status_code == 200:
             return response.json()
         else:
