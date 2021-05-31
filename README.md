@@ -1,27 +1,25 @@
 Impartus Downloader
 ===
 
-
 Downloader for impartus streaming videos.
 
 - Convert impartus lectures to mkv files.
-- Supports downloading regular and flipped lecture.
-- Tested on Mac, Linux (ubuntu) and Windows 10.
-- Multi view/track files supported. Tested with files up to 4 tracks.
+- Regular and flipped lecture download supported.
+- Tested on Mac OSX, Linux (ubuntu) and Windows 10.
 - Parallel downloads supported. 
+- Supports multi-track files. Tested with video lectures having up to 4 tracks.
+- Backpack slides download supported.
+- Lecture chats overlayed as closed captions for the video.
 - Pause / Resume individual downloads.
 - Editable subject field to use shorter subject names and better organize the folders.
-- Auto Organize lecture videos by moving / renaming to match the lecture topic, subject (nick)name or the path structure.
-due to change in topic on server, new short-subject name mapping or change in video/slides path.
-- Download Lecture slides.
-- Attach slides downloaded manually (from other sources) to the lecture folder.
+- Auto Organize lectures to match any change in lecture topic, subject. 
+- Attach slides downloaded from external sources to the lecture folder.
 - Sortable content.
 - Customizable color schemes, fonts.
 - Configurable columns.
 - Color scheme change via the UI.
 
-
-___
+---
 
 ### UI
 ![Impartus Downloader](etc/impartus-ui.gif "Impartus Downloader")
@@ -30,7 +28,7 @@ ___
 ### Demo video
 [![Impartus v3 demo](https://img.youtube.com/vi/LC0QEABmLSc/0.jpg)](https://www.youtube.com/watch?v=LC0QEABmLSc)
 
-
+---
 
 ## Installation / Run
 
@@ -107,23 +105,39 @@ see etc/impartus.conf
 > $ python3 -m pytest -v test
 >
 
+---
+
 ## Todo
 * Option to download auto-generated slides.
 * Add metadata tags to slides to preserve mapping across lecture topic / video rename.
 * Improve fuzzy matching of videos to slides by making use of slide name and content.
 
+---
 
 ## Known Issues
-* Lecture slides to video mapping may be incorrect. The impartus platform does not offer a strict video to lecture slides mapping, the application uses the upload dates of the two for a fuzzy match.
-* Impartus site may start throttling the connections if there are too many parallel downloads. The application uses retry logic with induced delay. However, if the issue persists you may need to restart the app.
-* Application crashes on Linux with error 
- X Error of failed request:  BadLength (poly request too large or internal Xlib length error)`
-
-The issue is caused by a bug in libXft and can be resolved by uninstalling fonts-noto-color-emoji
+> * Lecture slides to video mapping may be incorrect. The impartus platform does not offer a strict video to lecture slides mapping, the application uses the upload dates of the two for a fuzzy match.
 >
-> $ sudo apt-get remove fonts-noto-color-emoji
+> * Impartus site may start throttling the connections if there are too many parallel downloads. The application uses retry logic with induced delay. However, if the issue persists you may need to restart the app.
+> 
+> * Application crashes on Linux with error: 
+ `X Error of failed request:  BadLength (poly request too large or internal Xlib length error)`
+>
+>  The issue is caused by a bug in libXft and can be resolved by uninstalling `fonts-noto-color-emoji`
+>
+>  $ sudo apt-get remove fonts-noto-color-emoji
+>
+> * Difficult to read closed captions on white background.
+>   
+> With VLC, you can set the background opacity value to 255.
+>  Go to Preferences.
+>  Select 'All' settings
+>  Navigate to Video > Subtitle / OSD > Text renderer   
+>  Change 'Background Opacity' to 255
+>  Save and restart VLC.
+![Setting background opacity in VLC](etc/vlc-bg-opacity.png "Setting background opacity in VLC")
+>  
+> 
 >
 
-
-
-Drop a mail to paljsingh@gmail.com for any issues/errors.
+---
+Drop a mail to paljsingh@gmail.com in case of any issues/errors.
