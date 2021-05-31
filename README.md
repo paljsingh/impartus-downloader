@@ -138,6 +138,7 @@ see etc/impartus.conf
 >
 >  `$ sudo apt-get remove fonts-noto-color-emoji`
 >
+---
 
 **Hard to read closed captions on white background**
 > 
@@ -155,8 +156,6 @@ see etc/impartus.conf
 > 
 ![Setting background opacity in VLC](etc/vlc-bg-opacity.png "Setting background opacity in VLC")
 >  
-> 
->
-
 ---
+
 Drop a mail to paljsingh@gmail.com in case of any issues/errors.
