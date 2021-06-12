@@ -1,7 +1,7 @@
 pycryptodome
 envyaml
 tk
-tksheet
+tksheet==5.0.25
 requests
 enzyme
 mock
