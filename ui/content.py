@@ -499,7 +499,7 @@ class Content:
     def save_captions_if_needed(self, video_metadata, root_url, captions_path):
         chat_msgs = self.impartus.get_chats(video_metadata, root_url)
         date_format = "%Y-%m-%d %H:%M:%S"
-        start_epoch = int(datetime.strptime(video_metadata['startTime'], date_format).strftime('%s'))
+        start_epoch = int(datetime.strptime(video_metadata['startTime'], date_format).timestamp())
         try:
             vtt_content = Captions.get_vtt(chat_msgs, start_epoch)
             Captions.save_vtt(vtt_content, captions_path)
