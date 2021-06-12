@@ -2,7 +2,7 @@ pycryptodome
 envyaml
 tk
 tksheet
-requests
+requests==5.0.25
 enzyme
 mock
 pytest
