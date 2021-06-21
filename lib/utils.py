@@ -1,6 +1,8 @@
 import os
+import platform
 import re
 import shutil
+import subprocess
 from typing import List
 import webbrowser
 from datetime import datetime
@@ -11,21 +13,21 @@ from lib.config import Config, ConfigType
 class Utils:
 
     @classmethod
-    def add_new_fields(cls, metadata, video_slide_mapping):
-        conf = Config.load(ConfigType.IMPARTUS)
+    def add_new_fields(cls, metadata, video_slide_mapping=None):
+        # conf = Config.load(ConfigType.IMPARTUS)
 
-        metadata['ext'] = None
-        slides = video_slide_mapping.get(metadata['ttid'])
-        if slides:
-            ext = video_slide_mapping.get(metadata['ttid']).split('.')[-1].lower()
-            if ext in conf.get('allowed_ext'):
-                metadata['ext'] = ext
+        # metadata['ext'] = None
+        # slides = video_slide_mapping.get(metadata['ttid'])
+        # if slides:
+        #     ext = video_slide_mapping.get(metadata['ttid']).split('.')[-1].lower()
+        #     if ext in conf.get('allowed_ext'):
+        #         metadata['ext'] = ext
 
         # pad the following fields
         fixed_width_numeric = {'seqNo': '{:02d}', 'views': '{:04d}', 'actualDuration': '{:05d}', 'sessionId': '{:04d}'}
         for key, val in fixed_width_numeric.items():
             # format these numeric fields to fix width with leading zeros.
-            if metadata[key]:
+            if metadata[key] is not None:
                 metadata[key] = val.format(int(metadata[key]))
 
         date_fields = {'startTime': 'startDate', 'endTime': 'endDate'}
@@ -82,9 +84,14 @@ class Utils:
     @classmethod
     def open_file(cls, path, event=None):   # noqa
         if re.match('https?', path) or re.match('file:', path):
-            webbrowser.open('{}'.format(path))
+            webbrowser.open(r'{}'.format(path))
+        elif platform.system() == 'Darwin':
+            # when preview.app, keynote.app is already launched,
+            # a second window often throws an error: 'cannot import <file>'
+            # use 'open' launcher.
+            subprocess.run(["open", path])
         else:
-            webbrowser.open('file://{}'.format(path))
+            webbrowser.open(r'file://{}'.format(path))
 
     @classmethod
     def date_difference(cls, date1, date2):
