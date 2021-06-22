@@ -62,7 +62,6 @@ class Finder:
                         copy_filepath = filepath
 
                         path_components = {}
-                        date_flag = False
                         for match in matches:
                             # {target_dir}, {subjectNameShort}, ...
                             video_path_format = video_path_format.replace(match, '')
@@ -70,7 +69,6 @@ class Finder:
                                 pattern = self.conf.get(ConfigKeys.TARGET_DIR.value).get(platform.system())
                             elif match == '{startDate}':
                                 pattern = r'[0-9]{4}-[0-9]{2}-[0-9]{2}'
-                                date_flag = True
                             elif match == '{ext}':
                                 pattern = r'mkv'
                             elif match == '{seqNo}':
@@ -81,7 +79,6 @@ class Finder:
                                 pattern = r'[a-zA-Z0-9-]+'
                             else:
                                 pattern = r'([a-zA-Z0-9\.-]+)(?=.*-[0-9]{4}-[0-9]{2}-[0-9]{2})'
-                            # prog = re.compile(pattern)
                             field = match[1:len(match)-1]
                             video_metadata[field] = re.match(pattern, copy_filepath).group(0)
                             copy_filepath = re.sub(pattern, '', copy_filepath, 1)
