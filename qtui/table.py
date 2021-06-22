@@ -1,5 +1,5 @@
 from functools import partial
-from typing import Dict, Callable
+from typing import Dict
 
 from PySide2 import QtCore
 from PySide2.QtGui import QIcon
@@ -132,6 +132,3 @@ class Table:
         for i in range(self.table.rowCount()):
             self.table.cellWidget(i, 0).layout().itemAt(0).widget().setChecked(False)
         clicked_widget.setChecked(True)
-
-    def show(self):
-        self.table.show()

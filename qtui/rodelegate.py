@@ -6,4 +6,3 @@ class ReadOnlyDelegate(QStyledItemDelegate):
 
     def createEditor(self, parent: QWidget, option: QStyleOptionViewItem, index: QModelIndex) -> None:
         return
-

@@ -96,7 +96,6 @@ class LoginWindow:
         self._switch_to_content_window()
 
     def _switch_to_content_window(self):
+        self.login_form.close()
         content_window = ContentWindow()
         content_window.show()
-        self.login_form.close()
-

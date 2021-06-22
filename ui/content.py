@@ -391,7 +391,7 @@ class Content:
         sheet_rows = list()
         for subject_id, videos in self.videos.items():
             for ttid, video_metadata in videos.items():
-                video_metadata = Utils.add_new_fields(video_metadata, self.video_slide_mapping)
+                video_metadata = Utils.add_new_fields(video_metadata)
 
                 video_path = self.impartus.get_mkv_path(video_metadata)
                 if not os.path.exists(video_path):
@@ -676,7 +676,7 @@ class Content:
         conf = Config.load(ConfigType.IMPARTUS)
         for subject_id, videos in self.videos.items():
             for ttid, video_metadata in videos.items():
-                video_metadata = Utils.add_new_fields(video_metadata, self.video_slide_mapping)
+                video_metadata = Utils.add_new_fields(video_metadata)
 
                 # for videos
                 expected_video_path = self.impartus.get_mkv_path(video_metadata)

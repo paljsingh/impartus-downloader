@@ -66,5 +66,3 @@ class Search:
         self.last_index = -1  # first search shall be index 0.
         self.search_next()
         return True
-
-

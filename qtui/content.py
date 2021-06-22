@@ -13,7 +13,7 @@ class ContentWindow(QMainWindow):
     def __init__(self, parent=None):
         QMainWindow.__init__(self, parent)
 
-        offline_data = Finder(self.conf).get_offline_content()
+        offline_data = Finder().get_offline_content()
 
         self.menu_bar = Menubar(self).add_menu()
         self._set_window_properties()
@@ -21,7 +21,7 @@ class ContentWindow(QMainWindow):
         # extra checkbox column
         col_count = 1 + len([*Columns.data_columns, *Columns.widget_columns, *Columns.hidden_columns])
         row_count = len(offline_data)
-        table = Table(row_count, col_count).set_headers().set_row_content(offline_data).show()
+        table = Table(row_count, col_count).set_headers().set_row_content(offline_data).table
 
         # create a vbox layout and add search button, table to it.
         vcontainer_widget = QWidget()
@@ -32,6 +32,7 @@ class ContentWindow(QMainWindow):
         vbox_layout.addWidget(search_widget)
         vbox_layout.addWidget(table)
         self.setCentralWidget(vcontainer_widget)
+        table.show()
 
     def _set_window_properties(self):
         # full screen

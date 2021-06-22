@@ -1,7 +1,5 @@
-import os
 import sys
 from functools import partial
-from typing import Dict
 
 from PySide2.QtGui import QIcon
 from PySide2.QtWidgets import QAction, QMainWindow
@@ -17,7 +15,7 @@ class Menubar:
     def __init__(self, window: QMainWindow):
         self.window = window
         self.impartus = Impartus()
-        self.conf = Config.load(ConfigType.Impartus)
+        self.conf = Config.load(ConfigType.IMPARTUS)
         pass
 
     def add_menu(self):
@@ -200,8 +198,8 @@ class Menubar:
     def needs_chat_download(self):
         pass
 
-    def help_doc(self):
-        Utils.open_file(DocFiles.HELPDOC)
+    def help_doc(self):     # noqa
+        Utils.open_file(DocFiles.HELPDOC.value)
 
     def check_updates(self):
         pass

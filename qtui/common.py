@@ -33,4 +33,3 @@ class Common:
         container_widget_layout.setContentsMargins(0, 0, 0, 0)
         container_widget.setLayout(container_widget_layout)
         return container_widget
-

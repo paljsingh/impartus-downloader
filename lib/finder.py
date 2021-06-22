@@ -14,8 +14,8 @@ from ui.data import ConfigKeys
 
 class Finder:
 
-    def __init__(self, config: Dict):
-        self.conf = config
+    def __init__(self):
+        self.conf = Config.load(ConfigType.IMPARTUS)
         self.logger = logging.getLogger(self.__class__.__name__)
         pass
 
@@ -61,7 +61,7 @@ class Finder:
                         sep = r"[/\\-]"
                         copy_filepath = filepath
 
-                        path_components = {}
+                        # path_components = {}
                         for match in matches:
                             # {target_dir}, {subjectNameShort}, ...
                             video_path_format = video_path_format.replace(match, '')
@@ -130,5 +130,5 @@ class Finder:
 
 if __name__ == '__main__':
     conf = Config.load(ConfigType.IMPARTUS)
-    con = Finder(conf).get_offline_content()
+    con = Finder().get_offline_content()
     print(con)

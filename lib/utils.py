@@ -13,7 +13,7 @@ from lib.config import Config, ConfigType
 class Utils:
 
     @classmethod
-    def add_new_fields(cls, metadata, video_slide_mapping=None):
+    def add_new_fields(cls, metadata):
         # conf = Config.load(ConfigType.IMPARTUS)
 
         # metadata['ext'] = None

@@ -8,3 +8,5 @@ pytest~=6.2.4
 pytest-mock
 PyYAML~=5.4.1
 PySide2~=5.15.2
+
+tksheet~=5.0.27
