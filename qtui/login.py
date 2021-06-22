@@ -1,6 +1,8 @@
+from PySide2 import QtWidgets
 from PySide2.QtCore import QFile
 from PySide2.QtUiTools import QUiLoader
 
+from qtui.content import ContentWindow
 from lib.config import Config, ConfigType
 from lib.impartus import Impartus
 from ui.data import ConfigKeys
@@ -33,7 +35,7 @@ class LoginWindow:
 
         # mark the save credentials box checked, if credentials are prefilled.
         if url != '' and email != '' and password != '':
-            self.login_form.save_credentials_checkbox.setChecked()
+            self.login_form.save_credentials_checkbox.setChecked(True)
 
         # set focus to an unfilled box.
         if not url or url == '':
@@ -52,6 +54,8 @@ class LoginWindow:
         self.validate_inputs()
 
         login_form.login_button.clicked.connect(lambda: self.on_login_click())
+
+        login_form.work_offline_button.clicked.connect(lambda: self.on_work_offline_click())
         return self.login_form
 
     def validate_inputs(self):
@@ -70,7 +74,7 @@ class LoginWindow:
         if url == '' or email == '' or password == '':
             return
 
-        # save credentials / forget (only email/password) credentials.
+        # save credentials / forget credentials (email/password only).
         if self.login_form.save_credentials_checkbox.isChecked():
             self.conf[ConfigKeys.URL.value] = url
             self.conf[ConfigKeys.EMAIL.value] = email
@@ -80,6 +84,19 @@ class LoginWindow:
             self.conf[ConfigKeys.PASSWORD.value] = ''
         Config.save(ConfigType.CREDENTIALS)
 
-        return self.impartus.authenticate(email, password, url)
+        status = self.impartus.authenticate(email, password, url)
+        if status:
+            self._switch_to_content_window()
+        else:
+            QtWidgets.QErrorMessage().showMessage(
+                'Error authenticating to {}. See console logs for details.'.format(url)
+            )
 
+    def on_work_offline_click(self):
+        self._switch_to_content_window()
+
+    def _switch_to_content_window(self):
+        content_window = ContentWindow()
+        content_window.show()
+        self.login_form.close()
 
