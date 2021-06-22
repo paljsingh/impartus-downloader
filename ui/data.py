@@ -140,7 +140,7 @@ class Columns:
             'title_case': False,
         },
         'slides_actions': {
-            'alignment': Qt.AlignCenter,
+            'alignment': Qt.AlignRight,
             'display_name': 'Slides',
             'editable': False,
             'original_values_col': None,
