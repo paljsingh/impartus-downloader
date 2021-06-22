@@ -3,8 +3,10 @@ from functools import partial
 from typing import Dict, List
 
 from PySide2 import QtCore
-from PySide2.QtGui import QIcon
-from PySide2.QtWidgets import QMainWindow, QWidget, QAbstractScrollArea, QVBoxLayout, QHBoxLayout
+from PySide2.QtCore import QItemSelectionModel
+from PySide2.QtGui import QIcon, QPalette
+from PySide2.QtWidgets import QMainWindow, QWidget, QAbstractScrollArea, QVBoxLayout, QHBoxLayout, QAbstractItemView, \
+    QApplication
 from PySide2.QtWidgets import QTableWidgetItem, QTableWidget, QStyleOptionProgressBar, QStyle
 from PySide2.QtWidgets import QLabel, QPushButton, QComboBox, QLineEdit, QProgressBar
 
@@ -69,21 +71,15 @@ class ContentWindow(QMainWindow):
         if not self.search_results:
             return
 
-        # if search term is not changed
-        if self.search_box.text() == self.search_term:
-            count = len(self.search_results)
-            self.search_results[self.last_index % count].setSelected(False)
-            new_index = (self.last_index + direction) % count
-            self.search_results[new_index].setSelected(True)
-            self.table.scrollToItem(self.search_results[new_index])
+        count = len(self.search_results)
+        self.table.clearSelection()
+        new_index = (self.last_index + direction) % count
+        self.table.scrollToItem(self.search_results[new_index])
+        self.search_results[new_index].setSelected(True)
 
-            # also, update results label.
-            self.last_index = new_index
-            self.results_label.setText('{} / {} matches'.format(new_index + 1, count))  # 1 based output.
-        else:
-            # reset, and fall through the loop / yield again.
-            self.last_index = -1
-            self.search_term = self.search_box.text()
+        # also, update results label.
+        self.last_index = new_index
+        self.results_label.setText('{} / {} matches'.format(new_index + 1, count))  # 1 based output.
 
     def search_prev(self):
         self.search_next(SearchDirection.BACKWARD.value)
@@ -109,41 +105,19 @@ class ContentWindow(QMainWindow):
         # window title
         self.setWindowTitle(Labels.APPLICATION_TITLE.value)
 
-    def _set_table_properties(self, table: QTableWidget, row_count: int, col_count: int):
+    def _set_table_properties(self, table: QTableWidget, row_count: int, col_count: int):   # noqa
         table.setColumnCount(col_count)
         table.setRowCount(row_count)
         table.setSortingEnabled(True)
 
         table.setAlternatingRowColors(True)
-        # table.setStyleSheet(
-        #     '''
-        #     QTableView::item {{ background-color: {evencolor};}}
-        #     QTableView::item:alternate {{ background-color: {oddcolor};}}
-        #     QTableView::item {{
-        #         padding: 5px;
-        #         border-left: 1px solid {gridcolor}; border-top: 1px solid {gridcolor};
-        #         margin: 0px;
-        #         selection-color: {selcolor};
-        #     }}
-        #     '''.format(
-        #         oddcolor=self.default_color_scheme.get('odd_row')['bg'],
-        #         evencolor=self.default_color_scheme.get('even_row')['bg'],
-        #         gridcolor=self.default_color_scheme.get('table')['grid'],
-        #         selcolor=self.default_color_scheme.get('highlight'),
-        # ))
-        table.setStyleSheet('''
-                QTableView::item {{
-                padding: 5px;
-                margin: 0px;
-                selection-color: {selcolor};
-            }}'''.format(selcolor=self.default_color_scheme.get('highlight')))
-
+        table.setStyleSheet('QTableView::item {{padding: 5px; margin: 0px;}}')
         table.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAsNeeded)
         table.setSizeAdjustPolicy(QAbstractScrollArea.AdjustToContents)
         table.viewport().setMaximumWidth(4000)
         return table
 
-    def _set_header_properties(self, table: QTableWidget):
+    def _set_header_properties(self, table: QTableWidget):      # noqa
         readonly_delegate = ReadOnlyDelegate()
 
         for index, (key, val) in enumerate([*Columns.data_columns.items(), *Columns.widget_columns.items()]):
@@ -166,17 +140,12 @@ class ContentWindow(QMainWindow):
                 pass
             table.setHorizontalHeaderItem(index, widget)
 
-        # set header colors, sort icons
-        # QHeaderView::section
-        # {{color: {color};
-        # background - color: {bgcolor};}}
+        # sort icons.
         table.horizontalHeader().setStyleSheet(
             '''
             QHeaderView::down-arrow {{image: url({sortdown}); width: 10px; height:9px; padding-right: 5px}}
             QHeaderView::up-arrow {{image: url({sortup}); width: 10px; height:9px; padding-right: 5px}}
             '''.format(
-                # color=self.default_color_scheme.get('header')['fg'],
-                # bgcolor=self.default_color_scheme.get('header')['bg'],
                 sortdown=IconFiles.SORT_DOWN_ARROW.value,
                 sortup=IconFiles.SORT_UP_ARROW.value,
             )
@@ -256,12 +225,12 @@ class ContentWindow(QMainWindow):
         widget_layout = QHBoxLayout(widget)
         widget_layout.setSpacing(0)
         widget_layout.setMargin(0)
-        widget_layout.setAlignment(QtCore.Qt.AlignCenter)
         return widget_layout
 
     def _add_slides_actions_buttons(self, metadata, index):
         widget = QWidget()
         widget_layout = self._get_layout_widget(widget)
+        widget_layout.setAlignment(Columns.widget_columns.get('slides_actions')['alignment'])
 
         # show slides combo box.
         combo_box = self._add_slides_combobox(metadata, index)
