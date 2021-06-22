@@ -90,6 +90,7 @@ class Finder:
                         video_metadata['tapNToggle'] = '?'
                         video_metadata['actualDurationReadable'] = '--:--'
                     video_metadata['offline_filepath'] = filepath
+                    video_metadata['ttid'] = ttid
                     return ttid, video_metadata
 
                 except NameError as ex:
