@@ -1,7 +1,6 @@
 pycryptodome
 envyaml~=1.8.210417
 tk
-tksheet~=5.0.27
 requests~=2.25.1
 enzyme~=0.4.1
 mock~=4.0.3
