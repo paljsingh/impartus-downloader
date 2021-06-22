@@ -3,26 +3,26 @@ from functools import partial
 from typing import Dict, List
 
 from PySide2 import QtCore
-from PySide2.QtCore import QItemSelectionModel
-from PySide2.QtGui import QIcon, QPalette
-from PySide2.QtWidgets import QMainWindow, QWidget, QAbstractScrollArea, QVBoxLayout, QHBoxLayout, QAbstractItemView, \
-    QApplication
+from PySide2.QtGui import QIcon
+from PySide2.QtWidgets import QMainWindow, QWidget, QAbstractScrollArea, QVBoxLayout, QHBoxLayout, QCheckBox, \
+    QHeaderView
 from PySide2.QtWidgets import QTableWidgetItem, QTableWidget, QStyleOptionProgressBar, QStyle
 from PySide2.QtWidgets import QLabel, QPushButton, QComboBox, QLineEdit, QProgressBar
 
+from lib.impartus import Impartus
+from qtui.menubar import Menubar
 from qtui.rodelegate import ReadOnlyDelegate
 from lib.config import Config, ConfigType
 from lib.finder import Finder
 from lib.utils import Utils
-from ui.data import ConfigKeys, ActionItems, Icons, Columns, IconFiles, Labels, SearchDirection
+from qtui.search import Search
+from ui.data import ConfigKeys, ActionItems, Icons, Columns, IconFiles, Labels
 
 
 class ContentWindow(QMainWindow):
 
     def __init__(self, parent=None):
         QMainWindow.__init__(self, parent)
-        self.last_index = 0
-        self.search_term = None
 
         colorscheme_config = Config.load(ConfigType.COLORSCHEMES)
         self.default_color_scheme = colorscheme_config.get(colorscheme_config.get(ConfigKeys.COLORSCHEME_DEFAULT.value))
@@ -30,11 +30,17 @@ class ContentWindow(QMainWindow):
         self.conf = Config.load(ConfigType.IMPARTUS)
         offline_data = Finder(self.conf).get_offline_content()
 
+        self.impartus = Impartus()
+
+        self.menu_bar = Menubar(self, self.impartus, self.conf).add_menu()
         self._set_window_properties()
 
         table = QTableWidget()
         table = self._set_table_properties(
-            table, len(offline_data), len([*Columns.data_columns, *Columns.widget_columns]))
+            table, len(offline_data),
+            # extra column for checkbox
+            len([*Columns.data_columns, *Columns.widget_columns, *Columns.hidden_columns]) + 1
+        )
 
         table = self._set_header_properties(table)
         table = self._set_row_content(table, offline_data)
@@ -45,59 +51,11 @@ class ContentWindow(QMainWindow):
         vcontainer_widget = QWidget()
         vbox_layout = QVBoxLayout(vcontainer_widget)
 
-        self.search_results = None
-        self.search_box, self.results_label, search_widget = self._add_search_box()
-
+        self.search = Search(self, self.table)
+        search_widget = self.search.add_search_box()
         vbox_layout.addWidget(search_widget)
         vbox_layout.addWidget(self.table)
         self.setCentralWidget(vcontainer_widget)
-
-    def _add_search_box(self):
-        search_box = QLineEdit()
-        search_box.setPlaceholderText('Search...')
-        search_box.textChanged.connect(self.search)
-        QtCore.QMetaObject.connectSlotsByName(self)
-
-        results_label = QLabel()
-
-        # create a horizontal container.
-        widget = QWidget()
-        hbox_layout = QHBoxLayout(widget)
-        hbox_layout.addWidget(search_box)
-        hbox_layout.addWidget(results_label)
-        return search_box, results_label, widget
-
-    def search_next(self, direction: int = SearchDirection.FORWARD.value):
-        if not self.search_results:
-            return
-
-        count = len(self.search_results)
-        self.table.clearSelection()
-        new_index = (self.last_index + direction) % count
-        self.table.scrollToItem(self.search_results[new_index])
-        self.search_results[new_index].setSelected(True)
-
-        # also, update results label.
-        self.last_index = new_index
-        self.results_label.setText('{} / {} matches'.format(new_index + 1, count))  # 1 based output.
-
-    def search_prev(self):
-        self.search_next(SearchDirection.BACKWARD.value)
-
-    def search(self):
-        self.table.clearSelection()
-        self.results_label.clear()
-        self.search_results = None
-        text = self.search_box.text().lower()
-        # do not search for short text.
-        if len(text) <= 2:
-            return True
-
-        self.search_results = self.table.findItems(text, QtCore.Qt.MatchFlag.MatchContains)
-        self.search_term = self.search_box.text()
-        self.last_index = -1    # first search shall be index 0.
-        self.search_next()
-        return True
 
     def _set_window_properties(self):
         # full screen
@@ -120,7 +78,14 @@ class ContentWindow(QMainWindow):
     def _set_header_properties(self, table: QTableWidget):      # noqa
         readonly_delegate = ReadOnlyDelegate()
 
-        for index, (key, val) in enumerate([*Columns.data_columns.items(), *Columns.widget_columns.items()]):
+        widget = QTableWidgetItem()
+        widget.setText('')
+        table.setHorizontalHeaderItem(0, widget)
+        table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
+
+        # enumerate from 1.
+        for index, (key, val) in enumerate(
+                [*Columns.data_columns.items(), *Columns.widget_columns.items(), *Columns.hidden_columns.items()], 1):
             widget = QTableWidgetItem()
             widget.setText(val['display_name'])
 
@@ -138,6 +103,10 @@ class ContentWindow(QMainWindow):
             if not val['sortable']:
                 # TODO -
                 pass
+
+            if val['hidden']:
+                table.setColumnHidden(index, True)
+
             table.setHorizontalHeaderItem(index, widget)
 
         # sort icons.
@@ -150,19 +119,49 @@ class ContentWindow(QMainWindow):
                 sortup=IconFiles.SORT_UP_ARROW.value,
             )
         )
+
         table.horizontalHeader().setSortIndicatorShown(True)
 
         return table
 
+    def _add_checkbox_widget(self, row: int):
+        container_widget = QWidget()
+        checkbox = QCheckBox()
+        checkbox.clicked.connect(partial(self.on_checkbox_click, row))
+        container_widget_layout = QHBoxLayout(container_widget)
+        container_widget_layout.addWidget(checkbox)
+        container_widget_layout.setAlignment(QtCore.Qt.AlignCenter)
+        container_widget_layout.setContentsMargins(0, 0, 0, 0)
+        container_widget.setLayout(container_widget_layout)
+        return container_widget
+
+    def on_checkbox_click(self, row):
+        # if the same item is clicked again, do not do anything.
+        clicked_widget = self.table.cellWidget(row, 0).layout().itemAt(0).widget()
+        if not clicked_widget.isChecked():
+            return
+
+        # keep only one checkbox selected at a time.
+        for i in range(self.table.rowCount()):
+            self.table.cellWidget(i, 0).layout().itemAt(0).widget().setChecked(False)
+        clicked_widget.setChecked(True)
+
     def _set_row_content(self, table: QTableWidget, data: Dict):
         for index, (ttid, item) in enumerate(data.items()):
-            for col, (key, val) in enumerate(Columns.data_columns.items()):
+            # for each row, add a checkbox first.
+            container_widget = self._add_checkbox_widget(index)
+            table.setCellWidget(index, 0, container_widget)
+
+            # enumerate rest of the columns from 1
+            for col, (key, val) in enumerate(Columns.data_columns.items(), 1):
                 widget = QTableWidgetItem(str(item[key]))
                 widget.setTextAlignment(Columns.data_columns[key]['alignment'])
                 table.setItem(index, col, widget)
 
-            # download % progress bar
-            col = len(Columns.data_columns)
+            # total columns so far...
+            col = len(Columns.data_columns) + 1
+
+            # progress bar.
             progress_bar = self._add_progress_bar(item)
             table.setCellWidget(index, col, progress_bar)
             col += 1
@@ -176,6 +175,12 @@ class ContentWindow(QMainWindow):
             slides_actions_widget = self._add_slides_actions_buttons(item, index)
             table.setCellWidget(index, col, slides_actions_widget)
             col += 1
+
+            # hidden columns
+            for col_index, (key, val) in enumerate(Columns.hidden_columns.items(), col):
+                widget = QTableWidgetItem(str(item[key]))
+                widget.setTextAlignment(Columns.hidden_columns[key]['alignment'])
+                table.setItem(index, col, widget)
 
         for index in range(len(data)):
             table.setRowHeight(index, 48)
@@ -305,9 +310,10 @@ class ContentWindow(QMainWindow):
 
     def keyPressEvent(self, e):
         if e.key() == QtCore.Qt.Key_Enter or e.key() == QtCore.Qt.Key_Return:
-            self.search_next()
+            self.search.search_next()
         elif e.key() == QtCore.Qt.Key_G and (e.modifiers() & QtCore.Qt.ShiftModifier) \
                 and (e.modifiers() & QtCore.Qt.ControlModifier):
-            self.search_prev()
+            self.search.search_prev()
         elif e.key() == QtCore.Qt.Key_G and (e.modifiers() & QtCore.Qt.ControlModifier):
-            self.search_next()
+            self.search.search_next()
+
