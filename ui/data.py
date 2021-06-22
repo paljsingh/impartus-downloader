@@ -271,6 +271,14 @@ class IconFiles(enum.Enum):
         return str(self.value)
 
 
+class DocFiles(enum.Enum):
+
+    HELPDOC = 'docs/helpdoc.pdf'
+
+    def __str__(self):
+        return str(self.value)
+
+
 class ActionItems:
     video_actions = {
         'download_video': {
@@ -305,4 +313,3 @@ class ActionItems:
 class SearchDirection(enum.Enum):
     FORWARD = 1
     BACKWARD = -1
-

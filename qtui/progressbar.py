@@ -14,4 +14,3 @@ class ProgressBar:
         progressbar_options.state = QStyle.State_Enabled | QStyle.State_Active
         progress_bar.initStyleOption(progressbar_options)
         return progress_bar
-

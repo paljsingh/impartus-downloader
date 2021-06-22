@@ -73,5 +73,3 @@ class Slides:
     @classmethod
     def show_slides(cls, slides: List, index: int):
         Utils.open_file(slides[index - 1])
-
-

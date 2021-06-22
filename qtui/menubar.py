@@ -1,3 +1,4 @@
+import os
 import sys
 from functools import partial
 from typing import Dict
@@ -5,16 +6,18 @@ from typing import Dict
 from PySide2.QtGui import QIcon
 from PySide2.QtWidgets import QAction, QMainWindow
 
+from lib.config import ConfigType, Config
 from lib.impartus import Impartus
-from ui.data import Columns
+from lib.utils import Utils
+from ui.data import Columns, DocFiles
 
 
 class Menubar:
 
-    def __init__(self, window: QMainWindow, impartus: Impartus, conf: Dict):
+    def __init__(self, window: QMainWindow):
         self.window = window
-        self.impartus = impartus
-        self.conf = conf
+        self.impartus = Impartus()
+        self.conf = Config.load(ConfigType.Impartus)
         pass
 
     def add_menu(self):
@@ -155,12 +158,6 @@ class Menubar:
     def login(self):
         pass
 
-    def help_doc(self):
-        pass
-
-    def check_updates(self):
-        pass
-
     def attach_slides(self):
         pass
 
@@ -201,4 +198,10 @@ class Menubar:
         pass
 
     def needs_chat_download(self):
+        pass
+
+    def help_doc(self):
+        Utils.open_file(DocFiles.HELPDOC)
+
+    def check_updates(self):
         pass
