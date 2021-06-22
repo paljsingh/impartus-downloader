@@ -208,8 +208,8 @@ class Columns:
 
 
 class ConfigKeys(enum.Enum):
-    URL = 'url'
-    LOGIN = 'login_email'
+    URL = 'impartus_url'
+    EMAIL = 'login_email'
     PASSWORD = 'password'
     TARGET_DIR = 'target_dir'
     CONFIG_DIR = 'config_dir'

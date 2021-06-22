@@ -1,100 +1,85 @@
-# -*- coding: utf-8 -*-
+from PySide2.QtCore import QFile
+from PySide2.QtUiTools import QUiLoader
 
-################################################################################
-## Form generated from reading UI file 'login.ui'
-##
-## Created by: Qt User Interface Compiler version 5.15.2
-##
-## WARNING! All changes made in this file will be lost when recompiling UI file!
-################################################################################
-
-from PySide2.QtCore import *
-from PySide2.QtGui import *
-from PySide2.QtWidgets import *
+from lib.config import Config, ConfigType
+from lib.impartus import Impartus
+from ui.data import ConfigKeys
 
 
-class Ui_LoginWindow(object):
-    def setupUi(self, Ui_MainWindow):
-        if not Ui_MainWindow.objectName():
-            Ui_MainWindow.setObjectName(u"Ui_MainWindow")
-        Ui_MainWindow.resize(800, 600)
-        self.centralwidget = QWidget(Ui_MainWindow)
-        self.centralwidget.setObjectName(u"centralwidget")
-        self.widget = QWidget(self.centralwidget)
-        self.widget.setObjectName(u"widget")
-        self.widget.setGeometry(QRect(170, 41, 431, 171))
-        self.gridLayout = QGridLayout(self.widget)
-        self.gridLayout.setObjectName(u"gridLayout")
-        self.gridLayout.setContentsMargins(0, 0, 0, 0)
-        self.label = QLabel(self.widget)
-        self.label.setObjectName(u"label")
+class LoginWindow:
+    def __init__(self):
+        self.conf = Config.load(ConfigType.CREDENTIALS)
+        self.impartus = Impartus()
+        self.login_form = None
+        self.login_button = None
 
-        self.gridLayout.addWidget(self.label, 0, 0, 1, 1)
+    def setup_ui(self):
+        loader = QUiLoader()
+        file = QFile("qtui/login.ui")
+        file.open(QFile.ReadOnly)
+        login_form = loader.load(file, None)
+        self.login_form = login_form
+        file.close()
 
-        self.lineEdit = QLineEdit(self.widget)
-        self.lineEdit.setObjectName(u"lineEdit")
+        # credentials from config.
+        url = self.conf[ConfigKeys.URL.value] if self.conf.get(ConfigKeys.URL.value) else ''
+        login_form.url_box.setText(url)
 
-        self.gridLayout.addWidget(self.lineEdit, 0, 1, 1, 2)
+        email = self.conf[ConfigKeys.EMAIL.value] if self.conf.get(ConfigKeys.EMAIL.value) else ''
+        login_form.email_box.setText(email)
 
-        self.label_2 = QLabel(self.widget)
-        self.label_2.setObjectName(u"label_2")
+        password = self.conf[ConfigKeys.PASSWORD.value] if self.conf.get(ConfigKeys.PASSWORD.value) else ''
+        login_form.password_box.setText(password)
 
-        self.gridLayout.addWidget(self.label_2, 1, 0, 1, 1)
+        # mark the save credentials box checked, if credentials are prefilled.
+        if url != '' and email != '' and password != '':
+            self.login_form.save_credentials_checkbox.setChecked()
 
-        self.lineEdit_3 = QLineEdit(self.widget)
-        self.lineEdit_3.setObjectName(u"lineEdit_3")
+        # set focus to an unfilled box.
+        if not url or url == '':
+            login_form.url_box.setFocus()
+        elif not email or email == '':
+            login_form.email_box.setFocus()
+        else:
+            login_form.password_box.setFocus()
 
-        self.gridLayout.addWidget(self.lineEdit_3, 1, 1, 1, 2)
+        # enable/disable login button when input changes...
+        login_form.email_box.textChanged.connect(lambda: self.validate_inputs())
+        login_form.password_box.textChanged.connect(lambda: self.validate_inputs())
+        login_form.url_box.textChanged.connect(lambda: self.validate_inputs())
 
-        self.label_3 = QLabel(self.widget)
-        self.label_3.setObjectName(u"label_3")
+        # validate the prefilled inputs and enable login button if needed.
+        self.validate_inputs()
 
-        self.gridLayout.addWidget(self.label_3, 2, 0, 1, 1)
+        login_form.login_button.clicked.connect(lambda: self.on_login_click())
+        return self.login_form
 
-        self.lineEdit_2 = QLineEdit(self.widget)
-        self.lineEdit_2.setObjectName(u"lineEdit_2")
+    def validate_inputs(self):
+        if self.login_form.email_box.text() == '' or self.login_form.password_box.text() == '' or \
+                self.login_form.url_box.text() == '':
+            self.login_form.login_button.setEnabled(False)
+        else:
+            self.login_form.login_button.setEnabled(True)
+        pass
 
-        self.gridLayout.addWidget(self.lineEdit_2, 2, 1, 1, 2)
+    def on_login_click(self):
+        url = self.login_form.url_box.text()
+        email = self.login_form.email_box.text()
+        password = self.login_form.password_box.text()
 
-        self.pushButton = QPushButton(self.widget)
-        self.pushButton.setObjectName(u"pushButton")
+        if url == '' or email == '' or password == '':
+            return
 
-        self.gridLayout.addWidget(self.pushButton, 3, 2, 1, 1)
+        # save credentials / forget (only email/password) credentials.
+        if self.login_form.save_credentials_checkbox.isChecked():
+            self.conf[ConfigKeys.URL.value] = url
+            self.conf[ConfigKeys.EMAIL.value] = email
+            self.conf[ConfigKeys.PASSWORD.value] = password
+        else:
+            self.conf[ConfigKeys.EMAIL.value] = ''
+            self.conf[ConfigKeys.PASSWORD.value] = ''
+        Config.save(ConfigType.CREDENTIALS)
 
-        self.checkBox = QCheckBox(self.widget)
-        self.checkBox.setObjectName(u"checkBox")
-        self.checkBox.setLayoutDirection(Qt.LeftToRight)
-        self.checkBox.setAutoFillBackground(False)
+        return self.impartus.authenticate(email, password, url)
 
-        self.gridLayout.addWidget(self.checkBox, 3, 1, 1, 1)
-
-        self.gridLayout.setColumnStretch(0, 1)
-        self.gridLayout.setColumnStretch(1, 2)
-        self.gridLayout.setColumnStretch(2, 1)
-        Ui_MainWindow.setCentralWidget(self.centralwidget)
-        self.menubar = QMenuBar(Ui_MainWindow)
-        self.menubar.setObjectName(u"menubar")
-        self.menubar.setGeometry(QRect(0, 0, 800, 24))
-        Ui_MainWindow.setMenuBar(self.menubar)
-        self.statusbar = QStatusBar(Ui_MainWindow)
-        self.statusbar.setObjectName(u"statusbar")
-        Ui_MainWindow.setStatusBar(self.statusbar)
-        self.toolBar = QToolBar(Ui_MainWindow)
-        self.toolBar.setObjectName(u"toolBar")
-        Ui_MainWindow.addToolBar(Qt.TopToolBarArea, self.toolBar)
-
-        self.retranslateUi(Ui_MainWindow)
-
-        QMetaObject.connectSlotsByName(Ui_MainWindow)
-    # setupUi
-
-    def retranslateUi(self, Ui_MainWindow):
-        Ui_MainWindow.setWindowTitle(QCoreApplication.translate("LoginWindow", u"MainWindow", None))
-        self.label.setText(QCoreApplication.translate("LoginWindow", u"URL", None))
-        self.label_2.setText(QCoreApplication.translate("LoginWindow", u"Email", None))
-        self.label_3.setText(QCoreApplication.translate("LoginWindow", u"Password", None))
-        self.pushButton.setText(QCoreApplication.translate("LoginWindow", u"Login", None))
-        self.checkBox.setText(QCoreApplication.translate("LoginWindow", u"Save Credentials", None))
-        self.toolBar.setWindowTitle(QCoreApplication.translate("LoginWindow", u"toolBar", None))
-    # retranslateUi
 

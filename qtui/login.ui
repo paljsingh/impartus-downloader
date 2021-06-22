@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
  <class>LoginWindow</class>
- <widget class="QMainWindow" name="Ui_MainWindow">
+ <widget class="QMainWindow" name="LoginWindow">
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -14,7 +14,7 @@
    <string>MainWindow</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <widget class="QWidget" name="">
+   <widget class="QWidget" name="layoutWidget">
     <property name="geometry">
      <rect>
       <x>170</x>
@@ -32,7 +32,7 @@
       </widget>
      </item>
      <item row="0" column="1" colspan="2">
-      <widget class="QLineEdit" name="lineEdit"/>
+      <widget class="QLineEdit" name="url_box"/>
      </item>
      <item row="1" column="0">
       <widget class="QLabel" name="label_2">
@@ -42,7 +42,7 @@
       </widget>
      </item>
      <item row="1" column="1" colspan="2">
-      <widget class="QLineEdit" name="lineEdit_3"/>
+      <widget class="QLineEdit" name="email_box"/>
      </item>
      <item row="2" column="0">
       <widget class="QLabel" name="label_3">
@@ -52,17 +52,17 @@
       </widget>
      </item>
      <item row="2" column="1" colspan="2">
-      <widget class="QLineEdit" name="lineEdit_2"/>
-     </item>
-     <item row="3" column="2">
-      <widget class="QPushButton" name="pushButton">
-       <property name="text">
-        <string>Login</string>
+      <widget class="QLineEdit" name="password_box">
+       <property name="echoMode">
+        <enum>QLineEdit::Password</enum>
        </property>
       </widget>
      </item>
      <item row="3" column="1">
-      <widget class="QCheckBox" name="checkBox">
+      <widget class="QCheckBox" name="save_credentials_checkbox">
+       <property name="focusPolicy">
+        <enum>Qt::StrongFocus</enum>
+       </property>
        <property name="layoutDirection">
         <enum>Qt::LeftToRight</enum>
        </property>
@@ -71,6 +71,22 @@
        </property>
        <property name="text">
         <string>Save Credentials</string>
+       </property>
+      </widget>
+     </item>
+     <item row="3" column="2">
+      <widget class="QPushButton" name="login_button">
+       <property name="focusPolicy">
+        <enum>Qt::StrongFocus</enum>
+       </property>
+       <property name="text">
+        <string>Login</string>
+       </property>
+       <property name="autoDefault">
+        <bool>true</bool>
+       </property>
+       <property name="default">
+        <bool>true</bool>
        </property>
       </widget>
      </item>
@@ -83,7 +99,7 @@
      <x>0</x>
      <y>0</y>
      <width>800</width>
-     <height>24</height>
+     <height>21</height>
     </rect>
    </property>
   </widget>

@@ -1,27 +1,20 @@
 import os.path
 from functools import partial
-from typing import Dict, List, Union
+from typing import Dict, List
 
 from PySide2 import QtWidgets, QtCore
 from PySide2.QtCore import QModelIndex
-from PySide2.QtGui import QIcon, QKeyEvent, QInputEvent, QKeySequence
+from PySide2.QtGui import QIcon
 from PySide2.QtWidgets import QMainWindow, QComboBox, QTableWidget, QTableWidgetItem, QProgressBar, QVBoxLayout
 from PySide2.QtWidgets import QAbstractScrollArea, QPushButton, QHBoxLayout, QLabel, QLineEdit, QWidget
 from PySide2.QtWidgets import QStyleOptionViewItem, QStyleOptionProgressBar, QStyle, QStyledItemDelegate
 
 from lib.config import Config, ConfigType
 from lib.finder import Finder
-# from lib.impartus import Impartus
+from lib.impartus import Impartus
 from lib.utils import Utils
-from qtui.login import Ui_LoginWindow
+from qtui.login import LoginWindow
 from ui.data import Labels, Columns, Icons, ConfigKeys, IconFiles, ActionItems, SearchDirection
-
-
-class LoginWindow(QMainWindow, Ui_LoginWindow):
-    def __init__(self):
-        super(LoginWindow, self).__init__()
-        self.setupUi(self)
-        self.show()
 
 
 class ContentWindow(QMainWindow):
@@ -74,7 +67,7 @@ class ContentWindow(QMainWindow):
         hbox_layout.addWidget(results_label)
         return search_box, results_label, widget
 
-    def search_next(self, direction: SearchDirection = SearchDirection.FORWARD.value):
+    def search_next(self, direction: int = SearchDirection.FORWARD.value):
         if not self.search_results:
             return
 
@@ -108,7 +101,7 @@ class ContentWindow(QMainWindow):
 
         self.search_results = self.table.findItems(text, QtCore.Qt.MatchFlag.MatchContains)
         self.search_term = self.search_box.text()
-        self.last_index = -1
+        self.last_index = -1    # first search shall be index 0.
         self.search_next()
         return True
 
@@ -166,20 +159,19 @@ class ContentWindow(QMainWindow):
             if not val['sortable']:
                 # TODO -
                 pass
-            table.horizontalHeader().setSortIndicator(index + 1, QtCore.Qt.SortOrder.DescendingOrder)
             table.setHorizontalHeaderItem(index, widget)
 
         # set header colors, sort icons
         table.horizontalHeader().setStyleSheet(
             '''
-            QHeaderView::section {{color: {}; background-color: {};}}
-            QHeaderView::down-arrow {{image: url({}); width: 10px; height:9px; padding-right: 5px}}
-            QHeaderView::up-arrow {{image: url({}); width: 10px; height:9px; padding-right: 5px}}
+            QHeaderView::section {{color: {color}; background-color: {bgcolor};}}
+            QHeaderView::down-arrow {{image: url({sortdown}); width: 10px; height:9px; padding-right: 5px}}
+            QHeaderView::up-arrow {{image: url({sortup}); width: 10px; height:9px; padding-right: 5px}}
             '''.format(
-                self.default_color_scheme.get('header')['fg'],
-                self.default_color_scheme.get('header')['bg'],
-                IconFiles.SORT_UP_ARROW.value,
-                IconFiles.SORT_DOWN_ARROW.value,
+                color=self.default_color_scheme.get('header')['fg'],
+                bgcolor=self.default_color_scheme.get('header')['bg'],
+                sortdown=IconFiles.SORT_DOWN_ARROW.value,
+                sortup=IconFiles.SORT_UP_ARROW.value,
             )
         )
         table.horizontalHeader().setSortIndicatorShown(True)
@@ -352,8 +344,11 @@ class ReadOnlyDelegate(QStyledItemDelegate):
 
 
 if __name__ == '__main__':
+    QtCore.QCoreApplication.setAttribute(QtCore.Qt.AA_ShareOpenGLContexts)
     app = QtWidgets.QApplication([])
     app.setWindowIcon(QIcon(IconFiles.APP_LOGO.value))
-    win = ContentWindow()
+    # win = ContentWindow()
+    # win.show()
+    win = LoginWindow().setup_ui()
     win.show()
     app.exec_()
