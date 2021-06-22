@@ -349,6 +349,9 @@ class Impartus:
             self.logger.error('Http response code: {}, response body: {}: '.format(response.status_code, response.text))
             return False
 
+    def is_authenticated(self):
+        return True if self.session else False
+
 
 class GetOutOfLoop(Exception):
     pass
