@@ -1,4 +1,5 @@
-from PySide2.QtWidgets import QWidget, QHBoxLayout, QProgressBar, QStyleOptionProgressBar, QStyle
+from PySide2.QtGui import QPalette, QColor
+from PySide2.QtWidgets import QWidget, QHBoxLayout, QProgressBar, QStyleOptionProgressBar, QStyle, QApplication
 from PySide2extn.RoundProgressBar import roundProgressBar
 
 
@@ -25,12 +26,22 @@ class ProgressBar(QWidget):
         widget_layout.setSpacing(0)
 
         progress_bar = roundProgressBar()
-        progress_bar.rpb_setMinimumSize(44, 44)
-        progress_bar.rpb_setMaximumSize(44, 44)
+        progress_bar.rpb_setMinimumSize(36, 36)
+        progress_bar.rpb_setMaximumSize(48, 48)
         progress_bar.rpb_setTextRatio(5)
         progress_bar.rpb_setValue(0)
-        progress_bar.rpb_setTextFormat('Value')
-        progress_bar.rpb_setBarStyle('Pizza')
+        progress_bar.rpb_setTextFont('Arial')
+        progress_bar.rpb_setTextFormat('Percent')
+        progress_bar.rpb_setLineWidth(4)
+        progress_bar.rpb_setTextWidth(9)
+        path_color = QApplication.palette().color(QPalette.Background).getRgb()
+        line_color = QApplication.palette().color(QPalette.Highlight).getRgb()
+        text_color = QApplication.palette().color(QPalette.Text).getRgb()
+        progress_bar.rpb_setTextColor(text_color)
+        progress_bar.rpb_setLineColor(line_color)
+        progress_bar.rpb_setPathColor(path_color)
+
+        # TODO: capture event for system theme color change and repaint the progress bar.
 
         widget_layout.addWidget(progress_bar)
         return progress_bar
