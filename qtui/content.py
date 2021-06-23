@@ -21,7 +21,8 @@ class ContentWindow(QMainWindow):
         # extra checkbox column
         col_count = 1 + len([*Columns.data_columns, *Columns.widget_columns, *Columns.hidden_columns])
         row_count = len(offline_data)
-        table = Table(row_count, col_count).set_headers().set_row_content(offline_data).table
+        table_obj = Table(row_count, col_count).set_headers().set_row_content(offline_data).resizable_headers()
+        table = table_obj.table
 
         # create a vbox layout and add search button, table to it.
         vcontainer_widget = QWidget()

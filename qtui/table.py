@@ -48,10 +48,6 @@ class Table:
             widget = QTableWidgetItem()
             widget.setText(val['display_name'])
 
-            # set resizable property
-            mode = val[ConfigKeys.RESIZE_POLICY.value]
-            self.table.horizontalHeader().setSectionResizeMode(index, mode)
-
             # make the column read-only if editable property not set.
             if not val['editable']:
                 self.table.setItemDelegateForColumn(index, readonly_delegate)
@@ -63,9 +59,11 @@ class Table:
                 # TODO -
                 pass
 
-            # hidden columns.
+            self.table.horizontalHeader().setSectionResizeMode(index, val['resize_policy'])
             if val['hidden']:
+                # self.table.horizontalHeader().setSectionHidden(index, True)
                 self.table.setColumnHidden(index, True)
+                pass
 
             self.table.setHorizontalHeaderItem(index, widget)
 
@@ -118,10 +116,17 @@ class Table:
             for col_index, (key, val) in enumerate(Columns.hidden_columns.items(), col):
                 widget = QTableWidgetItem(str(item[key]))
                 widget.setTextAlignment(Columns.hidden_columns[key]['alignment'])
-                self.table.setItem(index, col, widget)
+                self.table.setItem(index, col_index, widget)
 
         for index in range(len(data)):
             self.table.setRowHeight(index, 48)
+        return self
+
+    def resizable_headers(self):
+        # self.table.horizontalHeader().setCascadingSectionResizes(True)
+        # for i in range(self.table.columnCount()):
+        #     self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Interactive)
+
         return self
 
     def on_checkbox_click(self, row):
