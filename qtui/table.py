@@ -139,3 +139,15 @@ class Table:
         for i in range(self.table.rowCount()):
             self.table.cellWidget(i, 0).layout().itemAt(0).widget().setChecked(False)
         clicked_widget.setChecked(True)
+
+    def show_hide_column(self, column):
+        col_index = None
+        for i, col_name in enumerate([*Columns.data_columns.keys(), *Columns.widget_columns.keys()], 1):
+            if col_name == column:
+                col_index = i
+                break
+
+        if self.table.isColumnHidden(col_index):
+            self.table.setColumnHidden(col_index, False)
+        else:
+            self.table.setColumnHidden(col_index, True)
