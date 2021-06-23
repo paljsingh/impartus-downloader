@@ -1,3 +1,4 @@
+import os
 from functools import partial
 from typing import Dict
 
@@ -5,6 +6,7 @@ from PySide2 import QtCore
 from PySide2.QtGui import QIcon
 from PySide2.QtWidgets import QTableWidget, QAbstractScrollArea, QTableWidgetItem, QHeaderView
 
+from lib.utils import Utils
 from qtui.common import Common
 from qtui.progressbar import ProgressBar
 from qtui.rodelegate import ReadOnlyDelegate
@@ -19,6 +21,7 @@ class Table:
         self.row_count = row_count
         self.col_count = col_count
         self.table = self._add_table()
+        self.data = None
 
     def _add_table(self):
         table = QTableWidget()
@@ -81,6 +84,7 @@ class Table:
         return self
 
     def set_row_content(self, data: Dict):
+        self.data = data
         for index, (ttid, item) in enumerate(data.items()):
             # for each row, add a checkbox first.
             container_widget = Common.add_checkbox_widget(partial(self.on_checkbox_click, index))
@@ -151,3 +155,52 @@ class Table:
             self.table.setColumnHidden(col_index, False)
         else:
             self.table.setColumnHidden(col_index, True)
+
+    def _get_checked_row_index(self):
+        for i in range(self.table.rowCount()):
+            if self.table.cellWidget(i, 0).layout().itemAt(0).widget().isChecked():
+                return i
+        return -1
+
+    def _get_ttid_col_index(self):
+        for i, key in enumerate(Columns.hidden_columns.keys(), 1 + len(Columns.data_columns) + len(Columns.widget_columns)):
+            if key == 'ttid':
+                return i
+        return -1
+
+    def _get_ttid(self, row_index, ttid_col_index):
+        return self.table.item(row_index, ttid_col_index).text()
+
+    def _get_ttid_for_checked_row(self):
+        if not self.data:
+            return
+
+        ttid_col_index = self._get_ttid_col_index()
+        if ttid_col_index < 0:
+            return
+
+        checked_row_index = self._get_checked_row_index()
+        if checked_row_index < 0:
+            return
+
+        return self._get_ttid(checked_row_index, ttid_col_index)
+
+    def play_video(self):
+        ttid = self._get_ttid_for_checked_row()
+        video_file = self.data.get(ttid)['offline_filepath']
+        if video_file:
+            Utils.open_file(video_file)
+
+    def open_folder(self):
+        ttid = self._get_ttid_for_checked_row()
+        video_path = self.data.get(ttid)['offline_filepath']
+        slides_path = self.data.get(ttid)['backpack_slides'][0] if self.data.get(ttid).get('backpack_slides') else None
+        captions_path = self.data.get(ttid)['captions'][0] if self.data.get(ttid).get('captions') else None
+        if video_path:
+            Utils.open_file(os.path.dirname(video_path))
+        elif slides_path:
+            Utils.open_file(os.path.dirname(slides_path))
+        elif captions_path:
+            Utils.open_file(os.path.dirname(captions_path))
+        else:
+            return

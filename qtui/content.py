@@ -20,8 +20,8 @@ class ContentWindow(QMainWindow):
         # extra checkbox column
         col_count = 1 + len([*Columns.data_columns, *Columns.widget_columns, *Columns.hidden_columns])
         row_count = len(offline_data)
-        table_obj = Table(row_count, col_count).set_headers().set_row_content(offline_data).resizable_headers()
-        table = table_obj.table
+        self.table_obj = Table(row_count, col_count).set_headers().set_row_content(offline_data).resizable_headers()
+        table = self.table_obj.table
 
         # create a vbox layout and add search button, table to it.
         vcontainer_widget = QWidget()
@@ -35,8 +35,10 @@ class ContentWindow(QMainWindow):
         table.show()
 
         callbacks = {
-            'view_menu_column_click': table_obj.show_hide_column,
+            'view_menu_column_click': self.table_obj.show_hide_column,
             'view_menu_search_click': self.search.set_focus,
+            'video_menu_play_video_click': self.table_obj.play_video,
+            'slides_menu_open_folder_click': self.table_obj.open_folder,
         }
         self.menu_bar = Menubar(self).add_menu(callbacks)
 

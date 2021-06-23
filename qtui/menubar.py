@@ -108,7 +108,7 @@ class Menubar:
         play_video_button = QAction(QIcon(), 'Play Video', self.window)
         play_video_button.setShortcut('Ctrl+P')
         play_video_button.setStatusTip('Play Video')
-        play_video_button.triggered.connect(self.play_video)
+        play_video_button.triggered.connect(callbacks['video_menu_play_video_click'])
         video_menu.addAction(play_video_button)
 
         # video menu - download chats button.
@@ -129,7 +129,7 @@ class Menubar:
         open_folder_button = QAction(QIcon(), 'Open Folder', self.window)
         open_folder_button.setShortcut('Ctrl+O')
         open_folder_button.setStatusTip('Open Folder')
-        open_folder_button.triggered.connect(self.open_folder)
+        open_folder_button.triggered.connect(callbacks['slides_menu_open_folder_click'])
         slides_menu.addAction(open_folder_button)
 
         # slides menu - attach_slides button.
