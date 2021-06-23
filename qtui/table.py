@@ -1,23 +1,26 @@
 import os
+import shutil
 from functools import partial
 from typing import Dict
 
 from PySide2 import QtCore
 from PySide2.QtGui import QIcon
-from PySide2.QtWidgets import QTableWidget, QAbstractScrollArea, QTableWidgetItem, QHeaderView
+from PySide2.QtWidgets import QTableWidget, QAbstractScrollArea, QTableWidgetItem, QHeaderView, QFileDialog
 
+from lib.config import Config, ConfigType
 from lib.utils import Utils
 from qtui.common import Common
 from qtui.progressbar import ProgressBar
 from qtui.rodelegate import ReadOnlyDelegate
 from qtui.slides import Slides
 from qtui.videos import Videos
-from ui.data import IconFiles, ConfigKeys, Columns
+from ui.data import IconFiles, Columns
 
 
 class Table:
 
     def __init__(self, row_count: int, col_count: int):
+        self.conf = Config.load(ConfigType.IMPARTUS)
         self.row_count = row_count
         self.col_count = col_count
         self.table = self._add_table()
@@ -191,16 +194,32 @@ class Table:
         if video_file:
             Utils.open_file(video_file)
 
-    def open_folder(self):
+    def _get_folder_path(self):
         ttid = self._get_ttid_for_checked_row()
+
         video_path = self.data.get(ttid)['offline_filepath'] if self.data.get(ttid).get('offline_filepath') else None
-        slides_path = self.data.get(ttid)['backpack_slides'][0] if self.data.get(ttid).get('backpack_slides') else None
-        captions_path = self.data.get(ttid)['captions'][0] if self.data.get(ttid).get('captions') else None
         if video_path:
-            Utils.open_file(os.path.dirname(video_path))
-        elif slides_path:
-            Utils.open_file(os.path.dirname(slides_path))
-        elif captions_path:
-            Utils.open_file(os.path.dirname(captions_path))
-        else:
+            return os.path.dirname(video_path)
+        slides_path = self.data.get(ttid)['backpack_slides'][0] if self.data.get(ttid).get('backpack_slides') else None
+        if slides_path:
+            return os.path.dirname(slides_path)
+        captions_path = self.data.get(ttid)['captions'][0] if self.data.get(ttid).get('captions') else None
+        if captions_path:
+            return os.path.dirname(captions_path)
+
+    def open_folder(self):
+        folder_path = self._get_folder_path()
+        Utils.open_file(folder_path)
+
+    def attach_slides(self):
+        folder_path = self._get_folder_path()
+        filters = ['{} files (*.{})'.format(str(x).title(), x) for x in self.conf.get('allowed_ext')]
+        filters_str = ';;'.join(filters)
+        filepaths = QFileDialog().getOpenFileNames(None,
+                                                   caption="Select files to attach...",
+                                                   dir=folder_path,
+                                                   filter=filters_str)
+        if not filepaths:
             return
+        for filepath in filepaths[0]:
+            shutil.copy(filepath, folder_path)

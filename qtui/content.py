@@ -39,6 +39,7 @@ class ContentWindow(QMainWindow):
             'view_menu_search_click': self.search.set_focus,
             'video_menu_play_video_click': self.table_obj.play_video,
             'slides_menu_open_folder_click': self.table_obj.open_folder,
+            'slides_menu_attach_slides_click': self.table_obj.attach_slides,
         }
         self.menu_bar = Menubar(self).add_menu(callbacks)
 

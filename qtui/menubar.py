@@ -136,7 +136,7 @@ class Menubar:
         attach_slides_button = QAction(QIcon(), 'Attach Lecture Slides', self.window)
         attach_slides_button.setShortcut('Ctrl+Shift+O')
         attach_slides_button.setStatusTip('Attach Lecture Slides')
-        attach_slides_button.triggered.connect(self.attach_slides)
+        attach_slides_button.triggered.connect(callbacks['slides_menu_attach_slides_click'])
         slides_menu.addAction(attach_slides_button)
 
         # help menu - Documentation button.
