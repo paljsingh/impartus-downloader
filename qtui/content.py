@@ -15,7 +15,6 @@ class ContentWindow(QMainWindow):
 
         offline_data = Finder().get_offline_content()
 
-        self.menu_bar = Menubar(self).add_menu()
         self._set_window_properties()
 
         # extra checkbox column
@@ -34,6 +33,12 @@ class ContentWindow(QMainWindow):
         vbox_layout.addWidget(table)
         self.setCentralWidget(vcontainer_widget)
         table.show()
+
+        callbacks = {
+            'view_menu_column_click': table_obj.show_hide_column,
+            'view_menu_search_click': self.search.set_focus,
+        }
+        self.menu_bar = Menubar(self).add_menu(callbacks)
 
     def _set_window_properties(self):
         # full screen

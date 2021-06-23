@@ -1,5 +1,6 @@
 import sys
 from functools import partial
+from typing import Dict
 
 from PySide2.QtGui import QIcon
 from PySide2.QtWidgets import QAction, QMainWindow
@@ -18,7 +19,7 @@ class Menubar:
         self.conf = Config.load(ConfigType.IMPARTUS)
         pass
 
-    def add_menu(self):
+    def add_menu(self, callbacks: Dict):
         main_menu = self.window.menuBar()
         actions_menu = main_menu.addMenu('Actions')
         view_menu = main_menu.addMenu('View')
@@ -67,7 +68,7 @@ class Menubar:
         for key, val in [*Columns.data_columns.items(), *Columns.widget_columns.items()]:
             submenu_item = QAction(QIcon(), val['display_name'], self.window)
             submenu_item.setStatusTip(val['menu_tooltip'])
-            submenu_item.triggered.connect(partial(self.show_hide_column, key))
+            submenu_item.triggered.connect(partial(callbacks['view_menu_column_click'], key))
             submenu_item.setCheckable(True)
             submenu_item.setChecked(True)
             view_menu.addAction(submenu_item)
@@ -77,7 +78,7 @@ class Menubar:
         search_button = QAction(QIcon.fromTheme('system-search'), 'Search...', self.window)
         search_button.setShortcut('Ctrl+F')
         search_button.setStatusTip('Search content')
-        search_button.triggered.connect(self.search)
+        search_button.triggered.connect(callbacks['view_menu_search_click'])
         view_menu.addAction(search_button)
 
         # video menu - flipped lecture quality button.
@@ -87,7 +88,6 @@ class Menubar:
         video_menu.addAction(flipped_lecture_quality_button)
         for video_quality in ['highest', *self.conf.get('video_quality_order'), 'lowest']:
             submenu_item = QAction(QIcon(), video_quality, self.window)
-            # submenu_item.setStatusTip(val['menu_tooltip'])
             submenu_item.triggered.connect(partial(self.set_video_quality, video_quality))
             submenu_item.setCheckable(True)
             if video_quality == self.conf.get('video_quality'):
@@ -175,9 +175,6 @@ class Menubar:
         pass
 
     def set_video_quality(self):
-        pass
-
-    def show_hide_column(self, column):
         pass
 
     def close(self):
