@@ -193,7 +193,7 @@ class Table:
 
     def open_folder(self):
         ttid = self._get_ttid_for_checked_row()
-        video_path = self.data.get(ttid)['offline_filepath']
+        video_path = self.data.get(ttid)['offline_filepath'] if self.data.get(ttid).get('offline_filepath') else None
         slides_path = self.data.get(ttid)['backpack_slides'][0] if self.data.get(ttid).get('backpack_slides') else None
         captions_path = self.data.get(ttid)['captions'][0] if self.data.get(ttid).get('captions') else None
         if video_path:
