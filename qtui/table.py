@@ -98,8 +98,10 @@ class Table:
             col = len(Columns.data_columns) + 1
 
             # progress bar.
-            progress_bar = ProgressBar.add_progress_bar(item)
+            progress_bar = ProgressBar('round')
             self.table.setCellWidget(index, col, progress_bar)
+            if item['offline_filepath']:
+                progress_bar.setValue(100)
             col += 1
 
             # video actions

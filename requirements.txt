@@ -10,3 +10,5 @@ PyYAML~=5.4.1
 PySide2~=5.15.2
 
 tksheet~=5.0.27
+qroundprogressbar~=1.0.0
+PySide2extn~=1.0.0
