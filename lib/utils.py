@@ -1,3 +1,5 @@
+import json
+import logging
 import os
 import platform
 import re
@@ -14,42 +16,36 @@ class Utils:
 
     @classmethod
     def add_new_fields(cls, metadata):
-        # conf = Config.load(ConfigType.IMPARTUS)
+        try:
+            # pad the following fields
+            fixed_width_numeric = {'seqNo': '{:02d}', 'views': '{:04d}', 'actualDuration': '{:05d}', 'sessionId': '{:04d}'}
+            for key, val in fixed_width_numeric.items():
+                # format these numeric fields to fix width with leading zeros.
+                if metadata[key] is not None:
+                    metadata[key] = val.format(int(metadata[key]))
 
-        # metadata['ext'] = None
-        # slides = video_slide_mapping.get(metadata['ttid'])
-        # if slides:
-        #     ext = video_slide_mapping.get(metadata['ttid']).split('.')[-1].lower()
-        #     if ext in conf.get('allowed_ext'):
-        #         metadata['ext'] = ext
+            date_fields = {'startTime': 'startDate', 'endTime': 'endDate'}
+            for key, val in date_fields.items():
+                # extract datetime fields, and create new fields named startDate, endDate
+                if metadata[key]:
+                    metadata[val] = str.split(metadata[key], ' ')[0]
+            # create new field to show human readable duration of the video.
+            duration_hour = int(metadata.get('actualDuration')) // 3600
+            duration_min = (int(metadata.get('actualDuration')) % 3600) // 60
+            metadata['actualDurationReadable'] = '{}:{:02d}h'.format(duration_hour, duration_min)
 
-        # pad the following fields
-        fixed_width_numeric = {'seqNo': '{:02d}', 'views': '{:04d}', 'actualDuration': '{:05d}', 'sessionId': '{:04d}'}
-        for key, val in fixed_width_numeric.items():
-            # format these numeric fields to fix width with leading zeros.
-            if metadata[key] is not None:
-                metadata[key] = val.format(int(metadata[key]))
-
-        date_fields = {'startTime': 'startDate', 'endTime': 'endDate'}
-        for key, val in date_fields.items():
-            # extract datetime fields, and create new fields named startDate, endDate
-            if metadata[key]:
-                metadata[val] = str.split(metadata[key], ' ')[0]
-
-        # create new field to show human readable duration of the video.
-        duration_hour = int(metadata.get('actualDuration')) // 3600
-        duration_min = (int(metadata.get('actualDuration')) % 3600) // 60
-        metadata['actualDurationReadable'] = '{}:{:02d}h'.format(duration_hour, duration_min)
-
-        # create new field to hold shortened subject names.
-        mapping_item = 'subjectName'
-        metadata['subjectNameShort'] = metadata[mapping_item]
-        mappings_conf = Config.load(ConfigType.MAPPINGS)
-        if mappings_conf.get(mapping_item):
-            for key, val in mappings_conf.get(mapping_item).items():
-                if key == metadata[mapping_item]:
-                    metadata['subjectNameShort'] = val
-                    break
+            # create new field to hold shortened subject names.
+            mapping_item = 'subjectName'
+            metadata['subjectNameShort'] = metadata[mapping_item]
+            mappings_conf = Config.load(ConfigType.MAPPINGS)
+            if mappings_conf.get(mapping_item):
+                for key, val in mappings_conf.get(mapping_item).items():
+                    if key == metadata[mapping_item]:
+                        metadata['subjectNameShort'] = val
+                        break
+        except KeyError as ex:
+            logger = logging.getLogger(cls.__name__)
+            logger.warning('Error parsing lecture metadata - {}'.format(ex))
 
         return metadata
 
@@ -104,3 +100,10 @@ class Utils:
         if source != destination:
             os.makedirs(os.path.dirname(destination), exist_ok=True)
             shutil.move(source, destination)
+
+    @classmethod
+    def save_json(cls, content, filepath):
+        with open(filepath, "w") as fh:
+            json.dump(content, fh, indent=4)
+
+
