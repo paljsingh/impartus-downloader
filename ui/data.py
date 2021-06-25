@@ -1,7 +1,7 @@
 import enum
 
 from PySide2.QtCore import Qt
-from PySide2.QtWidgets import QHeaderView
+from PySide2.QtWidgets import QHeaderView, QPushButton, QComboBox
 
 
 class Icons(enum.Enum):
@@ -48,6 +48,7 @@ class Labels(enum.Enum):
     CHECK_FOR_UPDATES = 'Check for updates...'
     HELP = 'Help'
     APPLICATION_TITLE = 'Impartus Downloader'
+    LOGIN_TITLE = 'Login - Impartus'
 
     def __str__(self):
         return str(self.value)
@@ -184,62 +185,28 @@ class Columns:
         },
     }
 
-    # progress bar
-    progressbar_column = {
-        'downloaded': {'display_name': 'Downloaded?', 'title_case': False, 'sortable': True,
-                       'editable': False, 'type': 'progressbar'}
-    }
-    button_columns = {
-        'download_video': {'type': 'button', 'editable': False, 'display_name': 'Video',
-                           'function': 'download_video', 'text': Icons.DOWNLOAD_VIDEO.value,
-                           'state': 'download_video_state'
-                           },
-        'play_video': {'type': 'button', 'editable': False, 'display_name': 'Video',
-                       'function': 'play_video', 'text': Icons.PLAY_VIDEO.value,
-                       'state': 'play_video_state'
-                       },
-        'open_folder': {'type': 'button', 'editable': False, 'display_name': 'Folder',
-                        'function': 'open_folder', 'text': Icons.OPEN_FOLDER.value,
-                        'state': 'open_folder_state'
-                        },
-        'download_slides': {'type': 'button', 'editable': False, 'display_name': 'Slides',
-                            'function': 'download_slides', 'text': Icons.DOWNLOAD_SLIDES.value,
-                            'state': 'download_slides_state'
-                            },
-        'show_slides': {'type': 'button', 'editable': False, 'display_name': 'Slides',
-                        'function': 'show_slides', 'text': Icons.SHOW_SLIDES.value,
-                        'state': 'show_slides_state'
-                        },
-        'attach_slides': {'type': 'button', 'editable': False, 'display_name': 'Slides',
-                          'function': 'attach_slides', 'text': Icons.ATTACH_SLIDES.value,
-                          'state': 'attach_slides_state'
-                          },
-    }
+    @classmethod
+    def get_display_columns(cls):
+        return [*Columns.data_columns, *Columns.widget_columns]
 
-    button_state_columns = {k: {'display_name': k, 'type': 'button_state'} for k in [
-        'download_video_state',
-        'play_video_state',
-        'open_folder_state',
-        'download_slides_state',
-        'show_slides_state',
-        'attach_slides_state',
-    ]}
+    @classmethod
+    def get_column_index_by_key(cls, key_name):
+        return [*Columns.data_columns.keys(), *Columns.widget_columns.keys(), *Columns.hidden_columns.keys()].index(
+            key_name) + 1
 
-    # index
-    index_column = {'index': {'display_name': 'index', 'type': 'auto'}}
-    metadata_column = {'metadata': {'display_name': 'metadata', 'type': 'metadata'}}
+    @classmethod
+    def get_column_index_by_display_name(cls, display_name):
+        for index, value in enumerate([*Columns.data_columns.values(), *Columns.widget_columns.values(), *Columns.hidden_columns.values()]):
+            if value['display_name'] == display_name:
+                return index + 1
 
-    # video / slides data
-    orig_value_columns = {k: {'display_name': k, 'type': 'original_value'} for k in [
-        'subjectName',
-    ]}
+    @classmethod
+    def get_columns_count(cls):
+        return 1 + len(Columns.data_columns) + len(Columns.widget_columns) + len(Columns.hidden_columns)
 
-    display_columns = {**data_columns, **progressbar_column, **button_columns}
-    all_columns = {**data_columns, **progressbar_column, **button_columns,
-                   **button_state_columns, **orig_value_columns, **index_column,
-                   **metadata_column}
-    column_names = [k for k in all_columns.keys()]
-    headers = [v['display_name'] for v in data_columns.values()]
+    @classmethod
+    def get_button_order(cls):
+        return 1 + len(Columns.data_columns) + len(Columns.widget_columns) + len(Columns.hidden_columns)
 
 
 class ConfigKeys(enum.Enum):
@@ -284,32 +251,51 @@ class ActionItems:
         'download_video': {
             'tooltip': '{} Download Video'.format(Icons.DOWNLOAD_VIDEO.value),
             'text': Icons.DOWNLOAD_VIDEO.value,
+            'type': QPushButton,
         },
         'play_video': {
             'tooltip': '{} Play Video'.format(Icons.PLAY_VIDEO.value),
             'text': Icons.PLAY_VIDEO.value,
+            'type': QPushButton,
         },
-        'download_captions': {
+        'download_chats': {
             'tooltip': '{} Download Lecture Chats'.format(Icons.DOWNLOAD_CAPTIONS.value),
             'text': Icons.DOWNLOAD_CAPTIONS.value,
+            'type': QPushButton,
         },
     }
     slides_actions = {
+        'show_slides': {
+            'tooltip': '{} Show Backpack Slides'.format(Icons.SHOW_SLIDES.value),
+            'text': Icons.DOWNLOAD_SLIDES.value,
+            'type': QComboBox,
+        },
         'download_slides': {
             'tooltip': '{} Download Backpack Slides'.format(Icons.DOWNLOAD_SLIDES.value),
             'text': Icons.DOWNLOAD_SLIDES.value,
+            'type': QPushButton,
         },
         'open_folder': {
             'tooltip': '{} Open Folder'.format(Icons.OPEN_FOLDER.value),
             'text': Icons.OPEN_FOLDER.value,
+            'type': QPushButton,
         },
         'attach_slides': {
             'tooltip': '{} Attach Slides'.format(Icons.ATTACH_SLIDES.value),
             'text': Icons.ATTACH_SLIDES.value,
+            'type': QPushButton,
         },
     }
+
+    @classmethod
+    def get_action_item_index(cls, action_item, field):    # noqa
+        for i, key in enumerate(getattr(ActionItems, action_item).keys()):
+            if key == field:
+                return i
 
 
 class SearchDirection(enum.Enum):
     FORWARD = 1
     BACKWARD = -1
+
+
