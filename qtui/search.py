@@ -4,17 +4,18 @@ from PySide2.QtWidgets import QHBoxLayout, QWidget, QLabel, QLineEdit, QMainWind
 from ui.data import SearchDirection
 
 
-class Search:
+class SearchBox:
 
-    def __init__(self, window: QMainWindow, table: QTableWidget):
+    def __init__(self, window: QMainWindow):
         self.window = window
-        self.table = table
         self.last_index = -1    # first search should yield position 0 (for 0 based indexed results)
         self.search_results = None
         self.search_term = None
 
         self.search_box = None
         self.results_label = None
+
+        self.table = None
         pass
 
     def add_search_box(self):
@@ -34,6 +35,9 @@ class Search:
         self.search_box = search_box
         self.results_label = results_label
         return widget
+
+    def set_table_widget_to_search(self, table: QTableWidget):
+        self.table = table
 
     def search_next(self, direction: int = SearchDirection.FORWARD.value):
         if not self.search_results:
