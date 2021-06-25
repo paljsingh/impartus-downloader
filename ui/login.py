@@ -8,7 +8,7 @@ from PySide2.QtWidgets import QMainWindow
 
 from lib.config import Config, ConfigType
 from lib.impartus import Impartus
-from qtui.variables import Variables
+from ui.variables import Variables
 from ui.data import ConfigKeys, Labels
 
 
@@ -24,7 +24,7 @@ class LoginWindow(QMainWindow):
     def setup_ui(self, content_window, switch_window_callback: Callable):
         self.content_window = content_window
         loader = QUiLoader()
-        file = QFile("qtui/login.ui")
+        file = QFile("ui/login.ui")
         file.open(QFile.ReadOnly)
         login_form = loader.load(file, self)
         self.setGeometry(400, 200, 800, 400)

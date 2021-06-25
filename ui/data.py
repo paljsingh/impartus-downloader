@@ -18,16 +18,7 @@ class Icons(enum.Enum):
     VIDEO_PROCESSING = '⧗'
     VIDEO_DOWNLOADED = '✓'
     VIDEO_NOT_DOWNLOADED = '⃠'
-    CAPTIONS_DOWNLOADED = '[㏄]'
-    CAPTIONS_NOT_DOWNLOADED = '[㏄ ⬇]'
-    CAPTIONS_NOT_AVAILABLE = '[no ㏄]'
     SLIDES_DOWNLOADED = '▤'
-    SLIDES_NOT_DOWNLOADED = '[▤ ⬇]'
-    SLIDES_NOT_AVAILABLE = '[no ▤]'
-    SORT_DESC = '▼'
-    SORT_ASC = '▲'
-    UNSORTED = '⇅'
-    EDITABLE = '✎'
     MOVED_TO = '⇨'
 
     def __str__(self):

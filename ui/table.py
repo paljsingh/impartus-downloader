@@ -16,11 +16,11 @@ from lib.captions import Captions
 from lib.config import Config, ConfigType
 from lib.impartus import Impartus
 from lib.utils import Utils
-from qtui.common import Common
-from qtui.progressbar import ProgressBar
-from qtui.rodelegate import ReadOnlyDelegate
-from qtui.slides import Slides
-from qtui.videos import Videos
+from ui.common import Common
+from ui.progressbar import ProgressBar
+from ui.rodelegate import ReadOnlyDelegate
+from ui.slides import Slides
+from ui.videos import Videos
 from ui.data import IconFiles, Columns, ActionItems, Icons
 
 

@@ -1,146 +1,175 @@
-import os
 import sys
-import tkinter
 from functools import partial
 
-import tkinter as tk
-from typing import Dict
+from PySide2.QtGui import QIcon
+from PySide2.QtWidgets import QAction, QMainWindow
 
-import requests
-
-from lib.config import Config, ConfigType
+from lib.config import ConfigType, Config
+from lib.impartus import Impartus
 from lib.utils import Utils
-from ui.colorschemes import ColorSchemes
-from ui.data import Columns, Labels
-from ui.dialogs import Dialogs
-from ui.vars import Variables
-
-from lib import version
-
+from ui.data import Columns, DocFiles
 
 
 class Menubar:
 
-    def __init__(self):
-        self.dialog = None
-        self.main_menu = None
-        self.help_menu = None
-        self.video_menu = None
-        self.view_menu = None
-        self.actions_menu = None
+    def __init__(self, login_window: QMainWindow, content_window: QMainWindow):
+        self.login_window = login_window
+        self.content_window = content_window
+        self.impartus = Impartus()
+        self.conf = Config.load(ConfigType.IMPARTUS)
+        pass
 
-        self.img = None
+    def add_menu(self, switch_window_callback):
+        main_menu = self.content_window.menuBar()
 
-    def add_menu(self, anchor, callbacks: Dict):
-        variables = Variables()
-        menubar = tkinter.Menu(anchor)
-        actions_menu = tkinter.Menu(menubar, tearoff=0)
-        actions_menu.add_command(label=Labels.RELOAD, command=callbacks['authentication_callback'])
-        actions_menu.add_command(label=Labels.AUTO_ORGANIZE, command=callbacks['auto_organize_callback'])
-        actions_menu.add_separator()
-        actions_menu.add_command(label=Labels.QUIT, command=partial(sys.exit, 0))
+        actions_menu = main_menu.addMenu('Actions')
+        view_menu = main_menu.addMenu('View')
+        video_menu = main_menu.addMenu('Video')
+        slides_menu = main_menu.addMenu('Slides')
+        help_menu = main_menu.addMenu('Help')
 
-        menubar.add_cascade(label=Labels.ACTIONS, menu=actions_menu)
+        # actions menu - login button
+        login_button = QAction(QIcon.fromTheme('dialog-password'), 'Login', self.content_window)
+        login_button.setShortcut('Ctrl+L')
+        login_button.setStatusTip('Login')
+        login_button.triggered.connect(partial(
+            self.login_window.on_login_click,
+            switch_window_callback
+        ))
+        actions_menu.addAction(login_button)
+        if self.impartus.is_authenticated():
+            login_button.setEnabled(False)
 
-        view_menu = tkinter.Menu(menubar, tearoff=0)
-        view_menu.add_command(label=Labels.COLUMNS, state=tk.DISABLED)
-        for key, item in Columns.display_columns.items():
-            view_menu.add_checkbutton(
-                label=item.get('display_name'), variable=variables.display_columns_vars(key),
-                onvalue=1, offvalue=0, command=callbacks['set_display_columns_callback']
-            )
+        # actions menu - reload button
+        reload_button = QAction(QIcon.fromTheme('view-refresh'), 'Reload', self.content_window)
+        reload_button.setShortcut('Ctrl+R')
+        reload_button.setStatusTip('Refresh content')
+        reload_button.triggered.connect(self.reload_content)
+        actions_menu.addAction(reload_button)
+        if not self.impartus.is_authenticated():
+            reload_button.setEnabled(False)
 
-        view_menu.add_separator()
-        view_menu.add_command(label=Labels.COLORSCHEME, state=tk.DISABLED)
-        for name, item in ColorSchemes.get_color_schemes().items():
-            view_menu.add_radiobutton(label='⦿ {}'.format(name), variable=variables.colorscheme_var(), value=name,
-                                      command=partial(callbacks['set_colorscheme_callback'], item),
-                                      )
-        view_menu.add_separator()
-        menubar.add_cascade(label=Labels.VIEW, menu=view_menu)
+        # actions menu - auto organize button
+        auto_organize_button = QAction(QIcon.fromTheme('tools-check-spelling'), 'Auto Organize', self.content_window)
+        auto_organize_button.setShortcut('Ctrl+/')
+        auto_organize_button.setStatusTip('Rename video files, download chats...')
+        auto_organize_button.triggered.connect(self.auto_organize)
+        actions_menu.addAction(auto_organize_button)
+        # disable auto-organize, if working offline, or
+        # online but all up to date.
+        if not self.impartus.is_authenticated() or \
+                (not self.needs_lecture_rename() and not self.needs_chat_download()):
+            auto_organize_button.setEnabled(False)
 
-        video_menu = tkinter.Menu(menubar, tearoff=0)
-        video_menu.add_command(label=str(Labels.FLIPPED_QUALITY), state=tk.DISABLED)
+        # actions menu - exit button.
+        exit_button = QAction(QIcon.fromTheme('application-exit'), 'Quit', self.content_window)
+        exit_button.setShortcut('Ctrl+Q')
+        exit_button.setStatusTip('Quit application')
+        exit_button.triggered.connect(partial(sys.exit, 0))
+        actions_menu.addAction(exit_button)
 
-        conf = Config.load(ConfigType.IMPARTUS)
-        for item in ['highest', *conf.get('video_quality_order'), 'lowest']:
-            video_menu.add_radiobutton(label=item, variable=variables.lecture_quality_var())
-        menubar.add_cascade(label=Labels.VIDEO, menu=video_menu)
+        # view menu - columns list
+        for key, val in [*Columns.data_columns.items(), *Columns.widget_columns.items()]:
+            submenu_item = QAction(QIcon(), val['display_name'], self.content_window)
+            submenu_item.setStatusTip(val['menu_tooltip'])
+            submenu_item.triggered.connect(partial(self.content_window.table_container.show_hide_column, key))
+            submenu_item.setCheckable(True)
+            submenu_item.setChecked(True)
+            view_menu.addAction(submenu_item)
+        view_menu.addSeparator()
 
-        helpmenu = tkinter.Menu(menubar, tearoff=0)
-        helpmenu.add_command(
-            label=Labels.DOCUMENTATION,
-            command=partial(Utils.open_file, os.path.join(os.path.abspath(os.curdir), 'docs/helpdoc.pdf'))
-        )
-        helpmenu.add_command(label=Labels.CHECK_FOR_UPDATES, command=self.about_dialog)
-        menubar.add_cascade(label=Labels.HELP, menu=helpmenu)
+        # view menu - search button.
+        search_button = QAction(QIcon.fromTheme('system-search'), 'Search...', self.content_window)
+        search_button.setShortcut('Ctrl+F')
+        search_button.setStatusTip('Search content')
+        search_button.triggered.connect(self.content_window.search_box.set_focus)
+        view_menu.addAction(search_button)
 
-        anchor.config(menu=menubar)
-        self.main_menu = menubar
-        self.help_menu = helpmenu
-        self.video_menu = video_menu
-        self.view_menu = view_menu
-        self.actions_menu = actions_menu
-        return menubar
+        # video menu - flipped lecture quality button.
+        flipped_lecture_quality_button = QAction(QIcon(), 'Flipped Lecture Video Quality', self.content_window)
+        flipped_lecture_quality_button.setStatusTip('Flipped lecture video quality')
+        flipped_lecture_quality_button.setEnabled(False)
+        video_menu.addAction(flipped_lecture_quality_button)
+        for video_quality in ['highest', *self.conf.get('video_quality_order'), 'lowest']:
+            submenu_item = QAction(QIcon(), video_quality, self.content_window)
+            submenu_item.triggered.connect(partial(self.set_video_quality, video_quality))
+            submenu_item.setCheckable(True)
+            if video_quality == self.conf.get('video_quality'):
+                submenu_item.setChecked(True)
+            else:
+                submenu_item.setChecked(False)
+            video_menu.addAction(submenu_item)
+        video_menu.addSeparator()
 
-    def about_dialog(self):
-        current_version = version.__version_info__
-        dialog = Dialogs.create_dialog(title='About...', size="600x600+100+100")
+        # video menu - download_video button.
+        download_video_button = QAction(QIcon(), 'Download Video', self.content_window)
+        download_video_button.setShortcut('Ctrl+J')
+        download_video_button.setStatusTip('Download Video')
+        download_video_button.triggered.connect(self.content_window.table_container.download_video)
+        video_menu.addAction(download_video_button)
 
-        frame1 = tk.Frame(dialog)
-        frame1.grid(row=0, column=0, sticky='nsew', ipadx=10, ipady=10)
+        # video menu - play video button.
+        play_video_button = QAction(QIcon(), 'Play Video', self.content_window)
+        play_video_button.setShortcut('Ctrl+P')
+        play_video_button.setStatusTip('Play Video')
+        play_video_button.triggered.connect(self.content_window.table_container.play_video)
+        video_menu.addAction(play_video_button)
 
-        # Logo
-        self.img = tk.PhotoImage(file='etc/id.png')
-        self.img = self.img.subsample(4, 4)
-        lbl = tk.Label(frame1, image=self.img)
-        lbl.grid(row=0, column=1, sticky='e', ipadx=10, ipady=10)
+        # video menu - download chats button.
+        download_chats_button = QAction(QIcon(), 'Download Lecture Chats', self.content_window)
+        download_chats_button.setShortcut('Ctrl+Shift+J')
+        download_chats_button.setStatusTip('Download Lecture Chats')
+        download_chats_button.triggered.connect(self.content_window.table_container.download_chats)
+        video_menu.addAction(download_chats_button)
 
-        # App title
-        tk.Label(frame1, text='Impartus Downloader', font=("Arial Bold Italic", 16)).grid(
-            row=0, column=3, sticky='w', ipadx=0, ipady=0)
+        # slides menu - download_slides button.
+        download_slides_button = QAction(QIcon(), 'Download Backpack Slides', self.content_window)
+        download_slides_button.setShortcut('Ctrl+K')
+        download_slides_button.setStatusTip('Download Backpack Slides')
+        # download_slides_button.triggered.connect(self.download_slides)
+        slides_menu.addAction(download_slides_button)
 
-        # current version
-        tk.Label(frame1, text='version - {}'.format(current_version)).grid(
-            row=1, column=2, sticky='ew', ipadx=10, ipady=10)
+        # slides menu - open_folder button.
+        open_folder_button = QAction(QIcon(), 'Open Folder', self.content_window)
+        open_folder_button.setShortcut('Ctrl+O')
+        open_folder_button.setStatusTip('Open Folder')
+        open_folder_button.triggered.connect(partial(self.content_window.table_container.open_folder))
+        slides_menu.addAction(open_folder_button)
 
-        releases = self.get_releases()
-        latest_version = releases[0]['tag_name']
-        if latest_version > current_version:
-            download_link1 = tk.Label(frame1, text="latest - {}".format(latest_version), fg="yellow", cursor="hand2")
-            download_link1.grid(row=2, column=2, sticky='ew', ipadx=10, ipady=10)
-            download_link1.bind("<Button-1>", partial(Utils.open_file, releases[0]['zipball_url']))
-        else:
-            tk.Label(frame1, text="(latest)").grid(row=2, column=2, sticky='ew', ipadx=10, ipady=10)
+        # slides menu - attach_slides button.
+        attach_slides_button = QAction(QIcon(), 'Attach Lecture Slides', self.content_window)
+        attach_slides_button.setShortcut('Ctrl+Shift+O')
+        attach_slides_button.setStatusTip('Attach Lecture Slides')
+        attach_slides_button.triggered.connect(partial(
+            self.content_window.table_container.attach_slides
+        ))
+        slides_menu.addAction(attach_slides_button)
 
-        frame1.columnconfigure(0, weight=1)
-        frame1.columnconfigure(3, weight=1)
+        # help menu - Documentation button.
+        helpdoc_button = QAction(QIcon(), 'Help', self.content_window)
+        helpdoc_button.setStatusTip('Help doc')
+        helpdoc_button.triggered.connect(self.help_doc)
+        help_menu.addAction(helpdoc_button)
 
-        frame2 = tk.Frame(dialog)
-        frame2.grid(row=1, column=0, sticky='nsew', ipadx=10, ipady=10)
+        # help menu - Documentation button.
+        check_updates_button = QAction(QIcon(), 'Check for Updates...', self.content_window)
+        check_updates_button.setStatusTip('Release Notes, Check for Updates')
+        check_updates_button.triggered.connect(self.check_updates)
+        help_menu.addAction(check_updates_button)
 
-        textbox = tk.Text(frame2)
-        for rel in releases:
-            textbox.insert(tk.END, '{}: {}\n\n'.format(rel['tag_name'], rel['name']))
-            textbox.insert(tk.END, 'Published on: {}\n\n'.format(rel['published_at']))
-            textbox.insert(tk.END, 'Changelist:\n\n{}\n\n'.format(rel['body'].strip()))
-            textbox.insert(tk.END, '---------------\n\n')
+        return main_menu
 
-        textbox.configure(state=tk.DISABLED)
-        textbox.grid(row=0, column=0, sticky='nsew', ipadx=10, ipady=10)
+    def set_video_quality(self, quality):
+        self.conf['flipped_lecture_quality'] = quality
 
-        frame2.columnconfigure(0, weight=1)
-        frame2.columnconfigure(2, weight=1)
+    def auto_organize(self):
+        pass
 
-        tk.Button(frame2, text='Close', command=Dialogs.on_dialog_close).grid(row=1, column=0, sticky='ew')
-        dialog.bind("<Escape>", Dialogs.on_dialog_close)
+    def reload_content(self):
+        pass
 
-        self.dialog = dialog
+    def help_doc(self):  # noqa
+        Utils.open_file(DocFiles.HELPDOC.value)
 
-    def get_releases(self):
-        url = 'https://api.github.com/repos/paljsingh/impartus-downloader/releases'
-        response = requests.get(url)
-        if response.status_code == 200:
-            return response.json()
-
-
+    def check_updates(self):
+        pass

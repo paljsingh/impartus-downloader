@@ -3,7 +3,7 @@ from typing import Dict
 
 from PySide2.QtWidgets import QWidget
 
-from qtui.common import Common
+from ui.common import Common
 from ui.data import ActionItems
 
 

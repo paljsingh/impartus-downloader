@@ -3,9 +3,9 @@ from PySide2.QtGui import QIcon
 from PySide2.QtWidgets import QMainWindow
 
 from lib.impartus import Impartus
-from qtui.content import ContentWindow
-from qtui.login import LoginWindow
-from qtui.menubar import Menubar
+from ui.content import ContentWindow
+from ui.login import LoginWindow
+from ui.menubar import Menubar
 from ui.data import IconFiles
 
 
