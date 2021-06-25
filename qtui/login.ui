@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>LoginWindow</class>
- <widget class="QMainWindow" name="LoginWindow">
+<!-- <class>LoginWindow</class> -->
+<!-- <widget class="QMainWindow" name="LoginWindow">
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -12,7 +12,7 @@
   </property>
   <property name="windowTitle">
    <string>MainWindow</string>
-  </property>
+  </property> -->
   <widget class="QWidget" name="centralwidget">
    <widget class="QWidget" name="layoutWidget">
     <property name="geometry">
@@ -160,7 +160,7 @@
     </layout>
    </widget>
   </widget>
-  <widget class="QMenuBar" name="menubar">
+<!--  <widget class="QMenuBar" name="menubar">
    <property name="geometry">
     <rect>
      <x>0</x>
@@ -183,6 +183,8 @@
    </attribute>
   </widget>
  </widget>
- <resources/>
+ -->
+<!-- <resources/>
  <connections/>
+-->
 </ui>
