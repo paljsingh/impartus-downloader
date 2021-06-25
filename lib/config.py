@@ -5,15 +5,13 @@ import enum
 
 class ConfigType(enum.Enum):
     CREDENTIALS = 1
-    COLORSCHEMES = 2
-    MAPPINGS = 3
-    IMPARTUS = 4
+    MAPPINGS = 2
+    IMPARTUS = 3
 
 
 class Config:
     config_maps = {
         ConfigType.CREDENTIALS: {'filepath': 'etc/creds.conf', 'method': 'yaml'},
-        ConfigType.COLORSCHEMES: {'filepath': 'etc/color-schemes.conf', 'method': 'yaml'},
         ConfigType.MAPPINGS: {'filepath': 'etc/mappings.conf', 'method': 'yaml'},
         ConfigType.IMPARTUS: {'filepath': 'etc/impartus.conf', 'method': 'envyaml'},
     }
