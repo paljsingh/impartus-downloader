@@ -17,17 +17,21 @@ Downloader for impartus streaming videos.
 - Sortable content.
 - Customizable color schemes, fonts.
 - Configurable columns.
-- Color scheme change via the UI.
+
+- [new] Qt5 bsed ui.
+- [new] System theme supported
+- [new] offline workflow to access lectures, slides without logging in.
+- [new] Content search.
+- [new] Better, responsive user experience.
 
 ---
 
 ### UI
-![Impartus Downloader](etc/impartus-ui.gif "Impartus Downloader")
+![Impartus Downloader](images/ui-demo.gif "Impartus Downloader")
 
 
 ### Demo video
-[![Impartus v3 demo](https://img.youtube.com/vi/LC0QEABmLSc/0.jpg)](https://www.youtube.com/watch?v=LC0QEABmLSc)
-
+[TBA]
 ---
 
 ## Installation / Run
