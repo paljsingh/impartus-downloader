@@ -1,6 +1,8 @@
+from datetime import datetime
 from typing import List
 import html
 import os
+import logging
 
 from lib.config import ConfigType, Config
 
@@ -112,6 +114,19 @@ STYLE
         os.makedirs(os.path.dirname(filepath), exist_ok=True)
         with open(filepath, 'w+') as fh:
             fh.write(vtt_content)
+
+    @classmethod
+    def save_as_captions(cls, video_metadata, chat_msgs, captions_path):
+        date_format = "%Y-%m-%d %H:%M:%S"
+        start_epoch = int(datetime.strptime(video_metadata['startTime'], date_format).timestamp())
+        try:
+            vtt_content = Captions.get_vtt(chat_msgs, start_epoch)
+            Captions.save_vtt(vtt_content, captions_path)
+        except CaptionsNotFound:
+            logger = logging.getLogger(cls.__name__)
+            logger.info("no lecture chat found for {}".format(captions_path))
+            return
+        return True
 
 
 class CaptionsNotFound(Exception):
