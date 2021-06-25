@@ -187,7 +187,8 @@ class Columns:
 
     @classmethod
     def get_column_index_by_display_name(cls, display_name):
-        for index, value in enumerate([*Columns.data_columns.values(), *Columns.widget_columns.values(), *Columns.hidden_columns.values()]):
+        for index, value in enumerate(
+                [*Columns.data_columns.values(), *Columns.widget_columns.values(), *Columns.hidden_columns.values()]):
             if value['display_name'] == display_name:
                 return index + 1
 
@@ -288,5 +289,4 @@ class ActionItems:
 class SearchDirection(enum.Enum):
     FORWARD = 1
     BACKWARD = -1
-
 
