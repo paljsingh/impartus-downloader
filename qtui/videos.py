@@ -1,43 +1,45 @@
 import os
-from functools import partial
+from typing import Dict
 
 from PySide2.QtWidgets import QWidget
 
-from lib.utils import Utils
 from qtui.common import Common
-from ui.data import ActionItems, ConfigKeys
+from ui.data import ActionItems
 
 
 class Videos:
 
     @classmethod
-    def add_video_actions_buttons(cls, metadata):
+    def add_video_actions_buttons(cls, metadata, callbacks: Dict):
         widget = QWidget()
         widget_layout = Common.get_layout_widget(widget)
         for pushbutton in Common.add_actions_buttons(ActionItems.video_actions):
             widget_layout.addWidget(pushbutton)
 
             # disable download button, if video exists locally.
-            if metadata.get('offline_filepath') \
-                    and pushbutton.text() == ActionItems.video_actions['download_video']['text']:
-                pushbutton.setEnabled(False)
-            else:
-                pushbutton.setEnabled(True)
+            if pushbutton.text() == ActionItems.video_actions['download_video']['text']:
+                pushbutton.clicked.connect(callbacks['download_video'])
 
-            # enable play button, if video exists locally.
-            if metadata.get('offline_filepath') \
-                    and pushbutton.text() == ActionItems.video_actions['play_video']['text']:
-                pushbutton.setEnabled(True)
-                pushbutton.clicked.connect(partial(Utils.open_file, metadata['offline_filepath']))
-            else:
-                pushbutton.setEnabled(False)
+                if metadata.get('offline_filepath'):
+                    pushbutton.setEnabled(False)
+                else:
+                    pushbutton.setEnabled(True)
+            elif pushbutton.text() == ActionItems.video_actions['play_video']['text']:
+                pushbutton.clicked.connect(callbacks['play_video'])
 
-            # enable download chats button, if lecture chats file does not exist.
-            if pushbutton.text() == ActionItems.video_actions['download_captions']['text']:
-                filepath = metadata.get(ConfigKeys.CAPTIONS_PATH.value)
-                if filepath and not os.path.exists(filepath):
+                if metadata.get('offline_filepath'):
+                    # enable play button, if video exists locally.
                     pushbutton.setEnabled(True)
                 else:
                     pushbutton.setEnabled(False)
+            elif pushbutton.text() == ActionItems.video_actions['download_chats']['text']:
+                pushbutton.clicked.connect(callbacks['download_chats'])
+
+                # enable download chats button, if lecture chats file does not exist.
+                filepath = metadata.get('chats')
+                if filepath and os.path.exists(filepath):
+                    pushbutton.setEnabled(False)
+                else:
+                    pushbutton.setEnabled(True)
 
         return widget
