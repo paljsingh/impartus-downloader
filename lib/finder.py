@@ -23,16 +23,16 @@ class Finder:
         offline_content = dict()
         count = 0
         for dirpath, subdirs, files in os.walk(self.conf.get('target_dir').get(platform.system())):
-            ttid, video_metadata = self.get_offline_video_metadata(dirpath, files)
-            if ttid:
-                count += 1
-                backpack_slides = self.get_offline_backpack_slides(dirpath, files)
-                captions = self.get_offline_captions(dirpath, files)
-                offline_content[ttid] = {
-                    'backpack_slides': backpack_slides,
-                    'captions': captions,
-                    **video_metadata,
-                }
+            for ttid, video_metadata in self.get_offline_video_metadata(dirpath, files):
+                if ttid:
+                    count += 1
+                    backpack_slides = self.get_offline_backpack_slides(dirpath, files)
+                    chats = self.get_offline_chats(dirpath, files)
+                    offline_content[ttid] = {
+                        'backpack_slides': backpack_slides,
+                        'chats': chats,
+                        **video_metadata,
+                    }
         return offline_content
 
     def get_offline_video_metadata(self, path: str, files: List) -> (str, Dict):
@@ -78,19 +78,23 @@ class Finder:
                             elif match == '{professorName}':
                                 pattern = r'[a-zA-Z0-9-]+'
                             else:
-                                pattern = r'([a-zA-Z0-9\.-]+)(?=.*-[0-9]{4}-[0-9]{2}-[0-9]{2})'
+                                pattern = r'([a-zA-Z0-9\._-]+)(?=.*-[0-9]{4}-[0-9]{2}-[0-9]{2})'
                             field = match[1:len(match)-1]
-                            video_metadata[field] = re.match(pattern, copy_filepath).group(0)
+                            if re.match(pattern, copy_filepath):
+                                video_metadata[field] = re.match(pattern, copy_filepath).group(0)
                             copy_filepath = re.sub(pattern, '', copy_filepath, 1)
                             copy_filepath = re.sub(sep, '', copy_filepath, 1)
 
                         video_metadata['tapNToggle'] = '?'
                         video_metadata['actualDurationReadable'] = '--:--'
                         video_metadata['ttid'] = ttid
+                        video_metadata['ext'] = ''
+                        video_metadata['slide_url'] = ''
+                        del video_metadata['target_dir']
 
                     # for all videos...
                     video_metadata['offline_filepath'] = filepath
-                    return ttid, video_metadata
+                    yield ttid, video_metadata
 
                 except NameError as ex:
                     self.logger.warning('config_dir not found, or does not exist. error: {}'.format(ex))
@@ -107,12 +111,10 @@ class Finder:
                     backpack_slides.append(os.path.join(path, filename))
         return backpack_slides
 
-    def get_offline_captions(self, path: str, files: List):  # noqa
-        captions = []
+    def get_offline_chats(self, path: str, files: List):  # noqa
         for filename in files:
             if filename.endswith('.vtt'):
-                captions.append(os.path.join(path, filename))
-        return captions
+                return os.path.join(path, filename)
 
     def _get_ttid(self, filepath: str):
         try:
@@ -122,7 +124,7 @@ class Finder:
                     for x in mkv.tags:
                         for y in x.simpletags:
                             if y.name == 'TTID':
-                                return y.string
+                                return int(y.string)
         except enzyme.MalformedMKVError as ex:
             self.logger.warning("Exception while parsing file {}".format(str(filepath)))
             self.logger.warning("You may want to delete and re-download this file.")
