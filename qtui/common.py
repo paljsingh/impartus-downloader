@@ -16,11 +16,12 @@ class Common:
     @classmethod
     def add_actions_buttons(cls, actions: Dict):
         for key, val in actions.items():
-            pushbutton = QPushButton()
-            pushbutton.setText(val['text'])
-            pushbutton.setToolTip(val['tooltip'])
-            pushbutton.setMaximumWidth(40)
-            yield pushbutton
+            if val['type'] == QPushButton:
+                pushbutton = QPushButton()
+                pushbutton.setText(val['text'])
+                pushbutton.setToolTip(val['tooltip'])
+                pushbutton.setMaximumWidth(40)
+                yield pushbutton
 
     @classmethod
     def add_checkbox_widget(cls, callback: Callable):
