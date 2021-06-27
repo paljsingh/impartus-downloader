@@ -401,21 +401,24 @@ class Table:
         for i in range(self.table.rowCount()):
             if self.table.cellWidget(i, 0).layout().itemAt(0).widget().isChecked():
                 return i
-        return -1
 
     def get_ttid_col(self):      # noqa
         for i, key in enumerate(Columns.hidden_columns.keys(),
                                 1 + len(Columns.data_columns) + len(Columns.widget_columns)):
             if key == 'ttid':
                 return i
-        return -1
 
     def get_selected_row_ttid(self, row_index):
-        return int(self.table.item(row_index, self.get_ttid_col()).text())
+        col = self.get_ttid_col()
+        if col:
+            return int(self.table.item(row_index, col).text())
 
     def get_selected_row_folder(self):
         row = self.get_selected_row()
-        ttid = self.get_selected_row_ttid(row)
+        ttid = self.get_selected_row_ttid(row) if row else None
+
+        if not ttid:
+            return
 
         video_path = self.data.get(ttid)['offline_filepath'] if self.data.get(ttid).get('offline_filepath') else None
         if video_path:
