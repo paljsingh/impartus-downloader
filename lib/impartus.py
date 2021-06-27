@@ -49,7 +49,7 @@ class Impartus:
         self.temp_downloads_dir = os.path.join(Utils.get_temp_dir(), 'impartus.media')
         os.makedirs(self.temp_downloads_dir, exist_ok=True)
 
-    def _download_m3u8(self, ttid, flipped=False, video_quality='highest'):
+    def _download_m3u8(self, ttid, flipped=False, flipped_lecture_quality='highest'):
         root_url = Variables().login_url()
 
         if flipped:
@@ -66,12 +66,12 @@ class Impartus:
 
         url = None
         if flipped:
-            if video_quality == 'highest':
+            if flipped_lecture_quality == 'highest':
                 url = self.get_url_for_highest_quality_video(m3u8_urls)
-            elif video_quality == 'lowest':
+            elif flipped_lecture_quality == 'lowest':
                 url = self.get_url_for_lowest_quality_video(m3u8_urls)
             else:  # given a specific resolution.
-                url = self.get_url_for_resolution(m3u8_urls, video_quality)
+                url = self.get_url_for_resolution(m3u8_urls, flipped_lecture_quality)
         elif len(m3u8_urls) > 0:
             url = m3u8_urls[0]
 
@@ -82,13 +82,13 @@ class Impartus:
         return None
 
     def get_url_for_highest_quality_video(self, m3u8_urls):
-        for resolution in self.conf.get('video_quality_order'):
+        for resolution in self.conf.get('flipped_lecture_quality_order'):
             for url in m3u8_urls:
                 if resolution in url:
                     return url
 
     def get_url_for_lowest_quality_video(self, m3u8_urls):
-        for resolution in reversed(self.conf.get('video_quality_order')):
+        for resolution in reversed(self.conf.get('flipped_lecture_quality_order')):
             for url in m3u8_urls:
                 if resolution in url:
                     return url
@@ -392,7 +392,6 @@ class Impartus:
             mapping_dict = self.map_slides_to_videos(videos_per_subject, slides_per_subject)
 
             # populate the mapped slide to video metadata item.
-            # ensure every metadata item has slide_url and ext fields set (either to a valid value or '')
             for item in videos_per_subject:
                 ttid = item['ttid']
                 slide_url = mapping_dict.get(ttid)
@@ -400,9 +399,11 @@ class Impartus:
                     online_lectures[ttid]['slide_url'] = slide_url
                     ext = slide_url.split('.')[-1]
                     online_lectures[ttid]['ext'] = ext
+                    online_lectures[ttid]['slide_path'] = self.get_mkv_path(item)
                 else:
                     online_lectures[ttid]['slide_url'] = ''
                     online_lectures[ttid]['ext'] = ''
+                    online_lectures[ttid]['slide_path'] = ''
 
         return online_lectures
 
