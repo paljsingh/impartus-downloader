@@ -18,7 +18,9 @@ class Utils:
     def add_new_fields(cls, metadata):
         try:
             # pad the following fields
-            fixed_width_numeric = {'seqNo': '{:02d}', 'views': '{:04d}', 'actualDuration': '{:05d}', 'sessionId': '{:04d}'}
+            fixed_width_numeric = {
+                'seqNo': '{:02d}', 'views': '{:04d}', 'actualDuration': '{:05d}', 'sessionId': '{:04d}'
+            }
             for key, val in fixed_width_numeric.items():
                 # format these numeric fields to fix width with leading zeros.
                 if metadata[key] is not None:
@@ -105,5 +107,3 @@ class Utils:
     def save_json(cls, content, filepath):
         with open(filepath, "w") as fh:
             json.dump(content, fh, indent=4)
-
-

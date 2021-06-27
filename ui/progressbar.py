@@ -1,4 +1,4 @@
-from PySide2.QtGui import QPalette, QColor
+from PySide2.QtGui import QPalette
 from PySide2.QtWidgets import QWidget, QHBoxLayout, QProgressBar, QStyleOptionProgressBar, QStyle, QApplication
 from PySide2extn.RoundProgressBar import roundProgressBar
 
