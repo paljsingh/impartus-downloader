@@ -1,8 +1,8 @@
 from PySide2 import QtWidgets, QtCore
 from PySide2.QtGui import QIcon
-from PySide2.QtWidgets import QMainWindow
 
 from lib.impartus import Impartus
+from ui.callbcks import Callbacks
 from ui.content import ContentWindow
 from ui.login import LoginWindow
 from ui.menubar import Menubar
@@ -17,22 +17,19 @@ class App:
         self.impartus = Impartus()
         self.login_window = LoginWindow(self.impartus)
         self.content_window = ContentWindow(self.impartus)
+
+        # initialize callbacks
+        Callbacks().setup(
+            impartus=self.impartus,
+            login_window=self.login_window,
+            content_window=self.content_window
+        )
         self.content_window.set_layout()
 
-        self.login_window.setup_ui(self.content_window, self.switch_window_callback)
+        self.login_window.setup_ui(self.content_window)
         self.login_window.show()
 
-        self.menu_bar = Menubar(self.login_window, self.content_window).add_menu(self.switch_window_callback)
-
-
-    def switch_window_callback(self, from_window: QMainWindow, to_window: QMainWindow):  # noqa
-        """
-        switch between two windows.
-        """
-        to_window.show()
-        from_window.hide()
-        to_window.setFocus()
-        return to_window
+        self.menu_bar = Menubar(self.login_window, self.content_window).add_menu()
 
     def run(self):
         self.app.exec_()
@@ -41,4 +38,3 @@ class App:
 if __name__ == '__main__':
     QtCore.QCoreApplication.setAttribute(QtCore.Qt.AA_ShareOpenGLContexts)
     App().run()
-

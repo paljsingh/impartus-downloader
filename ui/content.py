@@ -8,6 +8,7 @@ from lib.config import Config, ConfigType
 from lib.finder import Finder
 from lib.impartus import Impartus
 from lib.utils import Utils
+from ui.callbcks import Callbacks
 from ui.search import SearchBox
 from ui.table import Table
 from ui.data import Labels
@@ -60,6 +61,9 @@ class ContentWindow(QMainWindow):
         self.table_container.fill_table(self.offline_data)
         self.search_box.set_table_widget_to_search(self.table_widget)
 
+        Callbacks().set_menu_statuses()
+        Callbacks().set_pushbutton_statuses()
+
     def work_online(self):
         if not self.offline_data:
             self.offline_data = Finder().get_offline_content()
@@ -77,6 +81,9 @@ class ContentWindow(QMainWindow):
         self.table_container.fill_table(self.online_data)
         self.search_box.set_table_widget_to_search(self.table_widget)
 
+        Callbacks().set_menu_statuses()
+        Callbacks().set_pushbutton_statuses()
+
     def save_metadata(self, online_data):   # noqa
         conf = Config.load(ConfigType.IMPARTUS)
         if conf.get('config_dir') and conf.get('config_dir').get(platform.system()) \
@@ -93,3 +100,15 @@ class ContentWindow(QMainWindow):
             if not online_item.get(key):
                 online_item[key] = offline_item[key]
         return online_item
+
+    def needs_lecture_rename(self):
+        return False
+
+    def needs_video_download(self):
+        return False
+
+    def needs_chat_download(self):
+        return False
+
+    def needs_backpack_slides_download(self):
+        return False
