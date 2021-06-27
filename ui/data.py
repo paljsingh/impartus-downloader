@@ -1,7 +1,13 @@
 import enum
+import sys
+from functools import partial
 
 from PySide2.QtCore import Qt
 from PySide2.QtWidgets import QHeaderView, QPushButton, QComboBox
+
+from lib.config import Config, ConfigType
+from lib.utils import Utils
+from ui.callbcks import Callbacks
 
 
 class Icons(enum.Enum):
@@ -58,17 +64,6 @@ class Columns:
             'sortable': True,
             'title_case': False,
         },
-        'seqNo': {
-            'alignment': Qt.AlignRight,
-            'display_name': 'Lecture #',
-            'editable': False,
-            'hidden': False,
-            'menu_tooltip': 'Lecture id',
-            'original_values_col': None,
-            'resize_policy': QHeaderView.ResizeMode.ResizeToContents,
-            'sortable': True,
-            'title_case': False,
-        },
         'professorName': {
             'alignment': Qt.AlignLeft,
             'display_name': 'Faculty',
@@ -90,6 +85,17 @@ class Columns:
             'resize_policy': QHeaderView.ResizeMode.Stretch,
             'sortable': True,
             'title_case': True,
+        },
+        'seqNo': {
+            'alignment': Qt.AlignRight,
+            'display_name': 'Lecture #',
+            'editable': False,
+            'hidden': False,
+            'menu_tooltip': 'Lecture id',
+            'original_values_col': None,
+            'resize_policy': QHeaderView.ResizeMode.ResizeToContents,
+            'sortable': True,
+            'title_case': False,
         },
         'actualDurationReadable': {
             'alignment': Qt.AlignRight,
@@ -286,7 +292,119 @@ class ActionItems:
                 return i
 
 
+class MenuItems:
+
+    conf = Config.load(ConfigType.IMPARTUS)
+    menu_items = {
+        'Actions': {
+            'Login': {
+                'shortcut': 'Ctrl+L',
+                'status_tip': 'Login to Impartus',
+                'callback': Callbacks().on_login_click,
+            },
+            'Reload': {
+                'shortcut': 'Ctrl+R',
+                'status_tip': 'Reload Table Content',
+                'callback': Callbacks().on_reload_click,
+            },
+            'Auto Organize': {
+                'shortcut': 'Ctrl+/',
+                'status_tip': 'Rename lecture videos, download missing captions...',
+                'callback': Callbacks().on_auto_organize_click,
+            },
+            'sep': {
+                'type': 'separator',
+            },
+            'Quit': {
+                'shortcut': 'Ctrl+Q',
+                'status_tip': 'Quit Application',
+                'callback': partial(sys.exit, 0)
+            },
+        },
+        'View': {
+            'Columns': {
+                'shortcut': None,
+                'status_tip': None,
+                'type': 'list',
+                'status': 'disabled',
+                'behavior': 'checkall',
+                'child_items': [x['display_name']
+                                for x in [*Columns.data_columns.values(), *Columns.widget_columns.values()]],
+                'child_callbacks': [partial(Callbacks().on_column_click, key)
+                                    for key in [*Columns.data_columns.keys(), *Columns.widget_columns.keys()]]
+            },
+            'sep': {
+                'type': 'separator',
+            },
+            'Search': {
+                'shortcut': 'Ctrl+F',
+                'status_tip': 'Search Content...',
+                'callback': Callbacks().on_search_click,
+            },
+        },
+        'Video': {
+            'Flipped Video Lecture Quality': {
+                'shortcut': None,
+                'type': 'list',
+                'status_tip': None,
+                'status': 'disabled',
+                'behavior': 'singleselect',
+                'child_items': [x for x in conf.get('flipped_lecture_quality_order')],
+                'default': conf.get('video_quality'),
+                'child_callbacks': [partial(Callbacks().on_video_quality_click, video_quality)
+                                    for video_quality in conf.get('flipped_lecture_quality')]
+            },
+            'sep': {
+                'type': 'separator',
+            },
+            'Download Video': {
+                'shortcut': 'Ctrl+J',
+                'status_tip': 'Download Lecture Video',
+                'callback': Callbacks().on_download_video_click,
+            },
+            'Play Video': {
+                'shortcut': 'Ctrl+P',
+                'status_tip': 'Play Lecture Video',
+                'callback': Callbacks().on_play_video_click,
+            },
+            'Download Lecture Chats': {
+                'shortcut': 'Shift+Ctrl+J',
+                'status_tip': 'Download Lecture Chats',
+                'callback': Callbacks().on_download_chats_click,
+            },
+        },
+        'Slides': {
+            'Download Backpack Slides': {
+                'shortcut': 'Ctrl+K',
+                'status_tip': 'Download Lecture Slides',
+                'callback': Callbacks().on_download_slides_click,
+            },
+            'Open Folder': {
+                'shortcut': 'Ctrl+O',
+                'status_tip': 'Open Lecture Content Folder',
+                'callback': Callbacks().on_open_folder_click,
+            },
+            'Attach Lecture Slides': {
+                'shortcut': 'Shift+Ctrl+O',
+                'status_tip': 'Attach Downloaded Slides to a Lecture',
+                'callback': Callbacks().on_attach_slides_click,
+            },
+        },
+        'Help': {
+            'Help': {
+                'shortcut': None,
+                'status_tip': 'Help docs',
+                'callback': partial(Utils.open_file, 'docs/helpdoc.pdf'),
+            },
+            'Check For Updates': {
+                'shortcut': None,
+                'status_tip': 'Check for new version, release notes...',
+                'callback': Callbacks().on_check_for_updates_click,
+            },
+        }
+    }
+
+
 class SearchDirection(enum.Enum):
     FORWARD = 1
     BACKWARD = -1
-
