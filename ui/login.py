@@ -8,9 +8,10 @@ from PySide2.QtWidgets import QMainWindow
 
 from lib.config import Config, ConfigType
 from lib.impartus import Impartus
-from ui.callbcks import Callbacks
-from ui.variables import Variables
-from ui.data import ConfigKeys, Labels
+from ui.data.callbcks import Callbacks
+from ui.data.configkeys import ConfigKeys
+from ui.data.labels import Labels
+from ui.data.variables import Variables
 
 
 class LoginWindow(QMainWindow):

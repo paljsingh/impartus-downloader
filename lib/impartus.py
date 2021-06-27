@@ -15,7 +15,7 @@ from lib.utils import Utils
 from lib.media.encoder import Encoder
 from lib.media.m3u8parser import M3u8Parser
 from lib.media.decrypter import Decrypter
-from ui.variables import Variables
+from ui.data.variables import Variables
 
 
 class Impartus:

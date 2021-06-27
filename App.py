@@ -2,11 +2,11 @@ from PySide2 import QtWidgets, QtCore
 from PySide2.QtGui import QIcon
 
 from lib.impartus import Impartus
-from ui.callbcks import Callbacks
+from ui.data.callbcks import Callbacks
 from ui.content import ContentWindow
+from ui.data.iconfiles import IconFiles
 from ui.login import LoginWindow
 from ui.menubar import Menubar
-from ui.data import IconFiles
 
 
 class App:

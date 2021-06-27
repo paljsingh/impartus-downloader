@@ -8,10 +8,10 @@ from lib.config import Config, ConfigType
 from lib.finder import Finder
 from lib.impartus import Impartus
 from lib.utils import Utils
-from ui.callbcks import Callbacks
+from ui.data.callbcks import Callbacks
+from ui.data.labels import Labels
 from ui.search import SearchBox
 from ui.table import Table
-from ui.data import Labels
 
 
 class ContentWindow(QMainWindow):

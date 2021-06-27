@@ -4,7 +4,7 @@ from typing import Dict
 from PySide2.QtWidgets import QWidget
 
 from ui.common import Common
-from ui.data import ActionItems
+from ui.data.actionitems import ActionItems
 
 
 class Videos:

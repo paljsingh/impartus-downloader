@@ -4,8 +4,8 @@ from PySide2.QtWidgets import QAction, QMainWindow
 from lib.config import ConfigType, Config
 from lib.impartus import Impartus
 from lib.utils import Utils
-from ui.callbcks import Callbacks
-from ui.data import DocFiles, MenuItems
+from ui.data.docs import Docs
+from ui.data.menuitems import MenuItems
 
 
 class Menubar:
@@ -68,7 +68,7 @@ class Menubar:
         pass
 
     def help_doc(self):  # noqa
-        Utils.open_file(DocFiles.HELPDOC.value)
+        Utils.open_file(Docs.HELPDOC.value)
 
     def check_updates(self):
         pass

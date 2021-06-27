@@ -17,11 +17,14 @@ from lib.config import Config, ConfigType
 from lib.impartus import Impartus
 from lib.utils import Utils
 from ui.common import Common
+from ui.data.Icons import Icons
+from ui.data.actionitems import ActionItems
+from ui.data.columns import Columns
+from ui.data.iconfiles import IconFiles
 from ui.progressbar import ProgressBar
 from ui.rodelegate import ReadOnlyDelegate
 from ui.slides import Slides
 from ui.videos import Videos
-from ui.data import IconFiles, Columns, ActionItems, Icons
 
 
 class Table:

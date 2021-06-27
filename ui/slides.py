@@ -8,7 +8,9 @@ from PySide2.QtWidgets import QComboBox, QWidget
 from lib.impartus import Impartus
 from lib.utils import Utils
 from ui.common import Common
-from ui.data import Icons, ActionItems, Columns
+from ui.data.Icons import Icons
+from ui.data.actionitems import ActionItems
+from ui.data.columns import Columns
 
 
 class Slides:

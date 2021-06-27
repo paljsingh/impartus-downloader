@@ -9,7 +9,7 @@ from typing import Dict, List
 
 from lib.config import Config, ConfigType
 from lib.utils import Utils
-from ui.data import ConfigKeys
+from ui.data.configkeys import ConfigKeys
 
 
 class Finder:

@@ -1,7 +1,12 @@
 import os
 
-from PySide2.QtCore import QObject
-from PySide2.QtWidgets import QMainWindow
+import requests
+from PySide2 import QtCore, QtWidgets
+from PySide2.QtCore import QObject, QModelIndex
+from PySide2.QtWidgets import QMainWindow, QDialog, QLabel, QTreeWidget, QTreeWidgetItem, QSizePolicy
+
+from lib import version
+from ui.dialog import Dialog
 
 
 class Callbacks:
@@ -168,5 +173,73 @@ class Callbacks:
         pass
 
     def on_check_for_updates_click(self):
+        current_version = version.__version_info__
+        releases = self.get_releases()
 
+        dialog = Dialog(file='ui/about.ui', parent=self.content_window).dialog
+
+        latest_version = releases[0]['tag_name']
+        version_label = dialog.findChild(QLabel, 'version_label')
+        new_version_label = dialog.findChild(QLabel, 'new_version_label')
+        dl_link1 = dialog.findChild(QLabel, 'dl_link1_label')
+        dl_link2 = dialog.findChild(QLabel, 'dl_link2_label')
+        version_label.setText(current_version)
+
+        # update version label
+        if latest_version > current_version:
+            new_version_label.setText('A new version {} is available.'.format(releases[0]['tag_name']))
+            dl_link1.setText('<a href="{}">zip download </a>'.format(releases[0]['zipball_url']))
+            dl_link2.setText('<a href="{}"> tar download</a>'.format(releases[0]['tarball_url']))
+            dl_link1.setOpenExternalLinks(True)
+            dl_link2.setOpenExternalLinks(True)
+            pass
+        else:
+            new_version_label.hide()
+            dl_link1.hide()
+            dl_link2.hide()
+            pass
+
+        # update changelist in the treewidget
+        treewidget = dialog.findChild(QTreeWidget, 'release_notes_treeview')
+        treewidget.setColumnCount(2)
+        treewidget.setHeaderLabels(['', ''])
+        treewidget.setAlternatingRowColors(True)
+        treewidget.header().setAlternatingRowColors(True)
+        for i, rel in enumerate(releases):
+
+            item = QTreeWidgetItem(treewidget)
+            item.setText(0, rel['tag_name'])
+            treewidget.addTopLevelItem(item)
+
+            item1 = QTreeWidgetItem(item)
+            item1.setText(0, 'Summary')
+            item1.setText(1, rel['name'])
+            item.addChild(item1)
+
+            item2 = QTreeWidgetItem(item)
+            item2.setText(0, 'Published on')
+            item2.setText(1, rel['published_at'])
+            item.addChild(item2)
+
+            item3 = QTreeWidgetItem(item)
+            item3.setText(0, 'Release Notes')
+            item3.setText(1, rel['body'])
+            item.addChild(item3)
+
+            # must expand every item for resizeColumnToContents policy to take effect.
+            item.setExpanded(True)
+
+        treewidget.resizeColumnToContents(0)
+        treewidget.resizeColumnToContents(1)
+        treewidget.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOn)
+
+        for i in range(1, len(releases)-1):
+            index = treewidget.model().index(i, 0)
+            treewidget.collapse(index)
         pass
+
+    def get_releases(self):
+        url = 'https://api.github.com/repos/paljsingh/impartus-downloader/releases'
+        response = requests.get(url)
+        if response.status_code == 200:
+            return response.json()
