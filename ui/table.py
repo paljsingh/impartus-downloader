@@ -19,6 +19,7 @@ from lib.utils import Utils
 from ui.common import Common
 from ui.data.Icons import Icons
 from ui.data.actionitems import ActionItems
+from ui.data.callbcks import Callbacks
 from ui.data.columns import Columns
 from ui.data.iconfiles import IconFiles
 from ui.progressbar import ProgressBar
@@ -108,7 +109,7 @@ class Table:
         self.data = data
         for index, (ttid, item) in enumerate(data.items()):
             # for each row, add a checkbox first.
-            container_widget = Common.add_checkbox_widget(partial(self.on_checkbox_click, index))
+            container_widget = Common.add_checkbox_widget(partial(self.on_click_checkbox, index))
             self.table.setCellWidget(index, 0, container_widget)
 
             # enumerate rest of the columns from 1
@@ -128,10 +129,9 @@ class Table:
             col += 1
 
             # video actions
-            video_path = self.impartus.get_mkv_path(item)
             callbacks = {
                 'download_video': partial(self.download_video, ttid),
-                'play_video': partial(Utils.open_file, video_path),
+                'play_video': partial(self.play_video, ttid),
                 'download_chats': partial(self.download_chats, ttid)
             }
             video_actions_widget = Videos.add_video_actions_buttons(item, callbacks)
@@ -139,11 +139,10 @@ class Table:
             col += 1
 
             # slides actions
-            folder = os.path.dirname(self.impartus.get_mkv_path(item))
             callbacks = {
                 'download_slides': partial(self.download_slides, ttid),
-                'open_folder': partial(Utils.open_file, folder),
-                'attach_slides': partial(self.attach_slides, folder),
+                'open_folder': partial(self.open_folder, ttid),
+                'attach_slides': partial(self.attach_slides, ttid),
             }
             slides_actions_widget = Slides.add_slides_actions_buttons(item, self.impartus, callbacks)
 
@@ -164,11 +163,12 @@ class Table:
         # Todo ...
         return self
 
-    def on_checkbox_click(self, row):
+    def on_click_checkbox(self, row):
         # if the same item is clicked again, do not do anything.
         clicked_widget = self.table.cellWidget(row, 0).layout().itemAt(0).widget()
         if not clicked_widget.isChecked():
             self.selected_row = None
+            Callbacks().set_menu_statuses()
             return
 
         # keep only one checkbox selected at a time.
@@ -176,6 +176,9 @@ class Table:
             self.table.cellWidget(i, 0).layout().itemAt(0).widget().setChecked(False)
         clicked_widget.setChecked(True)
         self.selected_row = row
+
+        # Enable some of the menu buttons.
+        Callbacks().set_menu_statuses()
 
     def show_hide_column(self, column):
         col_index = None
@@ -292,9 +295,10 @@ class Table:
             'pushbuttons': pushbuttons,
         }
         thread.start()
+        self.data[ttid]['offline_filepath'] = video_filepath
 
     def play_video(self, ttid):
-        video_file = self.data.get(ttid)['offline_filepath']
+        video_file = self.data[ttid]['offline_filepath']
         if video_file:
             Utils.open_file(video_file)
 
@@ -379,10 +383,12 @@ class Table:
             else:
                 widgets['download_slides'].setEnabled(True)
 
-    def open_folder(self, folder_path):     # noqa
+    def open_folder(self, ttid):     # noqa
+        folder_path = self.get_selected_row_folder()
         Utils.open_file(folder_path)
 
-    def attach_slides(self, folder_path):       # noqa
+    def attach_slides(self, ttid):       # noqa
+        folder_path = self.get_selected_row_folder()
         conf = Config.load(ConfigType.IMPARTUS)
         filters = ['{} files (*.{})'.format(str(x).title(), x) for x in conf.get('allowed_ext')]
         filters_str = ';;'.join(filters)
@@ -411,14 +417,17 @@ class Table:
             if key == 'ttid':
                 return i
 
-    def get_selected_row_ttid(self, row_index):
+    def get_selected_row_ttid(self):
+        row_index = self.get_selected_row()
+        if row_index is None:
+            return
+
         col = self.get_ttid_col()
         if col:
             return int(self.table.item(row_index, col).text())
 
     def get_selected_row_folder(self):
-        row = self.get_selected_row()
-        ttid = self.get_selected_row_ttid(row) if row else None
+        ttid = self.get_selected_row_ttid()
 
         if not ttid:
             return
