@@ -27,7 +27,7 @@ Downloader for impartus streaming videos.
 ---
 
 ### UI
-![Impartus Downloader](images/ui-demo.gif "Impartus Downloader")
+![Impartus Downloader](ui/images/ui-demo.gif "Impartus Downloader")
 
 
 ### Demo video
