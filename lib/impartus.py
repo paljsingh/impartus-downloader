@@ -348,7 +348,7 @@ class Impartus:
                     mapping[video_item['ttid']] = slide_item['filePath']
         return mapping
 
-    def authenticate(self):
+    def login(self):
         root_url = Variables().login_url()
         username = Variables().login_email()
         password = Variables().login_password()
@@ -369,6 +369,13 @@ class Impartus:
             self.logger.error('Error authenticating to {} with username {}.'.format(url, username))
             self.logger.error('Http response code: {}, response body: {}: '.format(response.status_code, response.text))
             return False
+
+    def logout(self):
+        self.session = None
+        self.token = None
+
+        # Really Impartus? No server api to logout ?
+        pass
 
     def is_authenticated(self):
         return True if self.session else False

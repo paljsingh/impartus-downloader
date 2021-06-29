@@ -44,10 +44,17 @@ class Callbacks:
         login_menu = self.get_action(actions_menu, 'Login')
         reload_menu = self.get_action(actions_menu, 'Reload')
         auto_organize_menu = self.get_action(actions_menu, 'Auto Organize')
+        logout_menu = self.get_action(actions_menu, 'Logout')
         if is_authenticated:
             login_menu.setEnabled(False)
         else:
             login_menu.setEnabled(True)
+
+        # disable reload menu if any downloads are in progress.
+        if len(self.content_window.table_container.threads) > 0:
+            reload_menu.setEnabled(False)
+        else:
+            reload_menu.setEnabled(True)
 
         # if lecture files need update in their name / location, or video /chats / backpack slides need to be
         # downloaded, enable auto organize menu.
@@ -60,11 +67,10 @@ class Callbacks:
         else:
             auto_organize_menu.setEnabled(False)
 
-        # disable reload menu if any downloads are in progress.
-        if len(self.content_window.table_container.threads) > 0:
-            reload_menu.setEnabled(False)
+        if is_authenticated:
+            logout_menu.setEnabled(True)
         else:
-            reload_menu.setEnabled(True)
+            logout_menu.setEnabled(False)
 
         table = self.content_window.table_container
         selected_row = table.get_selected_row()
@@ -89,9 +95,12 @@ class Callbacks:
             play_video_menu.setEnabled(False)
 
         # enable download captions, if captions file does not exist locally.
-        if is_authenticated and selected_row is not None and table.data[ttid].get('captions_path') \
-                and not os.path.exists(table.data[ttid].get('captions_path')):
-            download_chats_menu.setEnabled(True)
+        if is_authenticated and selected_row is not None and table.data[ttid]:
+            captions_path = self.impartus.get_captions_path(table.data[ttid])
+            if captions_path and not os.path.exists(captions_path):
+                download_chats_menu.setEnabled(True)
+            else:
+                download_chats_menu.setEnabled(False)
         else:
             download_chats_menu.setEnabled(False)
 
@@ -145,35 +154,47 @@ class Callbacks:
     def on_auto_organize_click(self):
         pass
 
+    def on_logout_click(self):
+        self.impartus.logout()
+        self.switch_windows(
+            from_window=self.content_window,
+            to_window=self.login_window,
+        )
+        self.set_menu_statuses()
+
     def on_column_click(self):
         pass
 
     def on_search_click(self):
-        pass
+        self.content_window.search_box.set_focus()
 
-    def on_video_quality_click(self):
+    def on_video_quality_click(self, video_quality: str):
+        # disable other menu items...
         pass
 
     def on_download_video_click(self):
-        pass
+        ttid = self.content_window.table_container.get_selected_row_ttid()
+        self.content_window.table_container.download_video(ttid)
 
     def on_play_video_click(self):
         ttid = self.content_window.table_container.get_selected_row_ttid()
         self.content_window.table_container.play_video(ttid)
 
     def on_download_chats_click(self):
-        pass
+        ttid = self.content_window.table_container.get_selected_row_ttid()
+        self.content_window.table_container.download_chats(ttid)
 
     def on_download_slides_click(self):
-        pass
+        ttid = self.content_window.table_container.get_selected_row_ttid()
+        self.content_window.table_container.download_slides(ttid)
 
     def on_open_folder_click(self):
         ttid = self.content_window.table_container.get_selected_row_ttid()
         self.content_window.table_container.open_folder(ttid)
-        pass
 
     def on_attach_slides_click(self):
-        pass
+        ttid = self.content_window.table_container.get_selected_row_ttid()
+        self.content_window.table_container.attach_slides(ttid)
 
     def on_check_for_updates_click(self):
         current_version = version.__version_info__
@@ -195,12 +216,10 @@ class Callbacks:
             dl_link2.setText('<a href="{}"> tar download</a>'.format(releases[0]['tarball_url']))
             dl_link1.setOpenExternalLinks(True)
             dl_link2.setOpenExternalLinks(True)
-            pass
         else:
             new_version_label.hide()
             dl_link1.hide()
             dl_link2.hide()
-            pass
 
         # update changelist in the treewidget
         treewidget = dialog.findChild(QTreeWidget, 'release_notes_treeview')
@@ -239,7 +258,6 @@ class Callbacks:
         for i in range(1, len(releases)-1):
             index = treewidget.model().index(i, 0)
             treewidget.collapse(index)
-        pass
 
     def get_releases(self):
         url = 'https://api.github.com/repos/paljsingh/impartus-downloader/releases'

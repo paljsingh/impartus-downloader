@@ -8,7 +8,7 @@ from PySide2.QtWidgets import QMainWindow
 
 from lib.config import Config, ConfigType
 from lib.impartus import Impartus
-from ui.data.callbcks import Callbacks
+from ui.data.callbacks import Callbacks
 from ui.data.configkeys import ConfigKeys
 from ui.data.labels import Labels
 from ui.data.variables import Variables
@@ -102,7 +102,7 @@ class LoginWindow(QMainWindow):
             self.conf[ConfigKeys.PASSWORD.value] = ''
         Config.save(ConfigType.CREDENTIALS)
 
-        status = self.impartus.authenticate()
+        status = self.impartus.login()
         if status:
             switch_window_callback(
                 from_window=self,
