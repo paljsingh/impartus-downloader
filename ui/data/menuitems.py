@@ -3,7 +3,7 @@ from functools import partial
 
 from lib.config import ConfigType, Config
 from lib.utils import Utils
-from ui.data.callbcks import Callbacks
+from ui.data.callbacks import Callbacks
 from ui.data.columns import Columns
 
 
@@ -27,7 +27,15 @@ class MenuItems:
                 'status_tip': 'Rename lecture videos, download missing captions...',
                 'callback': Callbacks().on_auto_organize_click,
             },
-            'sep': {
+            'sep1': {
+                'type': 'separator',
+            },
+            'Logout': {
+                'shortcut': 'Ctrl+Shift+L',
+                'status_tip': 'Logout from Impartus',
+                'callback': Callbacks().on_logout_click,
+            },
+            'sep2': {
                 'type': 'separator',
             },
             'Quit': {
@@ -43,8 +51,8 @@ class MenuItems:
                 'type': 'list',
                 'status': 'disabled',
                 'behavior': 'checkall',
-                'child_items': [x['display_name']
-                                for x in [*Columns.data_columns.values(), *Columns.widget_columns.values()]],
+                'child_items':
+                    [x['display_name'] for x in [*Columns.data_columns.values(), *Columns.widget_columns.values()]],
                 'child_callbacks': [partial(Callbacks().on_column_click, key)
                                     for key in [*Columns.data_columns.keys(), *Columns.widget_columns.keys()]]
             },
@@ -64,10 +72,16 @@ class MenuItems:
                 'status_tip': None,
                 'status': 'disabled',
                 'behavior': 'singleselect',
-                'child_items': [x for x in conf.get('flipped_lecture_quality_order')],
-                'default': conf.get('video_quality'),
-                'child_callbacks': [partial(Callbacks().on_video_quality_click, video_quality)
-                                    for video_quality in conf.get('flipped_lecture_quality')]
+                'child_items': [
+                    'highest',
+                    *[x for x in conf.get('flipped_lecture_quality_order')],
+                    'lowest'
+                ],
+                'default': conf.get('flipped_lecture_quality'),
+                'child_callbacks': [
+                    partial(Callbacks().on_video_quality_click, video_quality)
+                    for video_quality in ['highest', *conf.get('flipped_lecture_quality_order'), 'lowest']
+                ],
             },
             'sep': {
                 'type': 'separator',
