@@ -36,10 +36,13 @@ class Slides:
             if pushbutton.text() == ActionItems.slides_actions['download_slides']['text']:
                 pushbutton.clicked.connect(callbacks['download_slides'])
 
-                filepath = impartus.get_slides_path(metadata)
-                if metadata.get('slide_url') and metadata.get('slide_url') != '' \
-                        and filepath and not os.path.exists(filepath):
-                    pushbutton.setEnabled(True)
+                if impartus.is_authenticated():
+                    filepath = impartus.get_slides_path(metadata)
+                    if metadata.get('slide_url') and metadata.get('slide_url') != '' \
+                            and filepath and not os.path.exists(filepath):
+                        pushbutton.setEnabled(True)
+                    else:
+                        pushbutton.setEnabled(False)
                 else:
                     pushbutton.setEnabled(False)
             # open folder should be enabled, if folder exist
