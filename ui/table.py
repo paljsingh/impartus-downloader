@@ -19,7 +19,7 @@ from lib.utils import Utils
 from ui.common import Common
 from ui.data.Icons import Icons
 from ui.data.actionitems import ActionItems
-from ui.data.callbcks import Callbacks
+from ui.data.callbacks import Callbacks
 from ui.data.columns import Columns
 from ui.data.iconfiles import IconFiles
 from ui.progressbar import ProgressBar
