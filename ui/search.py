@@ -73,3 +73,4 @@ class SearchBox:
 
     def set_focus(self):
         self.search_box.setFocus()
+        self.search_box.selectAll()
