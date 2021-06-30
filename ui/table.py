@@ -29,6 +29,17 @@ from ui.videos import Videos
 
 
 class Table:
+    """
+    Table class:
+    Creates a table and provides methods to get / set table headers and its properties, as well as the table data..
+    Also own the handler methods called by the widgets contained in the table.
+
+    The handler methods defined here can/should be reused by the menu items event handlers (defined in callbacks.py).
+    Except for the difference that,
+    while the table class widgets have the required video / slides / captions available to them when creating the
+    widgets, the menu items handler first need to collect this info from the currently selected row / content
+    and then pass on that info to the handlers defined in this class.
+    """
 
     def __init__(self, impartus: Impartus):
         self.threads = dict()
@@ -317,6 +328,9 @@ class Table:
         captions_path = self.impartus.get_captions_path(self.data[ttid])
         status = Captions.save_as_captions(self.data.get(ttid), chat_msgs, captions_path)
 
+        # also update local copy of data
+        self.data[ttid]['captions_path'] = captions_path
+
         # set chat button false
         if not status:
             dc_button.setEnabled(True)
@@ -384,11 +398,11 @@ class Table:
                 widgets['download_slides'].setEnabled(True)
 
     def open_folder(self, ttid):     # noqa
-        folder_path = self.get_selected_row_folder()
+        folder_path = self.get_folder_from_ttid(ttid)
         Utils.open_file(folder_path)
 
     def attach_slides(self, ttid):       # noqa
-        folder_path = self.get_selected_row_folder()
+        folder_path = self.get_folder_from_ttid(ttid)
         conf = Config.load(ConfigType.IMPARTUS)
         filters = ['{} files (*.{})'.format(str(x).title(), x) for x in conf.get('allowed_ext')]
         filters_str = ';;'.join(filters)
@@ -432,18 +446,21 @@ class Table:
         if not ttid:
             return
 
-        video_path = self.data.get(ttid)['offline_filepath'] if self.data.get(ttid).get('offline_filepath') else None
-        if video_path:
-            return os.path.dirname(video_path)
-        slides_path = self.data.get(ttid)['backpack_slides'][0] if self.data.get(ttid).get('backpack_slides') else None
-        if slides_path:
-            return os.path.dirname(slides_path)
-        captions_path = self.data.get(ttid)['captions'][0] if self.data.get(ttid).get('captions') else None
-        if captions_path:
-            return os.path.dirname(captions_path)
+        return self.get_folder_from_ttid(ttid)
 
     def get_row_from_ttid(self, ttid: int):
         ttid_col_index = self.get_ttid_col()
         for i in range(self.table.rowCount()):
             if int(self.table.item(i, ttid_col_index).text()) == ttid:
                 return i
+
+    def get_folder_from_ttid(self, ttid: int):
+        video_path = self.data.get(ttid)['offline_filepath'] if self.data.get(ttid).get('offline_filepath') else None
+        if video_path:
+            return os.path.dirname(video_path)
+        slides_path = self.data.get(ttid)['backpack_slides'][0] if self.data.get(ttid).get('backpack_slides') else None
+        if slides_path:
+            return os.path.dirname(slides_path)
+        captions_path = self.data.get(ttid)['captions_path'] if self.data.get(ttid).get('captions_path') else None
+        if captions_path:
+            return os.path.dirname(captions_path)
