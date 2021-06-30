@@ -237,20 +237,24 @@ class Callbacks:
 
             item = QTreeWidgetItem(treewidget)
             item.setText(0, rel['tag_name'])
+            item.setTextAlignment(0, QtCore.Qt.AlignmentFlag.AlignTop)
             treewidget.addTopLevelItem(item)
 
             item1 = QTreeWidgetItem(item)
             item1.setText(0, 'Summary')
+            item1.setTextAlignment(0, QtCore.Qt.AlignmentFlag.AlignTop)
             item1.setText(1, rel['name'])
             item.addChild(item1)
 
             item2 = QTreeWidgetItem(item)
             item2.setText(0, 'Published on')
+            item2.setTextAlignment(0, QtCore.Qt.AlignmentFlag.AlignTop)
             item2.setText(1, rel['published_at'])
             item.addChild(item2)
 
             item3 = QTreeWidgetItem(item)
             item3.setText(0, 'Release Notes')
+            item3.setTextAlignment(0, QtCore.Qt.AlignmentFlag.AlignTop)
             item3.setText(1, rel['body'])
             item.addChild(item3)
 
@@ -261,7 +265,7 @@ class Callbacks:
         treewidget.resizeColumnToContents(1)
         treewidget.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOn)
 
-        for i in range(1, len(releases)-1):
+        for i in range(1, len(releases)):
             index = treewidget.model().index(i, 0)
             treewidget.collapse(index)
 
