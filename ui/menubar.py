@@ -76,6 +76,3 @@ class Menubar:
     def help_doc(self):  # noqa
         document_path = os.path.join(os.path.abspath(os.curdir), Docs.HELPDOC.value)
         Utils.open_file(document_path)
-
-    def check_updates(self):
-        pass
