@@ -49,6 +49,7 @@ class Slides:
                         pushbutton.setEnabled(False)
                 else:
                     pushbutton.setEnabled(False)
+
             # open folder should be enabled, if folder exist
             elif pushbutton.text() == ActionItems.slides_actions['open_folder']['text']:
                 pushbutton.clicked.connect(callbacks['open_folder'])
@@ -65,10 +66,19 @@ class Slides:
                 else:
                     pushbutton.setEnabled(False)
 
-            # attach slides is enabled always (creates a folder if one does not exist).
             elif pushbutton.text() == ActionItems.slides_actions['attach_slides']['text']:
-                pushbutton.clicked.connect(callbacks['attach_slides'])
-                pushbutton.setEnabled(True)
+
+                # attach slides is enabled, if at least one of the files exist.
+                video_path = metadata.get('offline_filepath')
+                slides_path = metadata.get('slides_path')
+                captions_path = metadata.get('captions_path')
+                if (video_path and os.path.exists(video_path)) or \
+                        (slides_path and os.path.exists(slides_path)) or \
+                        (captions_path and os.path.exists(captions_path)):
+                    pushbutton.setEnabled(True)
+                    pushbutton.clicked.connect(callbacks['attach_slides'])
+                else:
+                    pushbutton.setEnabled(False)
 
         return widget
 
@@ -77,7 +87,6 @@ class Slides:
         combo_box = QComboBox()
         combo_box.setMinimumWidth(100)
         combo_box.setMaximumWidth(100)
-        # combo_box.setItemDelegate()
 
         # retain size when hidden
         retain_size_policy = combo_box.sizePolicy()
