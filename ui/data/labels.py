@@ -2,6 +2,11 @@ import enum
 
 
 class Labels(enum.Enum):
+    """
+    Labels used throughout the application.
+    TODO: Remove unicode chars as their size and rendering can be platform and font specific, leading to uneven sized
+        or incorrectly displayed widgets.
+    """
     RELOAD = '⟳  Reload'
     AUTO_ORGANIZE = '⇄  Auto Organize Lectures'
     COLUMNS = '❘❘❘  Columns'
@@ -16,7 +21,3 @@ class Labels(enum.Enum):
     HELP = 'Help'
     APPLICATION_TITLE = 'Impartus Downloader'
     LOGIN_TITLE = 'Login - Impartus'
-
-    def __str__(self):
-        return str(self.value)
-

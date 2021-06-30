@@ -4,6 +4,10 @@ from ui.data.Icons import Icons
 
 
 class ActionItems:
+    """
+    Data required for the action items in table.py
+    """
+
     video_actions = {
         'download_video': {
             'tooltip': '{} Download Video'.format(Icons.DOWNLOAD_VIDEO.value),

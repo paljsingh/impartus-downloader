@@ -13,6 +13,9 @@ from lib.config import Config, ConfigType
 
 
 class Utils:
+    """
+    Utility functions.
+    """
 
     @classmethod
     def add_new_fields(cls, metadata):

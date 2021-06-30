@@ -1,15 +1,21 @@
 import os
 
 import requests
-from PySide2 import QtCore, QtWidgets
-from PySide2.QtCore import QObject, QModelIndex
-from PySide2.QtWidgets import QMainWindow, QDialog, QLabel, QTreeWidget, QTreeWidgetItem, QSizePolicy
+from PySide2 import QtCore
+from PySide2.QtCore import QObject
+from PySide2.QtWidgets import QMainWindow, QLabel, QTreeWidget, QTreeWidgetItem
 
 from lib import version
 from ui.dialog import Dialog
 
 
 class Callbacks:
+    """
+    Class to implement most (if not all) action handlers methods.
+    Presently owns almost all the menu item event handler.
+
+    Todo: Move the remaining menu items handlers here for better readability.
+    """
 
     def __new__(cls, *args, **kw):
         if not hasattr(cls, '_instance'):

@@ -9,6 +9,10 @@ from ui.data.menuitems import MenuItems
 
 
 class Menubar:
+    """
+    Responsible for creating menu entries. It picks up the menu items data specified in ui/data/menuitems.py
+    TODO: Move the remaining handler functions to callbacks.py
+    """
 
     def __init__(self, login_window: QMainWindow, content_window: QMainWindow):
         self.login_window = login_window

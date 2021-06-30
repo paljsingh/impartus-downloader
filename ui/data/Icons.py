@@ -2,6 +2,10 @@ import enum
 
 
 class Icons(enum.Enum):
+    """
+    Unicode chars for Icons
+    TODO: Use images instead of unicode chars due to their issues with size and rendering.
+    """
 
     DOWNLOAD_VIDEO = '⬇'
     PLAY_VIDEO = '▶'

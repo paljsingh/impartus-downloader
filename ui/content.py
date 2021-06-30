@@ -15,6 +15,11 @@ from ui.table import Table
 
 
 class ContentWindow(QMainWindow):
+    """
+    Content Window - provides a QTableWidget for displaying content, a search box for searching through the content.
+    Also maintains a copy of the data obtained from the online and offline workflows and responsible for merging the
+    two.
+    """
 
     def __init__(self, impartus: Impartus):
         QMainWindow.__init__(self, None)
@@ -46,6 +51,7 @@ class ContentWindow(QMainWindow):
         self.setCentralWidget(vcontainer_widget)
 
     def keyPressEvent(self, e):
+        # TODO: this can be moved to search class.
         if e.key() == QtCore.Qt.Key_Enter or e.key() == QtCore.Qt.Key_Return:
             self.search_box.search_next()
         elif e.key() == QtCore.Qt.Key_G and (e.modifiers() & QtCore.Qt.ShiftModifier) \
@@ -85,6 +91,7 @@ class ContentWindow(QMainWindow):
         Callbacks().set_pushbutton_statuses()
 
     def save_metadata(self, online_data):   # noqa
+        # TODO: move elsewhere.
         conf = Config.load(ConfigType.IMPARTUS)
         if conf.get('config_dir') and conf.get('config_dir').get(platform.system()) \
                 and conf.get('save_offline_lecture_metadata'):

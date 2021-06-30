@@ -2,6 +2,10 @@ import enum
 
 
 class ConfigKeys(enum.Enum):
+    """
+    class to hold all the entries specified in configuration files.
+    TODO: Ensure no code file directly uses a config key.
+    """
     URL = 'impartus_url'
     EMAIL = 'login_email'
     PASSWORD = 'password'

@@ -19,6 +19,10 @@ from ui.data.variables import Variables
 
 
 class Impartus:
+    """
+    wrapper methods to authenticate and fetch content from impartus platorm.
+    TODO: move the content aggregation / restructuring logic out of this class.
+    """
     def __init__(self, token=None):
         self.session = None
         self.token = None

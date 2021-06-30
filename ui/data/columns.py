@@ -3,6 +3,10 @@ from PySide2.QtWidgets import QHeaderView
 
 
 class Columns:
+    """
+    Table data headers and their properties.
+    Also provides a few helper methods for table header data.
+    """
     data_columns = {
         'subjectNameShort': {
             'alignment': Qt.AlignLeft,

@@ -15,6 +15,11 @@ from ui.data.variables import Variables
 
 
 class LoginWindow(QMainWindow):
+    """
+    Provides a Login window with a form to fill in credentials.
+    Also owns a few handler methods to act upon the events on the login form.
+    """
+
     def __init__(self, impartus: Impartus):
         super().__init__()
         self.conf = Config.load(ConfigType.CREDENTIALS)
@@ -29,7 +34,7 @@ class LoginWindow(QMainWindow):
         file = QFile("ui/login.ui")
         file.open(QFile.ReadOnly)
         login_form = loader.load(file, self)
-        self.setGeometry(400, 200, 800, 400)
+        self.setGeometry(400, 200, 800, 300)
         # window title
         self.setWindowTitle(Labels.LOGIN_TITLE.value)
         self.login_form = login_form

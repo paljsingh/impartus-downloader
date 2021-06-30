@@ -4,6 +4,11 @@ from PySide2extn.RoundProgressBar import roundProgressBar
 
 
 class ProgressBar(QWidget):
+    """
+    Progress bar:
+    The class provides either a QProgressbar (horizontal progress bar) or a round progressbar implemented via
+    PySide2extn.RoundProgressBar.
+    """
 
     def __init__(self, pb_type: str):
         super().__init__()

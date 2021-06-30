@@ -5,6 +5,10 @@ from ui.data.searchdirections import SearchDirection
 
 
 class SearchBox:
+    """
+    Class to provide search functionality.
+    TODO: separate the search_box creation code from the content search logic.
+    """
 
     def __init__(self, window: QMainWindow):
         self.window = window

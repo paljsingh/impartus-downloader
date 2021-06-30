@@ -4,12 +4,18 @@ import enum
 
 
 class ConfigType(enum.Enum):
+    """
+    enum for configuration types.
+    """
     CREDENTIALS = 1
     MAPPINGS = 2
     IMPARTUS = 3
 
 
 class Config:
+    """
+    class for loading configurations.
+    """
     config_maps = {
         ConfigType.CREDENTIALS: {'filepath': 'etc/creds.conf', 'method': 'yaml'},
         ConfigType.MAPPINGS: {'filepath': 'etc/mappings.conf', 'method': 'yaml'},

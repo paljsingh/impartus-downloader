@@ -8,6 +8,9 @@ from ui.data.columns import Columns
 
 
 class MenuItems:
+    """
+    declarative styled menu items.
+    """
 
     conf = Config.load(ConfigType.IMPARTUS)
     menu_items = {

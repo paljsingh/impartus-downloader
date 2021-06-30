@@ -10,6 +10,10 @@ from ui.menubar import Menubar
 
 
 class App:
+    """
+    Launches Qt application.
+    """
+
     def __init__(self):
         self.app = QtWidgets.QApplication([])
         self.app.setWindowIcon(QIcon(IconFiles.APP_LOGO.value))

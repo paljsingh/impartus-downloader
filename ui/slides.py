@@ -14,6 +14,10 @@ from ui.data.columns import Columns
 
 
 class Slides:
+    """
+    Responsible for creating widgets [slides_combobox, download_slides, open_folder, attach_slides] grouped under the
+    'Slides' header.
+    """
 
     @classmethod
     def add_slides_actions_buttons(cls, metadata, impartus: Impartus, callbacks: Dict):
@@ -100,6 +104,5 @@ class Slides:
         combo_box.show()
 
     @classmethod
-    def show_slides(cls, slides: List, index: int, *vargs, **kvargs):
-        print(index, *vargs, **kvargs)
+    def show_slides(cls, slides: List, index: int):
         Utils.open_file(slides[index - 1])

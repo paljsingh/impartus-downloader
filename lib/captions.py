@@ -8,6 +8,11 @@ from lib.config import ConfigType, Config
 
 
 class Captions:
+    """
+    Provides utility methods to create a closed captions file in webvtt format.
+    It uses the lecture chat data obtained from impartus api to create a captions file, that can be overlay-ed
+    as a subtitle/cc window while playing a lecture video.
+    """
 
     @classmethod
     def time_vtt_format(cls, value: int):

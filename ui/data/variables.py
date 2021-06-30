@@ -1,8 +1,7 @@
-
-
 class Variables(object):
     """
-    shared variables
+    Class to hold shared variables, implements a singleton.
+    TODO: Should table.offline_data / table.online_data be moved here?
     """
 
     _login_url = None
@@ -50,18 +49,3 @@ class Variables(object):
     def set_login_password(self, value: str):
         self._login_password = value
 
-    @property
-    def menu_actions_login_item(self):
-        return self._menu_actions_login_item
-
-    @menu_actions_login_item.setter
-    def menu_actions_login_item(self, value: str):
-        self._menu_actions_login_item = value
-
-    @property
-    def menu_actions_reload_item(self):
-        return self._menu_actions_reload_item
-
-    @menu_actions_reload_item.setter
-    def menu_actions_reload_item(self, value: str):
-        self._menu_actions_reload_item = value

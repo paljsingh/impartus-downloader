@@ -8,6 +8,9 @@ from ui.data.actionitems import ActionItems
 
 
 class Videos:
+    """
+    class responsible for creating widgets [download_video, play_video, download_chats] grouped under 'video' header.
+    """
 
     @classmethod
     def add_video_actions_buttons(cls, metadata, callbacks: Dict):

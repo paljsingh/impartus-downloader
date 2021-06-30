@@ -13,6 +13,10 @@ from ui.data.configkeys import ConfigKeys
 
 
 class Finder:
+    """
+    Class to find / aggregate offline data.
+    Responsible for collecting data from previously downloaded videos, slides and chat/captions files,
+    """
 
     def __init__(self):
         self.conf = Config.load(ConfigType.IMPARTUS)

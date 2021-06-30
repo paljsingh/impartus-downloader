@@ -5,6 +5,9 @@ from PySide2.QtWidgets import QHBoxLayout, QWidget, QPushButton, QCheckBox
 
 
 class Common:
+    """
+    Common utility methods around ui/widget creation.
+    """
 
     @classmethod
     def get_layout_widget(cls, widget: QWidget):
