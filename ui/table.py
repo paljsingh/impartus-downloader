@@ -45,8 +45,6 @@ class Table:
         self.threads = dict()
         self.conf = Config.load(ConfigType.IMPARTUS)
         self.impartus = impartus
-        self.row_count = None
-        self.col_count = None
         self.table = None
         self.data = None
         self.selected_row = None
@@ -63,13 +61,11 @@ class Table:
         self.table = table
         return table
 
-    def set_size(self, row_count: int, col_count: int):
-        self.row_count = row_count
-        self.col_count = col_count
-        self.table.setColumnCount(self.col_count)
-        self.table.setRowCount(self.row_count)
+    def _set_size(self, row_count: int, col_count: int):
+        self.table.setColumnCount(col_count)
+        self.table.setRowCount(row_count)
 
-    def set_headers(self):
+    def _set_headers(self):
         readonly_delegate = ReadOnlyDelegate()
 
         # header item for checkboxes column (TODO: check if it is possible to add a 'select all' checkbox here.)
@@ -97,7 +93,6 @@ class Table:
 
             self.table.horizontalHeader().setSectionResizeMode(index, val['resize_policy'])
             if val['hidden']:
-                # self.table.horizontalHeader().setSectionHidden(index, True)
                 self.table.setColumnHidden(index, True)
                 pass
 
@@ -204,11 +199,16 @@ class Table:
             self.table.setColumnHidden(col_index, True)
 
     def fill_table(self, data):
+        # clear does not reset the table size, do it explicitly.
+        self.table.clear()
+        self._set_size(0, 0)
+
+        # QTableWidget().clear
         col_count = Columns.get_columns_count()
         row_count = len(data)
 
-        self.set_size(row_count, col_count)
-        self.set_headers()
+        self._set_size(row_count, col_count)
+        self._set_headers()
 
         self.set_row_content(data)
         self.resizable_headers()
