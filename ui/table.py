@@ -129,6 +129,7 @@ class Table:
             # progress bar.
             progress_bar_widget = SortableRoundProgressbar()
             progress_bar_widget.setValue(0)
+            progress_bar_widget.setAlignment(Columns.widget_columns['progress_bar']['alignment'])
             self.table.setItem(index, col, progress_bar_widget.table_widget_item)
             self.table.setCellWidget(index, col, progress_bar_widget)
             if item.get('offline_filepath'):

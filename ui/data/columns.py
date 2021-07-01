@@ -9,7 +9,7 @@ class Columns:
     """
     data_columns = {
         'subjectNameShort': {
-            'alignment': Qt.AlignLeft,
+            'alignment': Qt.AlignLeft | Qt.AlignVCenter,
             'display_name': 'Subject',
             'editable': True,
             'hidden': False,
@@ -20,7 +20,7 @@ class Columns:
             'title_case': False,
         },
         'professorName': {
-            'alignment': Qt.AlignLeft,
+            'alignment': Qt.AlignLeft | Qt.AlignVCenter,
             'display_name': 'Faculty',
             'editable': False,
             'hidden': False,
@@ -31,7 +31,7 @@ class Columns:
             'title_case': True,
         },
         'topic': {
-            'alignment': Qt.AlignLeft,
+            'alignment': Qt.AlignLeft | Qt.AlignVCenter,
             'display_name': 'Topic',
             'editable': False,
             'hidden': False,
@@ -42,7 +42,7 @@ class Columns:
             'title_case': True,
         },
         'seqNo': {
-            'alignment': Qt.AlignRight,
+            'alignment': Qt.AlignRight | Qt.AlignVCenter,
             'display_name': 'Lecture #',
             'editable': False,
             'hidden': False,
@@ -53,7 +53,7 @@ class Columns:
             'title_case': False,
         },
         'actualDurationReadable': {
-            'alignment': Qt.AlignRight,
+            'alignment': Qt.AlignRight | Qt.AlignVCenter,
             'display_name': 'Duration',
             'editable': False,
             'hidden': False,
@@ -64,7 +64,7 @@ class Columns:
             'title_case': False,
         },
         'tapNToggle': {
-            'alignment': Qt.AlignRight,
+            'alignment': Qt.AlignRight | Qt.AlignVCenter,
             'display_name': 'Tracks',
             'editable': False,
             'hidden': False,
@@ -75,7 +75,7 @@ class Columns:
             'title_case': False,
         },
         'startDate': {
-            'alignment': Qt.AlignRight,
+            'alignment': Qt.AlignRight | Qt.AlignVCenter,
             'display_name': 'Date',
             'editable': False,
             'hidden': False,
@@ -89,7 +89,7 @@ class Columns:
 
     widget_columns = {
         'progress_bar': {
-            'alignment': Qt.AlignCenter,
+            'alignment': Qt.AlignHCenter | Qt.AlignVCenter,
             'display_name': 'Downloaded?',
             'editable': False,
             'hidden': False,
@@ -100,7 +100,7 @@ class Columns:
             'title_case': False,
         },
         'video_actions': {
-            'alignment': Qt.AlignCenter,
+            'alignment': Qt.AlignHCenter | Qt.AlignVCenter,
             'display_name': 'Video',
             'editable': False,
             'hidden': False,
@@ -111,7 +111,7 @@ class Columns:
             'title_case': False,
         },
         'slides_actions': {
-            'alignment': Qt.AlignRight,
+            'alignment': Qt.AlignHCenter | Qt.AlignVCenter,
             'display_name': 'Slides',
             'editable': False,
             'hidden': False,

@@ -28,7 +28,6 @@ class SortableRoundProgressbar(QWidget):
 
         # layout container.
         self.layout = QHBoxLayout()
-        self.layout.setAlignment(QtCore.Qt.AlignCenter)
         self.layout.setContentsMargins(0, 0, 0, 0)
 
         # add a progress bar to the layout.
@@ -42,6 +41,9 @@ class SortableRoundProgressbar(QWidget):
         self.setValue(0)
 
         self.setLayout(self.layout)
+
+    def setAlignment(self, alignment=QtCore.Qt.AlignCenter):
+        self.layout.setAlignment(alignment)
 
     def changeEvent(self, event: QEvent) -> None:
         """
