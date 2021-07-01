@@ -22,7 +22,7 @@ from ui.data.actionitems import ActionItems
 from ui.data.callbacks import Callbacks
 from ui.data.columns import Columns
 from ui.data.iconfiles import IconFiles
-from ui.progressbar import ProgressBar
+from ui.progressbar import SortableRoundProgressbar
 from ui.rodelegate import ReadOnlyDelegate
 from ui.slides import Slides
 from ui.videos import Videos
@@ -51,7 +51,6 @@ class Table:
 
     def add_table(self):    # noqa
         table = QTableWidget()
-        table.setSortingEnabled(True)
 
         table.setAlternatingRowColors(True)
         table.setStyleSheet('QTableView::item {{padding: 5px; margin: 0px;}}')
@@ -128,10 +127,12 @@ class Table:
             col = len(Columns.data_columns) + 1
 
             # progress bar.
-            progress_bar = ProgressBar('round')
-            self.table.setCellWidget(index, col, progress_bar)
+            progress_bar_widget = SortableRoundProgressbar()
+            progress_bar_widget.setValue(0)
+            self.table.setItem(index, col, progress_bar_widget.table_widget_item)
+            self.table.setCellWidget(index, col, progress_bar_widget)
             if item.get('offline_filepath'):
-                progress_bar.setValue(100)
+                progress_bar_widget.setValue(100)
             col += 1
 
             # video actions
@@ -200,10 +201,10 @@ class Table:
 
     def fill_table(self, data):
         # clear does not reset the table size, do it explicitly.
+        self.table.setSortingEnabled(False)
         self.table.clear()
         self._set_size(0, 0)
 
-        # QTableWidget().clear
         col_count = Columns.get_columns_count()
         row_count = len(data)
 
@@ -212,6 +213,7 @@ class Table:
 
         self.set_row_content(data)
         self.resizable_headers()
+        self.table.setSortingEnabled(True)
 
     def set_button_state(self, row: int, action_item: str, field: str, status: bool):
         col_index = Columns.get_column_index_by_key(action_item)
@@ -232,7 +234,7 @@ class Table:
             pause_event.set()
             resume_event.clear()
 
-    def _download_video(self, video_metadata, video_filepath, progressbar_widget: ProgressBar,
+    def _download_video(self, video_metadata, video_filepath, progressbar_widget: SortableRoundProgressbar,
                         pushbuttons: Dict, pause_ev, resume_ev):
         pushbuttons['download_video'].setText(Icons.PAUSE_DOWNLOAD.value)
         self.impartus.process_video(
