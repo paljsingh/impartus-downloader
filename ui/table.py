@@ -236,12 +236,12 @@ class Table:
     def pause_resume_button_click(self, download_button: CustomPushButton, pause_event, resume_event):   # noqa
         if pause_event.is_set():
             download_button.setIcon(Icons.VIDEO__PAUSE_DOWNLOAD.value)
-            download_button.setText('Pause Download')
+            download_button.setToolTip('Pause Download')
             resume_event.set()
             pause_event.clear()
         else:
             download_button.setIcon(Icons.VIDEO__RESUME_DOWNLOAD.value)
-            download_button.setText('Resume Download')
+            download_button.setToolTip('Resume Download')
             pause_event.set()
             resume_event.clear()
 
@@ -251,12 +251,12 @@ class Table:
         if value == 100:
             # update download button to show 'video under processing'
             download_button.setIcon(Icons.VIDEO__VIDEO_PROCESSING.value, animate=True)
-            download_button.setText('Processing Video...')
+            download_button.setToolTip('Processing Video...')
 
     def _download_video(self, video_metadata, video_filepath, progressbar_widget: SortableRoundProgressbar,
                         pushbuttons: Dict, pause_ev, resume_ev):
         pushbuttons['download_video'].setIcon(Icons.VIDEO__PAUSE_DOWNLOAD.value)
-        pushbuttons['download_video'].setText('Pause Download')
+        pushbuttons['download_video'].setToolTip('Pause Download')
 
         self.impartus.process_video(
             video_metadata,
@@ -267,7 +267,7 @@ class Table:
             video_quality='highest'
         )
         pushbuttons['download_video'].setIcon(Icons.VIDEO__DOWNLOAD_VIDEO.value)
-        pushbuttons['download_video'].setText('Download Video')
+        pushbuttons['download_video'].setToolTip('Download Video')
         pushbuttons['download_video'].setEnabled(False)
         pushbuttons['open_folder'].setEnabled(True)
         pushbuttons['play_video'].setEnabled(True)
