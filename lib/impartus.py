@@ -201,8 +201,11 @@ class Impartus:
         return self._get_sanitized_path(mkv_path)
 
     def get_slides_path(self, video_metadata):
-        slides_path = self.conf.get('slides_path').format(**video_metadata, target_dir=self.download_dir)
-        return self._get_sanitized_path(slides_path)
+        try:
+            slides_path = self.conf.get('slides_path').format(**video_metadata, target_dir=self.download_dir)
+            return self._get_sanitized_path(slides_path)
+        except KeyError as ex:
+            print('error: {}'.format(ex))
 
     def get_captions_path(self, video_metadata):
         captions_path = self.conf.get('captions_path').format(**video_metadata, target_dir=self.download_dir)
