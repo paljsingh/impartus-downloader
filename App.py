@@ -1,5 +1,5 @@
 from PySide2 import QtWidgets, QtCore
-from PySide2.QtGui import QIcon
+from PySide2.QtGui import QIcon, QGuiApplication, Qt
 
 from lib.impartus import Impartus
 from ui.data.callbacks import Callbacks
@@ -41,4 +41,6 @@ class App:
 
 if __name__ == '__main__':
     QtCore.QCoreApplication.setAttribute(QtCore.Qt.AA_ShareOpenGLContexts)
+    QGuiApplication.setAttribute(Qt.AA_EnableHighDpiScaling)
+    QGuiApplication.setAttribute(Qt.AA_UseHighDpiPixmaps)
     App().run()

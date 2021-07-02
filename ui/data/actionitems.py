@@ -10,40 +10,40 @@ class ActionItems:
 
     video_actions = {
         'download_video': {
-            'tooltip': '{} Download Video'.format(Icons.DOWNLOAD_VIDEO.value),
-            'text': Icons.DOWNLOAD_VIDEO.value,
+            'tooltip': 'Download Video',
+            'text': Icons.VIDEO__DOWNLOAD_VIDEO.value,
             'type': QPushButton,
         },
         'play_video': {
-            'tooltip': '{} Play Video'.format(Icons.PLAY_VIDEO.value),
-            'text': Icons.PLAY_VIDEO.value,
+            'tooltip': 'Play Video',
+            'text': Icons.VIDEO__PLAY_VIDEO.value,
             'type': QPushButton,
         },
         'download_chats': {
-            'tooltip': '{} Download Lecture Chats'.format(Icons.DOWNLOAD_CAPTIONS.value),
-            'text': Icons.DOWNLOAD_CAPTIONS.value,
+            'tooltip': 'Download Lecture Chats',
+            'text': Icons.SLIDES__DOWNLOAD_CAPTIONS.value,
             'type': QPushButton,
         },
     }
     slides_actions = {
         'show_slides': {
-            'tooltip': '{} Show Backpack Slides'.format(Icons.SHOW_SLIDES.value),
-            'text': Icons.DOWNLOAD_SLIDES.value,
+            'tooltip': 'Show Backpack Slides',
+            'text': Icons.SLIDES__DOWNLOAD_SLIDES.value,
             'type': QComboBox,
         },
         'download_slides': {
-            'tooltip': '{} Download Backpack Slides'.format(Icons.DOWNLOAD_SLIDES.value),
-            'text': Icons.DOWNLOAD_SLIDES.value,
+            'tooltip': 'Download Backpack Slides',
+            'text': Icons.SLIDES__DOWNLOAD_SLIDES.value,
             'type': QPushButton,
         },
         'open_folder': {
-            'tooltip': '{} Open Folder'.format(Icons.OPEN_FOLDER.value),
-            'text': Icons.OPEN_FOLDER.value,
+            'tooltip': 'Open Folder',
+            'text': Icons.VIDEO__OPEN_FOLDER.value,
             'type': QPushButton,
         },
         'attach_slides': {
-            'tooltip': '{} Attach Slides'.format(Icons.ATTACH_SLIDES.value),
-            'text': Icons.ATTACH_SLIDES.value,
+            'tooltip': 'Attach Slides',
+            'text': Icons.SLIDES__ATTACH_SLIDES.value,
             'type': QPushButton,
         },
     }

@@ -1,7 +1,11 @@
 from typing import Dict, Callable
 
 from PySide2 import QtCore
-from PySide2.QtWidgets import QHBoxLayout, QWidget, QPushButton, QCheckBox
+from PySide2.QtGui import QPalette
+from PySide2.QtWidgets import QHBoxLayout, QWidget, QPushButton, QCheckBox, QApplication, QGraphicsEffect
+import qtawesome as qta
+
+from ui.pushbutton import CustomPushButton
 
 
 class Common:
@@ -14,16 +18,19 @@ class Common:
         widget_layout = QHBoxLayout(widget)
         widget_layout.setSpacing(0)
         widget_layout.setMargin(0)
+        widget_layout.setContentsMargins(0, 0, 0, 0)
         return widget_layout
 
     @classmethod
     def add_actions_buttons(cls, actions: Dict):
         for key, val in actions.items():
             if val['type'] == QPushButton:
-                pushbutton = QPushButton()
-                pushbutton.setText(val['text'])
+                pushbutton = CustomPushButton()
+                pushbutton.setText('')
+                pushbutton.setObjectName(val['text'])
                 pushbutton.setToolTip(val['tooltip'])
-                pushbutton.setMaximumWidth(40)
+                pushbutton.setMaximumWidth(48)
+
                 yield pushbutton
 
     @classmethod
@@ -37,3 +44,4 @@ class Common:
         container_widget_layout.setContentsMargins(0, 0, 0, 0)
         container_widget.setLayout(container_widget_layout)
         return container_widget
+

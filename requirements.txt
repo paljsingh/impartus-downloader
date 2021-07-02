@@ -8,3 +8,5 @@ pytest-mock
 PyYAML~=5.4.1
 PySide2~=5.15.2
 PySide2extn~=1.0.0
+
+QtAwesome~=1.0.3

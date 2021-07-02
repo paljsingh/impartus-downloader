@@ -2,6 +2,7 @@ import os
 from functools import partial
 from typing import Dict, List
 
+import qtawesome as qta
 from PySide2.QtGui import QIcon
 from PySide2.QtWidgets import QComboBox, QWidget
 
@@ -11,6 +12,7 @@ from ui.common import Common
 from ui.data.Icons import Icons
 from ui.data.actionitems import ActionItems
 from ui.data.columns import Columns
+from ui.data.slideicons import SlideIcons
 
 
 class Slides:
@@ -37,7 +39,7 @@ class Slides:
             widget_layout.addWidget(pushbutton)
 
             # slides download is enabled if the slides file exists on server, but not locally.
-            if pushbutton.text() == ActionItems.slides_actions['download_slides']['text']:
+            if pushbutton.objectName() == ActionItems.slides_actions['download_slides']['text']:
                 pushbutton.clicked.connect(callbacks['download_slides'])
 
                 if impartus.is_authenticated():
@@ -51,7 +53,7 @@ class Slides:
                     pushbutton.setEnabled(False)
 
             # open folder should be enabled, if folder exist
-            elif pushbutton.text() == ActionItems.slides_actions['open_folder']['text']:
+            elif pushbutton.objectName() == ActionItems.slides_actions['open_folder']['text']:
                 pushbutton.clicked.connect(callbacks['open_folder'])
 
                 folder = None
@@ -66,7 +68,7 @@ class Slides:
                 else:
                     pushbutton.setEnabled(False)
 
-            elif pushbutton.text() == ActionItems.slides_actions['attach_slides']['text']:
+            elif pushbutton.objectName() == ActionItems.slides_actions['attach_slides']['text']:
 
                 # attach slides is enabled, if at least one of the files exist.
                 video_path = metadata.get('offline_filepath')
@@ -93,9 +95,15 @@ class Slides:
         retain_size_policy.setRetainSizeWhenHidden(True)
         combo_box.setSizePolicy(retain_size_policy)
         if item.get('backpack_slides'):
-            combo_box.addItem('{:4s} {:2d}'.format(Icons.SHOW_SLIDES, len(item['backpack_slides'])))
+            combo_box.addItem('{:2d}'.format(len(item['backpack_slides'])))
+            combo_box.setItemIcon(0, qta.icon(Icons.SLIDES__SHOW_SLIDES.value))
+
             for slide in item['backpack_slides']:
-                combo_box.addItem(QIcon(), os.path.basename(slide), slide)
+                combo_box.addItem(
+                    qta.icon(cls.get_icon_type(slide)),
+                    os.path.basename(slide),
+                    slide
+                )
             combo_box.activated.connect(
                 partial(Slides.show_slides, item['backpack_slides'])
             )
@@ -105,7 +113,7 @@ class Slides:
 
     @classmethod
     def add_combobox_items(cls, combo_box: QComboBox, items_text: List, items_data: List):
-        combo_box.addItem('{:4s} {:2d}'.format(Icons.SHOW_SLIDES, len(items_text)))
+        combo_box.addItem('{:4s} {:2d}'.format(Icons.SLIDES__SHOW_SLIDES, len(items_text)))
         for text, data in zip(items_text, items_data):
             combo_box.addItem(QIcon(), text, data)
         combo_box.activated.connect(partial(Slides.show_slides, items_data))
@@ -115,3 +123,11 @@ class Slides:
     @classmethod
     def show_slides(cls, slides: List, index: int):
         Utils.open_file(slides[index - 1])
+
+    @classmethod
+    def get_icon_type(cls, slide_path: str):
+        ext = slide_path.split('.')[-1]
+        if SlideIcons.filetypes.get(ext):
+            return SlideIcons.filetypes[ext]
+        else:
+            return Icons.SLIDES__FILETYPE_MISC.value

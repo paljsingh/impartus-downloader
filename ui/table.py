@@ -10,7 +10,7 @@ from threading import Event
 from PySide2 import QtCore
 from PySide2.QtGui import QIcon
 from PySide2.QtWidgets import QTableWidget, QAbstractScrollArea, QTableWidgetItem, QHeaderView, QFileDialog, \
-    QPushButton
+    QAbstractItemView
 
 from lib.captions import Captions
 from lib.config import Config, ConfigType
@@ -23,6 +23,7 @@ from ui.data.callbacks import Callbacks
 from ui.data.columns import Columns
 from ui.data.iconfiles import IconFiles
 from ui.progressbar import SortableRoundProgressbar
+from ui.pushbutton import CustomPushButton
 from ui.rodelegate import ReadOnlyDelegate
 from ui.slides import Slides
 from ui.videos import Videos
@@ -56,6 +57,11 @@ class Table:
         table.setStyleSheet('QTableView::item {{padding: 5px; margin: 0px;}}')
         table.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAsNeeded)
         table.setSizeAdjustPolicy(QAbstractScrollArea.AdjustToContents)
+
+        # disable multiple selection
+        table.setSelectionBehavior(QAbstractItemView.SelectItems)
+        table.setSelectionMode(QAbstractItemView.SingleSelection)
+
         table.viewport().setMaximumWidth(4000)
         self.table = table
         return table
@@ -144,6 +150,7 @@ class Table:
             }
             video_actions_widget = Videos.add_video_actions_buttons(item, callbacks)
             self.table.setCellWidget(index, col, video_actions_widget)
+            self.table.cellWidget(index, col).setContentsMargins(0, 0, 0, 0)
             col += 1
 
             # slides actions
@@ -225,28 +232,35 @@ class Table:
     VIDEOS
     """
 
-    def pause_resume_button_click(self, download_button: QPushButton, pause_event, resume_event):   # noqa
+    def pause_resume_button_click(self, download_button: CustomPushButton, pause_event, resume_event):   # noqa
         if pause_event.is_set():
-            download_button.setText(Icons.PAUSE_DOWNLOAD.value)
+            download_button.setIcon(Icons.VIDEO__PAUSE_DOWNLOAD.value)
             resume_event.set()
             pause_event.clear()
         else:
-            download_button.setText(Icons.RESUME_DOWNLOAD.value)
+            download_button.setIcon(Icons.VIDEO__RESUME_DOWNLOAD.value)
             pause_event.set()
             resume_event.clear()
 
+    def progress_callback(self, download_button: CustomPushButton,  # noqa
+                          progressbar_widget: SortableRoundProgressbar, value: int):
+        progressbar_widget.setValue(value)
+        if value == 100:
+            # update download button to show 'video under processing'
+            download_button.setIcon(Icons.VIDEO__VIDEO_PROCESSING.value, animate=True)
+
     def _download_video(self, video_metadata, video_filepath, progressbar_widget: SortableRoundProgressbar,
                         pushbuttons: Dict, pause_ev, resume_ev):
-        pushbuttons['download_video'].setText(Icons.PAUSE_DOWNLOAD.value)
+        pushbuttons['download_video'].setIcon(Icons.VIDEO__PAUSE_DOWNLOAD.value)
         self.impartus.process_video(
             video_metadata,
             video_filepath,
             pause_ev,
             resume_ev,
-            partial(progressbar_widget.setValue),
+            partial(self.progress_callback, pushbuttons['download_video'], progressbar_widget),
             video_quality='highest'
         )
-        pushbuttons['download_video'].setText(Icons.DOWNLOAD_VIDEO.value)
+        pushbuttons['download_video'].setIcon(Icons.VIDEO__DOWNLOAD_VIDEO.value)
         pushbuttons['download_video'].setEnabled(False)
         pushbuttons['open_folder'].setEnabled(True)
         pushbuttons['play_video'].setEnabled(True)
@@ -338,6 +352,7 @@ class Table:
         if not status:
             dc_button.setEnabled(True)
         else:
+            dc_button.setEnabled(False)
             of_button.setEnabled(True)
 
     """
