@@ -1,18 +1,15 @@
 import os
 from functools import partial
-from typing import Dict, List
+from typing import Dict
 
-import qtawesome as qta
-from PySide2.QtGui import QIcon
-from PySide2.QtWidgets import QComboBox, QWidget
+from PySide2.QtWidgets import QWidget
 
 from lib.impartus import Impartus
 from lib.utils import Utils
+from ui.combobox import CustomComboBox
 from ui.common import Common
-from ui.data.Icons import Icons
 from ui.data.actionitems import ActionItems
 from ui.data.columns import Columns
-from ui.data.slideicons import SlideIcons
 
 
 class Slides:
@@ -28,12 +25,13 @@ class Slides:
         widget_layout.setAlignment(Columns.widget_columns.get('slides_actions')['alignment'])
 
         # show slides combo box.
-        combo_box = Slides.add_slides_combobox(metadata)
-        widget_layout.addWidget(combo_box)
+        combo_box = CustomComboBox()
         if metadata.get('backpack_slides'):
             combo_box.show()
+            combo_box.add_items(metadata['backpack_slides'])
         else:
             combo_box.hide()
+        widget_layout.addWidget(combo_box)
 
         for pushbutton in Common.add_actions_buttons(ActionItems.slides_actions):
             widget_layout.addWidget(pushbutton)
@@ -83,51 +81,3 @@ class Slides:
                     pushbutton.setEnabled(False)
 
         return widget
-
-    @classmethod
-    def add_slides_combobox(cls, item):
-        combo_box = QComboBox()
-        combo_box.setMinimumWidth(100)
-        combo_box.setMaximumWidth(100)
-
-        # retain size when hidden
-        retain_size_policy = combo_box.sizePolicy()
-        retain_size_policy.setRetainSizeWhenHidden(True)
-        combo_box.setSizePolicy(retain_size_policy)
-        if item.get('backpack_slides'):
-            combo_box.addItem('{:2d}'.format(len(item['backpack_slides'])))
-            combo_box.setItemIcon(0, qta.icon(Icons.SLIDES__SHOW_SLIDES.value))
-
-            for slide in item['backpack_slides']:
-                combo_box.addItem(
-                    qta.icon(cls.get_icon_type(slide)),
-                    os.path.basename(slide),
-                    slide
-                )
-            combo_box.activated.connect(
-                partial(Slides.show_slides, item['backpack_slides'])
-            )
-            combo_box.model().item(0).setEnabled(False)
-
-        return combo_box
-
-    @classmethod
-    def add_combobox_items(cls, combo_box: QComboBox, items_text: List, items_data: List):
-        combo_box.addItem('{:4s} {:2d}'.format(Icons.SLIDES__SHOW_SLIDES, len(items_text)))
-        for text, data in zip(items_text, items_data):
-            combo_box.addItem(QIcon(), text, data)
-        combo_box.activated.connect(partial(Slides.show_slides, items_data))
-        combo_box.model().item(0).setEnabled(False)
-        combo_box.show()
-
-    @classmethod
-    def show_slides(cls, slides: List, index: int):
-        Utils.open_file(slides[index - 1])
-
-    @classmethod
-    def get_icon_type(cls, slide_path: str):
-        ext = slide_path.split('.')[-1]
-        if SlideIcons.filetypes.get(ext):
-            return SlideIcons.filetypes[ext]
-        else:
-            return Icons.SLIDES__FILETYPE_MISC.value

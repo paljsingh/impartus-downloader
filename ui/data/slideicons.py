@@ -42,3 +42,11 @@ class SlideIcons:
         'r': Icons.SLIDES__FILETYPE_CODE.value,
         'java': Icons.SLIDES__FILETYPE_CODE.value,
     }
+
+    @classmethod
+    def get_icon_type(cls, slide_path: str):
+        ext = slide_path.split('.')[-1]
+        if SlideIcons.filetypes.get(ext):
+            return SlideIcons.filetypes[ext]
+        else:
+            return Icons.SLIDES__FILETYPE_MISC.value

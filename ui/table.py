@@ -59,7 +59,7 @@ class Table:
         table.setSizeAdjustPolicy(QAbstractScrollArea.AdjustToContents)
 
         # disable multiple selection
-        table.setSelectionBehavior(QAbstractItemView.SelectItems)
+        # table.setSelectionBehavior(QAbstractItemView.SelectItems)
         table.setSelectionMode(QAbstractItemView.SingleSelection)
 
         table.viewport().setMaximumWidth(4000)
@@ -104,15 +104,15 @@ class Table:
             self.table.setHorizontalHeaderItem(index, widget)
 
         # sort icons.
-        self.table.horizontalHeader().setStyleSheet(
-            '''
-            QHeaderView::down-arrow {{image: url({sortdown}); width: 10px; height:9px; padding-right: 5px}}
-            QHeaderView::up-arrow {{image: url({sortup}); width: 10px; height:9px; padding-right: 5px}}
-            '''.format(
-                sortdown=IconFiles.SORT_DOWN_ARROW.value,
-                sortup=IconFiles.SORT_UP_ARROW.value,
-            )
-        )
+        # self.table.horizontalHeader().setStyleSheet(
+        #     '''
+        #     QHeaderView::down-arrow {{image: url({sortdown}); width: 10px; height:9px; padding-right: 5px}}
+        #     QHeaderView::up-arrow {{image: url({sortup}); width: 10px; height:9px; padding-right: 5px}}
+        #     '''.format(
+        #         sortdown=IconFiles.SORT_DOWN_ARROW.value,
+        #         sortup=IconFiles.SORT_UP_ARROW.value,
+        #     )
+        # )
         self.table.horizontalHeader().setSortIndicatorShown(True)
         return self
 
@@ -176,7 +176,9 @@ class Table:
 
     def resizable_headers(self):
         # Todo ...
-        return self
+        for i, (col, item) in enumerate([*Columns.data_columns.items(), *Columns.widget_columns.items()], 1):
+            if item.get('initial_size') and item['resize_policy'] != QHeaderView.ResizeMode.Stretch:
+                self.table.horizontalHeader().resizeSection(i, item.get('initial_size'))
 
     def on_click_checkbox(self, row):
         # if the same item is clicked again, do not do anything.
@@ -403,15 +405,7 @@ class Table:
             return_value = future.result()
 
             if return_value:
-                item_count = widgets['show_slides'].count()
-                all_items_text = []
-                all_items_data = []
-                if item_count:
-                    all_items_text = [widgets['show_slides'].itemData(i) for i in range(1, item_count)]
-                    all_items_data = [widgets['show_slides'].itemText(i) for i in range(1, item_count)]
-                all_items_text.append(os.path.basename(filepath))
-                all_items_data.append(filepath)
-                Slides.add_combobox_items(widgets['show_slides'], all_items_text, all_items_data)
+                widgets['show_slides'].add_items([filepath])
             else:
                 widgets['download_slides'].setEnabled(True)
 
@@ -432,8 +426,15 @@ class Table:
         )
         if not filepaths:
             return
+
+        row = self.get_row_from_ttid(ttid)
+        col = Columns.get_column_index_by_key('slides_actions')
+        ss_field = ActionItems.get_action_item_index('slides_actions', 'show_slides')
+        ss_combobox = self.table.cellWidget(row, col).layout().itemAt(ss_field).widget()
+
         for filepath in filepaths[0]:
-            shutil.copy(filepath, folder_path)
+            dest_path = shutil.copy(filepath, folder_path)
+            ss_combobox.add_items([dest_path])
 
     """
     MISC
