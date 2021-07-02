@@ -59,7 +59,6 @@ class Table:
         table.setSizeAdjustPolicy(QAbstractScrollArea.AdjustToContents)
 
         # disable multiple selection
-        # table.setSelectionBehavior(QAbstractItemView.SelectItems)
         table.setSelectionMode(QAbstractItemView.SingleSelection)
 
         table.viewport().setMaximumWidth(4000)
@@ -148,7 +147,7 @@ class Table:
                 'play_video': partial(self.play_video, ttid),
                 'download_chats': partial(self.download_chats, ttid)
             }
-            video_actions_widget = Videos.add_video_actions_buttons(item, callbacks)
+            video_actions_widget = Videos.add_video_actions_buttons(item, self.impartus, callbacks)
             self.table.setCellWidget(index, col, video_actions_widget)
             self.table.cellWidget(index, col).setContentsMargins(0, 0, 0, 0)
             col += 1
