@@ -167,6 +167,7 @@ class Callbacks:
             to_window=self.login_window,
         )
         self.set_menu_statuses()
+        self.login_window.validate_inputs()
 
     def on_column_click(self):
         pass
