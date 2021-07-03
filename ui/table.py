@@ -54,14 +54,16 @@ class Table:
         table = QTableWidget()
 
         table.setAlternatingRowColors(True)
-        table.setStyleSheet('QTableView::item {{padding: 5px; margin: 0px;}}')
-        table.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAsNeeded)
+        table.setContentsMargins(5, 0, 5, 0)
+        table.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
         table.setSizeAdjustPolicy(QAbstractScrollArea.AdjustToContents)
 
         # disable multiple selection
         table.setSelectionMode(QAbstractItemView.SingleSelection)
 
-        table.viewport().setMaximumWidth(4000)
+        screen_width = QtWidgets.QApplication.primaryScreen().size().width()
+        buffer = 70     # includes the window borders, vertical scrollbar, padding, row number field...
+        table.viewport().setMaximumWidth(screen_width - buffer)
         self.table = table
         return table
 
@@ -169,12 +171,10 @@ class Table:
             if item.get('initial_size') and item['resize_policy'] != QHeaderView.ResizeMode.Stretch:
                 self.table.horizontalHeader().resizeSection(i, item.get('initial_size'))
 
-        for i, col in enumerate([*Columns.data_columns, *Columns.widget_columns], 1):
+        for i in range(len(['id', *Columns.data_columns, *Columns.widget_columns])):
             self.table.horizontalHeader().setSectionResizeMode(i, QHeaderView.Interactive)
 
     def on_click_checkbox(self, checkbox: QCheckBox):
-        # checkbox.toggle()
-
         if self.prev_checkbox and self.prev_checkbox != checkbox:
             self.prev_checkbox.setChecked(False)
         self.prev_checkbox = checkbox
@@ -197,6 +197,8 @@ class Table:
         self.table.setSortingEnabled(False)
         self.table.clear()
         self._set_size(0, 0)
+
+        self.prev_checkbox = None
 
         col_count = Columns.get_columns_count()
         row_count = len(data)
