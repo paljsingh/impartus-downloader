@@ -211,28 +211,6 @@ class Impartus:
         captions_path = self.conf.get('captions_path').format(**video_metadata, target_dir=self.download_dir)
         return self._get_sanitized_path(captions_path)
 
-    def get_mkv_ttid_map(self):
-        mkv_ttid_map = dict()
-        for path in Path(self.download_dir).rglob('*.mkv'):
-            try:
-                with open(path, 'rb') as f:
-                    mkv = enzyme.MKV(f)
-                    if mkv.tags:
-                        for x in mkv.tags:
-                            for y in x.simpletags:
-                                if y.name == 'TTID':
-                                    mkv_ttid_map[y.string] = str(path)
-                                    raise GetOutOfLoop
-            except GetOutOfLoop:
-                pass
-            except enzyme.MalformedMKVError as ex:
-                self.logger.warning("Exception while parsing file {}".format(str(path)))
-                self.logger.warning("You may want to delete and re-download this file.")
-                self.logger.warning("Exception: {}".format(ex))
-                pass
-
-        return mkv_ttid_map
-
     def slides_exist_on_disk(self, path):
         path_without_ext = path.rsplit('.', 1)[0]
         for ext in self.conf.get('allowed_ext'):
