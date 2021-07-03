@@ -79,8 +79,7 @@ class Callbacks:
             logout_menu.setEnabled(False)
 
         table = self.content_window.table_container
-        selected_row = table.get_selected_row()
-        ttid = table.get_selected_row_ttid() if selected_row is not None else None
+        ttid = table.get_selected_row_ttid()
 
         # video menu
         video_menu = self.content_window.menuBar().findChild(QObject, 'Video')
@@ -89,19 +88,19 @@ class Callbacks:
         download_chats_menu = self.get_action(video_menu, 'Download Lecture Chats')
         # enable video download menu, when -
         # a row is checked, and the checked row needs a download.
-        if is_authenticated and selected_row is not None and not table.data[ttid].get('offline_filepath'):
+        if is_authenticated and ttid and not table.data[ttid].get('offline_filepath'):
             download_video_menu.setEnabled(True)
         else:
             download_video_menu.setEnabled(False)
 
-        if selected_row is not None and table.data[ttid].get('offline_filepath') \
+        if ttid and table.data[ttid].get('offline_filepath') \
                 and os.path.exists(table.data[ttid].get('offline_filepath')):
             play_video_menu.setEnabled(True)
         else:
             play_video_menu.setEnabled(False)
 
         # enable download captions, if captions file does not exist locally.
-        if is_authenticated and selected_row is not None and table.data[ttid]:
+        if is_authenticated and ttid and table.data[ttid]:
             captions_path = self.impartus.get_captions_path(table.data[ttid])
             if captions_path and not os.path.exists(captions_path):
                 download_chats_menu.setEnabled(True)
@@ -117,21 +116,21 @@ class Callbacks:
         attach_slides_menu = self.get_action(slides_menu, 'Attach Lecture Slides')
 
         # download slides button will ve enabled, if the slide exists on server, but not locally.
-        if is_authenticated and selected_row is not None and table.data[ttid].get('slide_url') and \
+        if is_authenticated and ttid and table.data[ttid].get('slide_url') and \
                 table.data[ttid].get('slide_path') and not os.path.exists(table.data[ttid].get('slide_path')):
             download_slides_menu.setEnabled(True)
         else:
             download_slides_menu.setEnabled(False)
 
         filepath = None
-        if selected_row is not None:
+        if ttid:
             for field in ['offline_filepath', 'slide_path', 'captions_path']:
                 if table.data[ttid].get(field):
                     filepath = table.data[ttid].get(field)
                     break
 
         directory = os.path.dirname(filepath) if filepath else None
-        if selected_row is not None and table.data[ttid].get('offline_filepath') and os.path.exists(directory):
+        if ttid and table.data[ttid].get('offline_filepath') and os.path.exists(directory):
             open_folder_menu.setEnabled(True)
             attach_slides_menu.setEnabled(True)
         else:
@@ -180,27 +179,27 @@ class Callbacks:
 
     def on_download_video_click(self):
         ttid = self.content_window.table_container.get_selected_row_ttid()
-        self.content_window.table_container.download_video(ttid)
+        self.content_window.table_container.on_click_download_video(ttid)
 
     def on_play_video_click(self):
         ttid = self.content_window.table_container.get_selected_row_ttid()
-        self.content_window.table_container.play_video(ttid)
+        self.content_window.table_container.on_click_play_video(ttid)
 
     def on_download_chats_click(self):
         ttid = self.content_window.table_container.get_selected_row_ttid()
-        self.content_window.table_container.download_chats(ttid)
+        self.content_window.table_container.on_click_download_chats(ttid)
 
     def on_download_slides_click(self):
         ttid = self.content_window.table_container.get_selected_row_ttid()
-        self.content_window.table_container.download_slides(ttid)
+        self.content_window.table_container.on_click_download_slides(ttid)
 
     def on_open_folder_click(self):
         ttid = self.content_window.table_container.get_selected_row_ttid()
-        self.content_window.table_container.open_folder(ttid)
+        self.content_window.table_container.on_click_open_folder(ttid)
 
     def on_attach_slides_click(self):
         ttid = self.content_window.table_container.get_selected_row_ttid()
-        self.content_window.table_container.attach_slides(ttid)
+        self.content_window.table_container.on_click_attach_slides(ttid)
 
     def on_check_for_updates_click(self):
         current_version = version.__version_info__
