@@ -61,8 +61,6 @@ class ContentWindow(QMainWindow):
             self.search_box.search_next()
 
     def work_offline(self):
-        if self.offline_data:
-            return
         self.offline_data = Finder().get_offline_content()
         self.table_container.fill_table(self.offline_data)
         self.search_box.set_table_widget_to_search(self.table_widget)
