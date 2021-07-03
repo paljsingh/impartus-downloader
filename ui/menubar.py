@@ -1,7 +1,8 @@
 import os
 
+from PySide2.QtCore import QPoint
 from PySide2.QtGui import QIcon
-from PySide2.QtWidgets import QAction, QMainWindow
+from PySide2.QtWidgets import QAction, QMainWindow, QActionGroup
 
 from lib.config import ConfigType, Config
 from lib.impartus import Impartus
@@ -31,29 +32,44 @@ class Menubar:
             level_1 = main_menu.addMenu(name)       # level_1: Actions_menu, View_menu ...
             level_1.setObjectName(name)
 
-            # for Login: {}, Reload: {} ... in
+            # for Login: {}, Reload: {}, flipped lecture quality: {}, columns: {} ... in
             for child_name, properties in value.items():
                 if properties.get('type') == 'separator':
                     level_1.addSeparator()
                 elif properties.get('type') == 'list':
+                    # list root    [flipped lecture video, Columns ... ]
                     submenu_item = QAction(QIcon(), child_name, self.content_window)
                     submenu_item.setCheckable(False)
-                    submenu_item.setObjectName(child_name)  # submenu_item: Col1_menu, Col2_menu ...
+                    submenu_item.setObjectName(child_name)
                     submenu_item.setEnabled(False)
                     level_1.addAction(submenu_item)
-                    for level2_child_name in properties['child_items']:     # level_2: View:Col1, View:Col2, Video: ...
+
+                    action_group = QActionGroup(level_1)
+                    if properties.get('behavior') == 'multiselect':
+                        action_group.setExclusive(False)
+                    else:
+                        action_group.setExclusive(True)
+
+                    # level_2: View:Col1,  View:Col2, Video: ...
+                    for i, (level2_child_name, callback) in enumerate(
+                            zip(properties['child_items'], properties['child_callbacks'])):
                         submenu_item = QAction(QIcon(), level2_child_name, self.content_window)
                         submenu_item.setCheckable(True)
                         submenu_item.setObjectName(level2_child_name)       # submenu_item: Col1_menu, Col2_menu ...
                         submenu_item.setEnabled(True)
-                        if properties.get('behavior') == 'checkall':
+                        action_group.addAction(submenu_item)
+
+                        if properties.get('behavior') == 'multiselect':
                             submenu_item.setChecked(True)
-                        elif properties.get('behavior') == 'checkone':
+                        elif properties.get('behavior') == 'singleselect':
                             submenu_item.setChecked(True) if level2_child_name == properties.get('default') \
                                 else submenu_item.setChecked(False)
                         else:
                             pass
+                        submenu_item.triggered.connect(callback)
+
                         level_1.addAction(submenu_item)
+
                 else:
                     level_2 = QAction(QIcon(), child_name, self.content_window)
                     level_2.setShortcut(properties['shortcut'])

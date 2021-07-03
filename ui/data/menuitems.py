@@ -53,7 +53,7 @@ class MenuItems:
                 'status_tip': None,
                 'type': 'list',
                 'status': 'disabled',
-                'behavior': 'checkall',
+                'behavior': 'multiselect',
                 'child_items':
                     [x['display_name'] for x in [*Columns.data_columns.values(), *Columns.widget_columns.values()]],
                 'child_callbacks': [partial(Callbacks().on_column_click, key)

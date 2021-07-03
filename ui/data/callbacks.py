@@ -169,15 +169,14 @@ class Callbacks:
         self.set_menu_statuses()
         self.login_window.validate_inputs()
 
-    def on_column_click(self):
-        pass
+    def on_column_click(self, column_name: str):
+        self.content_window.table_container.show_hide_column(column_name)
 
     def on_search_click(self):
         self.content_window.search_box.set_focus()
 
     def on_video_quality_click(self, video_quality: str):
-        # disable other menu items...
-        pass
+        self.impartus.conf['flipped_lecture_quality'] = video_quality
 
     def on_download_video_click(self):
         ttid = self.content_window.table_container.get_selected_row_ttid()
