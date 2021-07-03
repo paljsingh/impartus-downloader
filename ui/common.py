@@ -2,11 +2,9 @@ from functools import partial
 from typing import Dict, Callable
 
 from PySide2 import QtCore
-from PySide2.QtGui import QPalette
-from PySide2.QtWidgets import QHBoxLayout, QWidget, QPushButton, QCheckBox, QApplication, QGraphicsEffect
-import qtawesome as qta
+from PySide2.QtWidgets import QHBoxLayout, QWidget, QPushButton, QCheckBox
 
-from ui.pushbutton import CustomPushButton
+from ui.customwidgets.pushbutton import CustomPushButton
 
 
 class Common:

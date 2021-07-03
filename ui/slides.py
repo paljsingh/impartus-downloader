@@ -6,7 +6,7 @@ from PySide2.QtWidgets import QWidget
 
 from lib.impartus import Impartus
 from lib.utils import Utils
-from ui.combobox import CustomComboBox
+from ui.customwidgets.combobox import CustomComboBox
 from ui.common import Common
 from ui.data.actionitems import ActionItems
 from ui.data.columns import Columns

@@ -1,10 +1,10 @@
 from PySide2 import QtCore
 from PySide2.QtCore import QEvent
 from PySide2.QtGui import QPalette
-from PySide2.QtWidgets import QApplication, QTableWidgetItem, QHBoxLayout, QWidget
+from PySide2.QtWidgets import QApplication, QHBoxLayout, QWidget
 from PySide2extn.RoundProgressBar import roundProgressBar
 
-from ui.customtablewidgetitem import CustomTableWidgetItem
+from ui.customwidgets.tablewidgetitem import CustomTableWidgetItem
 
 
 class SortableRoundProgressbar(QWidget):

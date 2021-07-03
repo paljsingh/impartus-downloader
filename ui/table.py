@@ -11,20 +11,20 @@ import qtawesome as qta
 
 from PySide2 import QtCore, QtWidgets
 from PySide2.QtWidgets import QTableWidget, QAbstractScrollArea, QTableWidgetItem, QHeaderView, QFileDialog, \
-    QAbstractItemView, QCheckBox, QSizePolicy
+    QAbstractItemView, QCheckBox
 
 from lib.captions import Captions
 from lib.config import Config, ConfigType
 from lib.impartus import Impartus
 from lib.utils import Utils
 from ui.common import Common
-from ui.customtablewidgetitem import CustomTableWidgetItem
+from ui.customwidgets.tablewidgetitem import CustomTableWidgetItem
 from ui.data.Icons import Icons
 from ui.data.actionitems import ActionItems
 from ui.data.callbacks import Callbacks
 from ui.data.columns import Columns
 from ui.progressbar import SortableRoundProgressbar
-from ui.pushbutton import CustomPushButton
+from ui.customwidgets.pushbutton import CustomPushButton
 from ui.rodelegate import ReadOnlyDelegate
 from ui.slides import Slides
 from ui.videos import Videos
