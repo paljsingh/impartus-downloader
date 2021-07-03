@@ -3,11 +3,11 @@ Impartus Downloader
 
 Downloader for impartus streaming videos.
 
-- 🆕  Qt5 bsed ui.
-- 🆕  System themes supported
-- 🆕  Offline workflow to access previously downloaded lectures/slides.
-- 🆕  Content search.
-- 🆕  Better, responsive user experience.
+🔴  Qt5 bsed ui.  
+🔴 System theme colors supported.  
+🔴 Offline workflow to access previously downloaded lectures/slides.  
+🔴 Content search.  
+🔴 Better, responsive user experience.  
 
 - Convert impartus lectures to mkv files.
 - Regular and flipped lecture download supported.
