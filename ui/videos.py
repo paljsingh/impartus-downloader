@@ -26,13 +26,16 @@ class Videos:
             widget_layout.addWidget(pushbutton)
 
             # disable download button, if video exists locally.
-            if is_authenticated and pushbutton.objectName() == ActionItems.video_actions['download_video']['text']:
+            if pushbutton.objectName() == ActionItems.video_actions['download_video']['text']:
                 pushbutton.clicked.connect(callbacks['download_video'])
 
                 if metadata.get('offline_filepath'):
                     pushbutton.setEnabled(False)
                 else:
-                    pushbutton.setEnabled(True)
+                    if is_authenticated:
+                        pushbutton.setEnabled(True)
+                    else:
+                        pushbutton.setEnabled(False)
             elif pushbutton.objectName() == ActionItems.video_actions['play_video']['text']:
                 pushbutton.clicked.connect(callbacks['play_video'])
 
@@ -41,7 +44,7 @@ class Videos:
                     pushbutton.setEnabled(True)
                 else:
                     pushbutton.setEnabled(False)
-            elif is_authenticated and pushbutton.objectName() == ActionItems.video_actions['download_chats']['text']:
+            elif pushbutton.objectName() == ActionItems.video_actions['download_chats']['text']:
                 pushbutton.clicked.connect(callbacks['download_chats'])
 
                 # enable download chats button, if lecture chats file does not exist.
@@ -49,5 +52,8 @@ class Videos:
                 if filepath and os.path.exists(filepath):
                     pushbutton.setEnabled(False)
                 else:
-                    pushbutton.setEnabled(True)
+                    if is_authenticated:
+                        pushbutton.setEnabled(True)
+                    else:
+                        pushbutton.setEnabled(False)
         return widget
