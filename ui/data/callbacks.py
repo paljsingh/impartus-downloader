@@ -56,8 +56,8 @@ class Callbacks:
         else:
             login_menu.setEnabled(True)
 
-        # disable reload menu if any downloads are in progress.
-        if len(self.content_window.table_container.threads) > 0:
+        # disable reload menu if any downloads are in progress, or working offline.
+        if not is_authenticated or len(self.content_window.table_container.threads) > 0:
             reload_menu.setEnabled(False)
         else:
             reload_menu.setEnabled(True)
@@ -155,10 +155,10 @@ class Callbacks:
         self.set_menu_statuses()
 
     def on_reload_click(self):
-        pass
+        self.content_window.work_online()
 
     def on_auto_organize_click(self):
-        pass
+        print('auto organize called...')
 
     def on_logout_click(self):
         self.impartus.logout()
