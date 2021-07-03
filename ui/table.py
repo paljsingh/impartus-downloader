@@ -9,9 +9,9 @@ from threading import Event
 
 import qtawesome as qta
 
-from PySide2 import QtCore
+from PySide2 import QtCore, QtWidgets
 from PySide2.QtWidgets import QTableWidget, QAbstractScrollArea, QTableWidgetItem, QHeaderView, QFileDialog, \
-    QAbstractItemView, QCheckBox
+    QAbstractItemView, QCheckBox, QSizePolicy
 
 from lib.captions import Captions
 from lib.config import Config, ConfigType
@@ -20,6 +20,7 @@ from lib.utils import Utils
 from ui.common import Common
 from ui.data.Icons import Icons
 from ui.data.actionitems import ActionItems
+from ui.data.callbacks import Callbacks
 from ui.data.columns import Columns
 from ui.progressbar import SortableRoundProgressbar
 from ui.pushbutton import CustomPushButton
@@ -101,16 +102,6 @@ class Table:
 
             self.table.setHorizontalHeaderItem(index, widget)
 
-        # sort icons.
-        # self.table.horizontalHeader().setStyleSheet(
-        #     '''
-        #     QHeaderView::down-arrow {{image: url({sortdown}); width: 10px; height:9px; padding-right: 5px}}
-        #     QHeaderView::up-arrow {{image: url({sortup}); width: 10px; height:9px; padding-right: 5px}}
-        #     '''.format(
-        #         sortdown=IconFiles.SORT_DOWN_ARROW.value,
-        #         sortup=IconFiles.SORT_UP_ARROW.value,
-        #     )
-        # )
         self.table.horizontalHeader().setSortIndicatorShown(True)
         return self
 
@@ -178,12 +169,16 @@ class Table:
             if item.get('initial_size') and item['resize_policy'] != QHeaderView.ResizeMode.Stretch:
                 self.table.horizontalHeader().resizeSection(i, item.get('initial_size'))
 
+        for i, col in enumerate([*Columns.data_columns, *Columns.widget_columns], 1):
+            self.table.horizontalHeader().setSectionResizeMode(i, QHeaderView.Interactive)
+
     def on_click_checkbox(self, checkbox: QCheckBox):
         # checkbox.toggle()
 
         if self.prev_checkbox and self.prev_checkbox != checkbox:
             self.prev_checkbox.setChecked(False)
         self.prev_checkbox = checkbox
+        Callbacks().set_menu_statuses()
 
     def show_hide_column(self, column):
         col_index = None
@@ -212,6 +207,10 @@ class Table:
         self.set_row_content(data)
         self.resizable_headers()
         self.table.setSortingEnabled(True)
+
+        # show most recent lectures first.
+        self.table.sortByColumn(
+            Columns.get_column_index_by_key('startDate'), QtCore.Qt.SortOrder.DescendingOrder)
 
     def set_button_state(self, row: int, action_item: str, field: str, status: bool):
         col_index = Columns.get_column_index_by_key(action_item)
