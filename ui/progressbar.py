@@ -4,6 +4,8 @@ from PySide2.QtGui import QPalette
 from PySide2.QtWidgets import QApplication, QTableWidgetItem, QHBoxLayout, QWidget
 from PySide2extn.RoundProgressBar import roundProgressBar
 
+from ui.customtablewidgetitem import CustomTableWidgetItem
+
 
 class SortableRoundProgressbar(QWidget):
     """
@@ -96,16 +98,3 @@ class CustomRoundProgressBar(roundProgressBar):
 
     def value(self):
         return self.rpb_getValue()
-
-
-class CustomTableWidgetItem(QTableWidgetItem):
-
-    def __init__(self):
-        super().__init__()
-        self.value = None
-
-    def setValue(self, value: int):
-        self.value = value
-
-    def __lt__(self, other):
-        return self.value < other.value
