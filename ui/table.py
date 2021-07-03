@@ -7,10 +7,11 @@ from typing import Dict
 import concurrent.futures
 from threading import Event
 
+import qtawesome as qta
+
 from PySide2 import QtCore
-from PySide2.QtGui import QIcon
 from PySide2.QtWidgets import QTableWidget, QAbstractScrollArea, QTableWidgetItem, QHeaderView, QFileDialog, \
-    QAbstractItemView
+    QAbstractItemView, QCheckBox
 
 from lib.captions import Captions
 from lib.config import Config, ConfigType
@@ -19,9 +20,7 @@ from lib.utils import Utils
 from ui.common import Common
 from ui.data.Icons import Icons
 from ui.data.actionitems import ActionItems
-from ui.data.callbacks import Callbacks
 from ui.data.columns import Columns
-from ui.data.iconfiles import IconFiles
 from ui.progressbar import SortableRoundProgressbar
 from ui.pushbutton import CustomPushButton
 from ui.rodelegate import ReadOnlyDelegate
@@ -48,7 +47,7 @@ class Table:
         self.impartus = impartus
         self.table = None
         self.data = None
-        self.selected_row = None
+        self.prev_checkbox = None
 
     def add_table(self):    # noqa
         table = QTableWidget()
@@ -88,7 +87,7 @@ class Table:
             if not val['editable']:
                 self.table.setItemDelegateForColumn(index, readonly_delegate)
             else:
-                widget.setIcon(QIcon(IconFiles.EDITABLE_BLUE.value))
+                widget.setIcon(qta.icon(Icons.TABLE__EDITABLE_COLUMN.value))
 
             # disable sorting for some columns.
             if not val['sortable']:
@@ -119,7 +118,7 @@ class Table:
         self.data = data
         for index, (ttid, item) in enumerate(data.items()):
             # for each row, add a checkbox first.
-            container_widget = Common.add_checkbox_widget(partial(self.on_click_checkbox, index))
+            container_widget = Common.add_checkbox_widget(self.on_click_checkbox)
             self.table.setCellWidget(index, 0, container_widget)
 
             # enumerate rest of the columns from 1
@@ -179,22 +178,12 @@ class Table:
             if item.get('initial_size') and item['resize_policy'] != QHeaderView.ResizeMode.Stretch:
                 self.table.horizontalHeader().resizeSection(i, item.get('initial_size'))
 
-    def on_click_checkbox(self, row):
-        # if the same item is clicked again, do not do anything.
-        clicked_widget = self.table.cellWidget(row, 0).layout().itemAt(0).widget()
-        if not clicked_widget.isChecked():
-            self.selected_row = None
-            Callbacks().set_menu_statuses()
-            return
+    def on_click_checkbox(self, checkbox: QCheckBox):
+        # checkbox.toggle()
 
-        # keep only one checkbox selected at a time.
-        for i in range(self.table.rowCount()):
-            self.table.cellWidget(i, 0).layout().itemAt(0).widget().setChecked(False)
-        clicked_widget.setChecked(True)
-        self.selected_row = row
-
-        # Enable some of the menu buttons.
-        Callbacks().set_menu_statuses()
+        if self.prev_checkbox and self.prev_checkbox != checkbox:
+            self.prev_checkbox.setChecked(False)
+        self.prev_checkbox = checkbox
 
     def show_hide_column(self, column):
         col_index = None

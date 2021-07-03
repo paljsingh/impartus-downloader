@@ -1,3 +1,4 @@
+from functools import partial
 from typing import Dict, Callable
 
 from PySide2 import QtCore
@@ -37,7 +38,7 @@ class Common:
     def add_checkbox_widget(cls, callback: Callable):
         container_widget = QWidget()
         checkbox = QCheckBox()
-        checkbox.clicked.connect(callback)
+        checkbox.clicked.connect(partial(callback, checkbox))
         container_widget_layout = QHBoxLayout(container_widget)
         container_widget_layout.addWidget(checkbox)
         container_widget_layout.setAlignment(QtCore.Qt.AlignCenter)
