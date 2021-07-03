@@ -18,6 +18,7 @@ from lib.config import Config, ConfigType
 from lib.impartus import Impartus
 from lib.utils import Utils
 from ui.common import Common
+from ui.customtablewidgetitem import CustomTableWidgetItem
 from ui.data.Icons import Icons
 from ui.data.actionitems import ActionItems
 from ui.data.callbacks import Callbacks
@@ -135,24 +136,34 @@ class Table:
 
             # video actions
             callbacks = {
-                'download_video': partial(self.download_video, ttid),
-                'play_video': partial(self.play_video, ttid),
-                'download_chats': partial(self.download_chats, ttid)
+                'download_video': partial(self.on_click_download_video, ttid),
+                'play_video': partial(self.on_click_play_video, ttid),
+                'download_chats': partial(self.on_click_download_chats, ttid)
             }
-            video_actions_widget = Videos.add_video_actions_buttons(item, self.impartus, callbacks)
+            video_actions_widget, cell_value = Videos.add_video_actions_buttons(item, self.impartus, callbacks)
             self.table.setCellWidget(index, col, video_actions_widget)
             self.table.cellWidget(index, col).setContentsMargins(0, 0, 0, 0)
+
+            custom_item = CustomTableWidgetItem()
+            custom_item.setValue(cell_value)
+            self.table.setItem(index, col, custom_item)
+
             col += 1
 
             # slides actions
             callbacks = {
-                'download_slides': partial(self.download_slides, ttid),
-                'open_folder': partial(self.open_folder, ttid),
-                'attach_slides': partial(self.attach_slides, ttid),
+                'download_slides': partial(self.on_click_download_slides, ttid),
+                'open_folder': partial(self.on_click_open_folder, ttid),
+                'attach_slides': partial(self.on_click_attach_slides, ttid),
             }
-            slides_actions_widget = Slides.add_slides_actions_buttons(item, self.impartus, callbacks)
-
+            slides_actions_widget, cell_value = Slides.add_slides_actions_buttons(item, self.impartus, callbacks)
             self.table.setCellWidget(index, col, slides_actions_widget)
+
+            # numeric sort implemented via a Custom QTableWidgetItem
+            custom_item = CustomTableWidgetItem()
+            custom_item.setValue(cell_value)
+            self.table.setItem(index, col, custom_item)
+
             col += 1
 
             # hidden columns
@@ -262,7 +273,7 @@ class Table:
         pushbuttons['open_folder'].setEnabled(True)
         pushbuttons['play_video'].setEnabled(True)
 
-    def download_video(self, ttid: int):
+    def on_click_download_video(self, ttid: int):
         """
         callback function for Download button.
         Creates a thread to download the request video.
@@ -322,12 +333,12 @@ class Table:
         thread.start()
         self.data[ttid]['offline_filepath'] = video_filepath
 
-    def play_video(self, ttid):
+    def on_click_play_video(self, ttid):
         video_file = self.data[ttid]['offline_filepath']
         if video_file:
             Utils.open_file(video_file)
 
-    def download_chats(self, ttid):
+    def on_click_download_chats(self, ttid):
         row = self.get_row_from_ttid(ttid)
         col = Columns.get_column_index_by_key('video_actions')
         dc_field = ActionItems.get_action_item_index('video_actions', 'download_chats')
@@ -369,7 +380,7 @@ class Table:
             logger.error('Error', 'Error downloading slides, see console logs for details.')
             return False
 
-    def download_slides(self, ttid):  # noqa
+    def on_click_download_slides(self, ttid):  # noqa
         """
         callback function for Download button.
         Creates a thread to download the request video.
@@ -404,11 +415,11 @@ class Table:
             else:
                 widgets['download_slides'].setEnabled(True)
 
-    def open_folder(self, ttid):     # noqa
+    def on_click_open_folder(self, ttid):     # noqa
         folder_path = self.get_folder_from_ttid(ttid)
         Utils.open_file(folder_path)
 
-    def attach_slides(self, ttid):       # noqa
+    def on_click_attach_slides(self, ttid):       # noqa
         folder_path = self.get_folder_from_ttid(ttid)
         conf = Config.load(ConfigType.IMPARTUS)
         filters = ['{} files (*.{})'.format(str(x).title(), x) for x in conf.get('allowed_ext')]
@@ -453,14 +464,6 @@ class Table:
         col = self.get_ttid_col()
         if col:
             return int(self.table.item(row_index, col).text())
-
-    def get_selected_row_folder(self):
-        ttid = self.get_selected_row_ttid()
-
-        if not ttid:
-            return
-
-        return self.get_folder_from_ttid(ttid)
 
     def get_row_from_ttid(self, ttid: int):
         ttid_col_index = self.get_ttid_col()
