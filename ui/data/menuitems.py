@@ -126,7 +126,7 @@ class MenuItems:
             'Help': {
                 'shortcut': None,
                 'status_tip': 'Help docs',
-                'callback': partial(Utils.open_file, 'docs/helpdoc.pdf'),
+                'callback': Callbacks().on_help_doc,
             },
             'Check For Updates': {
                 'shortcut': None,

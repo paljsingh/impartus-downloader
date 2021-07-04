@@ -6,6 +6,8 @@ from PySide2.QtCore import QObject
 from PySide2.QtWidgets import QMainWindow, QLabel, QTreeWidget, QTreeWidgetItem
 
 from lib import version
+from lib.utils import Utils
+from ui.data.docs import Docs
 from ui.dialog import Dialog
 
 
@@ -267,6 +269,10 @@ class Callbacks:
         for i in range(1, len(releases)):
             index = treewidget.model().index(i, 0)
             treewidget.collapse(index)
+
+    def on_help_doc(self):  # noqa
+        document_path = os.path.join(os.path.abspath(os.curdir), Docs.HELPDOC.value)
+        Utils.open_file(document_path)
 
     def get_releases(self):
         url = 'https://api.github.com/repos/paljsingh/impartus-downloader/releases'
