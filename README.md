@@ -174,5 +174,50 @@ see etc/impartus.conf
 > 
 ---
 
+**System theme settings not picked up on Linux**
+
+On linux, PySide2 must be installed as system-wide package to access the currently selected theme settings.
+A pip based installation falls back to Fusion theme, and won't pick up the run time changes in the theme settings.
+
+Steps needed in order to use system theme settings on linux.
+
+remove pip Pyside2 installation:
+```
+$ pip3 uninstall PySide2
+```
+
+also remove any system wide Pyside2 pip install
+```
+$ sudo pip3 uninstall PySide2
+```
+
+Qt5ct is not needed, so just ensure the current envrionment does NOT have the Qt5ct variable
+```
+$ env | grep QT_QPA_PLATFORMTHEME
+```
+The above command should show empty result.
+
+Install PySide2 and dependent components as system wide package.
+
+```
+$ sudo apt-get install python3-pyside2.qtuitools python3-pyside2.qtwidgets libpyside2-py3-5.14
+```
+
+Ensure to use PySide2 api, in case there also exists a Qt5/Qt4 installation,
+```
+$ echo 'export QT_API=PySide2' >> ~/.bashrc 
+$ source ~/.bashrc
+$ python3 App.py
+```
+alternatively, one can run the app as:
+```
+$ QT_API=PySide2 python3 App.py
+```
+
+Ref: PySimpleGUI/PySimpleGUI#2437
+https://github.com/paljsingh/impartus-downloader/issues/80
+
+---
+
 
 Drop a mail to paljsingh@gmail.com in case of any issues/errors.
