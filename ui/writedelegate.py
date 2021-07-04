@@ -5,7 +5,6 @@ from PySide2.QtWidgets import QWidget, QStyleOptionViewItem, QLineEdit
 from PySide2.QtWidgets import QStyledItemDelegate
 from typing import Callable
 
-from lib.autovivify import AutoVivify
 from lib.config import ConfigType, Config
 from ui.data.columns import Columns
 
