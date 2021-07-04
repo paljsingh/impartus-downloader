@@ -28,6 +28,7 @@ from ui.customwidgets.pushbutton import CustomPushButton
 from ui.rodelegate import ReadOnlyDelegate
 from ui.slides import Slides
 from ui.videos import Videos
+from ui.writedelegate import WriteDelegate
 
 
 class Table:
@@ -51,6 +52,12 @@ class Table:
         self.data = None
         self.prev_checkbox = None
 
+        self.readonly_delegate = ReadOnlyDelegate()
+        self.write_delegate = WriteDelegate(self.get_data)
+
+    def get_data(self):
+        return self.data
+
     def add_table(self):    # noqa
         table = QTableWidget()
 
@@ -73,8 +80,6 @@ class Table:
         self.table.setRowCount(row_count)
 
     def _set_headers(self):
-        readonly_delegate = ReadOnlyDelegate()
-
         # header item for checkboxes column (TODO: check if it is possible to add a 'select all' checkbox here.)
         widget = QTableWidgetItem()
         widget.setText('')
@@ -89,9 +94,10 @@ class Table:
 
             # make the column read-only if editable property not set.
             if not val['editable']:
-                self.table.setItemDelegateForColumn(index, readonly_delegate)
+                self.table.setItemDelegateForColumn(index, self.readonly_delegate)
             else:
                 widget.setIcon(qta.icon(Icons.TABLE__EDITABLE_COLUMN.value))
+                self.table.setItemDelegateForColumn(index, self.write_delegate)
 
             # disable sorting for some columns.
             if not val['sortable']:
@@ -118,7 +124,7 @@ class Table:
             # enumerate rest of the columns from 1
             for col, (key, val) in enumerate(Columns.data_columns.items(), 1):
                 widget = QTableWidgetItem(str(item.get(key)))
-                widget.setTextAlignment(Columns.data_columns[key]['alignment'])
+                widget.setTextAlignment(val['alignment'])
                 self.table.setItem(index, col, widget)
 
             # total columns so far...

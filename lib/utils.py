@@ -10,6 +10,7 @@ import webbrowser
 from datetime import datetime
 
 from lib.config import Config, ConfigType
+from ui.data.columns import Columns
 
 
 class Utils:
@@ -39,15 +40,26 @@ class Utils:
             duration_min = (int(metadata.get('actualDuration')) % 3600) // 60
             metadata['actualDurationReadable'] = '{}:{:02d}h'.format(duration_hour, duration_min)
 
-            # create new field to hold shortened subject names.
-            mapping_item = 'subjectName'
-            metadata['subjectNameShort'] = metadata[mapping_item]
+            # We may want to display a shorter subject name, or a shorter faculty name (or any other field..)
+            # This is indicated by the presence of 'original_col_name' field in Columns.data_columns
+            col_mapping = {k: v['original_values_col'] for k, v in Columns.data_columns.items()
+                           if v.get('original_values_col')}
+
+            # for all such columns, load (if any) mappings exist in etc/mappings.conf
             mappings_conf = Config.load(ConfigType.MAPPINGS)
-            if mappings_conf.get(mapping_item):
-                for key, val in mappings_conf.get(mapping_item).items():
-                    if key == metadata[mapping_item]:
-                        metadata['subjectNameShort'] = val
-                        break
+            for new_col_name, orig_col_name in col_mapping.items():
+
+                metadata[new_col_name] = metadata[orig_col_name]  # default, if we can't find a mapping.
+
+                if mappings_conf.get(new_col_name):
+                    for mapping_key, mapping_val in mappings_conf[new_col_name].items():
+
+                        # create a new field in the metadata with the mapping value
+                        # e.g. metadata['subjectMameShort'] = 'ML'
+                        # where there exists another field: metadata['subjectName'] == 'DSE_SEC-1-MACHINE-LEARNING'
+                        if metadata[orig_col_name] == mapping_key:
+                            metadata[new_col_name] = mapping_val
+                            break
         except KeyError as ex:
             logger = logging.getLogger(cls.__name__)
             logger.warning('Error parsing lecture metadata - {}'.format(ex))
