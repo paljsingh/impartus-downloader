@@ -2,26 +2,30 @@ Impartus Downloader
 ===
 
 Downloader for impartus streaming videos.
-
-🔴  Qt5 bsed ui.  
-🔴 System theme colors supported.  
-🔴 Offline workflow to access previously downloaded lectures/slides.  
-🔴 Content search.  
-🔴 Better, responsive user experience.  
+---
 
 - Convert impartus lectures to mkv files.
 - Regular and flipped lecture download supported.
 - Tested on Mac OSX, Linux (ubuntu) and Windows 10.
 - Parallel downloads supported. 
+- Pause / Resume individual downloads.
 - Supports multi-track files. Tested with video lectures having up to 4 tracks.
 - Backpack slides download supported.
+-  🆕 Pyside2/Qt5 based ui.
+-  🆕 Bypass login screen to access previously downloaded content.
+-  🆕 Content Search.
+- Attach slides downloaded from external sources to the lecture folder.
+-  🆕 Option to view all the attached slides from the UI.
+-  🆕 Better management of the downloaded content.
 - Lecture chats overlayed as closed captions for the video.
-- Pause / Resume individual downloads.
+-  🆕 Download chats / captions file separately.
 - Editable subject field to use shorter subject names and better organize the folders.
 - Auto Organize lectures to match any change in lecture topic, subject. 
-- Attach slides downloaded from external sources to the lecture folder.
+-  🆕 Fast, Responsive UI.
+-  🆕 Supports system themes.
 - Sortable content.
-- Customizable color schemes, fonts.
+- 🆕 Better looking widgets.
+- 🆕 Round progress bar.
 - Configurable columns.
 
 
