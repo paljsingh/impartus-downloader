@@ -84,10 +84,10 @@ class Finder:
                             else:
                                 pattern = r'([a-zA-Z0-9\._-]+)(?=.*-[0-9]{4}-[0-9]{2}-[0-9]{2})'
                             field = match[1:len(match)-1]
-                            if re.match(pattern, copy_filepath):
-                                video_metadata[field] = re.match(pattern, copy_filepath).group(0)
-                            copy_filepath = re.sub(pattern, '', copy_filepath, 1)
-                            copy_filepath = re.sub(sep, '', copy_filepath, 1)
+                            if re.match(repr(pattern), copy_filepath):
+                                video_metadata[field] = re.match(repr(pattern), copy_filepath).group(0)
+                            copy_filepath = re.sub(repr(pattern), '', copy_filepath, 1)
+                            copy_filepath = re.sub(repr(sep), '', copy_filepath, 1)
 
                         video_metadata['tapNToggle'] = '?'
                         video_metadata['actualDurationReadable'] = '--:--'
