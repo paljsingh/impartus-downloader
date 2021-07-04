@@ -69,9 +69,7 @@ class ContentWindow(QMainWindow):
         Callbacks().set_pushbutton_statuses()
 
     def work_online(self):
-        if not self.offline_data:
-            self.offline_data = Finder().get_offline_content()
-
+        self.offline_data = Finder().get_offline_content()
         self.online_data = self.impartus.get_online_lectures()
         self.save_metadata(self.online_data)
 
