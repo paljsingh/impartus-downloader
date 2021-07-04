@@ -14,6 +14,8 @@ class Columns:
             'editable': True,
             'hidden': False,
             'menu_tooltip': 'Subject',
+            # provide a mapping to original values column, if you want to present a column values differently, *and*
+            # need to persist the changes via etc/mappings.conf
             'original_values_col': 'subjectName',
             'resize_policy': QHeaderView.ResizeMode.Fixed,
             'initial_size': 200,
