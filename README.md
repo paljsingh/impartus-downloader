@@ -3,6 +3,12 @@ Impartus Downloader
 
 Downloader for impartus streaming videos.
 
+🔴  Qt5 bsed ui.  
+🔴 System theme colors supported.  
+🔴 Offline workflow to access previously downloaded lectures/slides.  
+🔴 Content search.  
+🔴 Better, responsive user experience.  
+
 - Convert impartus lectures to mkv files.
 - Regular and flipped lecture download supported.
 - Tested on Mac OSX, Linux (ubuntu) and Windows 10.
@@ -17,81 +23,88 @@ Downloader for impartus streaming videos.
 - Sortable content.
 - Customizable color schemes, fonts.
 - Configurable columns.
-- Color scheme change via the UI.
+
 
 ---
 
 ### UI
-![Impartus Downloader](etc/impartus-ui.gif "Impartus Downloader")
+![Impartus Downloader](ui/images/ui-demo.gif "Impartus Downloader")
 
 
 ### Demo video
-[![Impartus v3 demo](https://img.youtube.com/vi/LC0QEABmLSc/0.jpg)](https://www.youtube.com/watch?v=LC0QEABmLSc)
-
+[TBA]
 ---
+
+## Prerequisites
+
+python >= v3.6
+ffmpeg >= v4.0
 
 ## Installation / Run
 
+### OSX (10.14+)
 
-Ensure python version is >= 3.6
-
-#### Setup virtualenv (optional)
->	$ virtualenv venv
+>   ```
+> # setup virtualenv (optional)
+> $ virtualenv venv
+> $ source venv/bin/activate 
 >
->	$ source venv/bin/activate 
-
-#### Clone repo
->	$ git clone https://github.com/paljsingh/impartus-downloader.git
+> # clone repo
+> $ git clone https://github.com/paljsingh/impartus-downloader.git
+> $ cd impartus-downloader
 >
->	$ cd impartus-downloader
-
-#### Install dependencies
-
-- OSX, Linux
-
->  
->	$ pip3 install -r requirements.txt
->
-
-- Windows
-
->  
->	$ pip3.exe install -r requirements.txt
->
-
-
-#### Install ffmpeg
-
-- OSX
->
+> # install dependencies
+> $ pip3 install -r requirements.txt
 > $ brew install ffmpeg
 > 
-
-- Linux (Ubuntu)
+> # Ensure ffmpeg version is >= 4.3.0
+> $ ffmpeg -version 
 >
-> $ sudo apt-get install ffmpeg
-> 
-
-- Windows
-> Download the win64-gpl zip from the following link, extract and copy ffmpeg.exe to
->  impartus-downloader folder. The ffmpeg.exe statically bundles the dependent libs and
-> should be about 90 MB in size.
-> 
-> [https://github.com/BtbN/FFmpeg-Builds/releases](https://github.com/BtbN/FFmpeg-Builds/releases)
->
-
-
-#### Run application
-
-- OSX, Linux
->
+> # Run application
 > $ python3 App.py
->
+> ```
 
-- Windows
+Windows 10
+>```
+> # clone repo
+> $ git.exe clone https://github.com/paljsingh/impartus-downloader.git
+> $ cd impartus-downloader
 >
+> # install dependencies
+> $ pip3.exe install -r requirements.txt
+>
+> Download win64-gpl zip from the following link, extract and copy ffmpeg.exe to
+> impartus-downloader folder. The ffmpeg.exe statically bundles the dependent libs and
+> should be about 90 MB in size.
+> [https://github.com/BtbN/FFmpeg-Builds/releases](https://github.com/BtbN/FFmpeg-Builds/releases)
+> 
+> # Ensure ffmpeg version is >= 4.3.0
+> $ ffmpeg.exe -version 
+>
+> # Run application
 > $ python.exe App.py
+> ```
+
+Linux (Ubuntu 20+)
+>```
+> # setup virtualenv (optional)
+> $ virtualenv venv
+> $ source venv/bin/activate 
 >
+> # clone repo
+> $ git clone https://github.com/paljsingh/impartus-downloader.git
+> $ cd impartus-downloader
+>
+> # install dependencies
+> $ pip3 install -r requirements.txt
+> $ sudo apt-get install ffmpeg
+>
+> # Ensure ffmpeg version is >= 4.3.0
+> $ ffmpeg -version 
+>
+> # Run application
+> $ python3 App.py
+> ```
 
 
 ## Configuration
@@ -101,20 +114,15 @@ see etc/impartus.conf
 
 ## Unit Tests
 
->
+> FIXME:
+> 
 > $ python3 -m pytest -v test
 >
 
 ---
 
-## Todo
-* Option to download auto-generated slides.
-* Add metadata tags to slides to preserve mapping across lecture topic / video rename.
-* Improve fuzzy matching of videos to slides by making use of slide name and content.
-
----
-
 ## Known Issues
+
 **Incorrect lecture slide associated to a video**
 
 > The impartus platform does not offer a strict video to lecture slides mapping, the application uses the upload dates of the two for a fuzzy match. 
@@ -154,13 +162,13 @@ see etc/impartus.conf
 > 
 >  Save and restart VLC.
 > 
-![Setting background opacity in VLC](etc/vlc-bg-opacity.png "Setting background opacity in VLC")
+> ![Setting background opacity in VLC](ui/images/vlc-bg-opacity.png "Setting background opacity in VLC")
 >
 > Below is a sample output of the opacity change.
 >
-![Background Opacity](etc/bg-opacity.png "Background Opacity")
-
->  
+> ![Background Opacity](ui/images/bg-opacity.png "Background Opacity")
+> 
 ---
+
 
 Drop a mail to paljsingh@gmail.com in case of any issues/errors.

@@ -1,11 +1,18 @@
+from datetime import datetime
 from typing import List
 import html
 import os
+import logging
 
 from lib.config import ConfigType, Config
 
 
 class Captions:
+    """
+    Provides utility methods to create a closed captions file in webvtt format.
+    It uses the lecture chat data obtained from impartus api to create a captions file, that can be overlay-ed
+    as a subtitle/cc window while playing a lecture video.
+    """
 
     @classmethod
     def time_vtt_format(cls, value: int):
@@ -112,6 +119,19 @@ STYLE
         os.makedirs(os.path.dirname(filepath), exist_ok=True)
         with open(filepath, 'w+') as fh:
             fh.write(vtt_content)
+
+    @classmethod
+    def save_as_captions(cls, video_metadata, chat_msgs, captions_path):
+        date_format = "%Y-%m-%d %H:%M:%S"
+        start_epoch = int(datetime.strptime(video_metadata['startTime'], date_format).timestamp())
+        try:
+            vtt_content = Captions.get_vtt(chat_msgs, start_epoch)
+            Captions.save_vtt(vtt_content, captions_path)
+        except CaptionsNotFound:
+            logger = logging.getLogger(cls.__name__)
+            logger.info("no lecture chat found for {}".format(captions_path))
+            return
+        return True
 
 
 class CaptionsNotFound(Exception):

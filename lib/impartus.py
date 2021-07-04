@@ -1,6 +1,8 @@
 import os
 import re
 import time
+from typing import List
+
 import requests
 import logging
 from pathlib import Path
@@ -13,9 +15,14 @@ from lib.utils import Utils
 from lib.media.encoder import Encoder
 from lib.media.m3u8parser import M3u8Parser
 from lib.media.decrypter import Decrypter
+from ui.data.variables import Variables
 
 
 class Impartus:
+    """
+    wrapper methods to authenticate and fetch content from impartus platorm.
+    TODO: move the content aggregation / restructuring logic out of this class.
+    """
     def __init__(self, token=None):
         self.session = None
         self.token = None
@@ -46,7 +53,9 @@ class Impartus:
         self.temp_downloads_dir = os.path.join(Utils.get_temp_dir(), 'impartus.media')
         os.makedirs(self.temp_downloads_dir, exist_ok=True)
 
-    def _download_m3u8(self, root_url, ttid, flipped=False, video_quality='highest'):
+    def _download_m3u8(self, ttid, flipped=False, flipped_lecture_quality='highest'):
+        root_url = Variables().login_url()
+
         if flipped:
             master_url = '{}/api/fetchvideo?fcid={}&token={}&type=index.m3u8'.format(root_url, ttid, self.token)
         else:
@@ -61,12 +70,12 @@ class Impartus:
 
         url = None
         if flipped:
-            if video_quality == 'highest':
+            if flipped_lecture_quality == 'highest':
                 url = self.get_url_for_highest_quality_video(m3u8_urls)
-            elif video_quality == 'lowest':
+            elif flipped_lecture_quality == 'lowest':
                 url = self.get_url_for_lowest_quality_video(m3u8_urls)
             else:  # given a specific resolution.
-                url = self.get_url_for_resolution(m3u8_urls, video_quality)
+                url = self.get_url_for_resolution(m3u8_urls, flipped_lecture_quality)
         elif len(m3u8_urls) > 0:
             url = m3u8_urls[0]
 
@@ -77,13 +86,13 @@ class Impartus:
         return None
 
     def get_url_for_highest_quality_video(self, m3u8_urls):
-        for resolution in self.conf.get('video_quality_order'):
+        for resolution in self.conf.get('flipped_lecture_quality_order'):
             for url in m3u8_urls:
                 if resolution in url:
                     return url
 
     def get_url_for_lowest_quality_video(self, m3u8_urls):
-        for resolution in reversed(self.conf.get('video_quality_order')):
+        for resolution in reversed(self.conf.get('flipped_lecture_quality_order')):
             for url in m3u8_urls:
                 if resolution in url:
                     return url
@@ -93,7 +102,7 @@ class Impartus:
             if resolution in url:
                 return url
 
-    def process_video(self, video_metadata, mkv_filepath, root_url, pause_ev, resume_ev, progress_callback_func,
+    def process_video(self, video_metadata, mkv_filepath, pause_ev, resume_ev, progress_callback_func,
                       video_quality='highest'):
         """
         Download video and decrypt, join, encode to mkv
@@ -112,7 +121,7 @@ class Impartus:
 
         self.logger.info("[{}]: Starting download for {}".format(ttid, mkv_filepath))
         # download media files for this video.
-        m3u8_content = self._download_m3u8(root_url, ttid, flipped, video_quality)
+        m3u8_content = self._download_m3u8(ttid, flipped, video_quality)
         if m3u8_content:
             summary, tracks_info = M3u8Parser(m3u8_content, num_tracks=number_of_tracks).parse()
             download_dir = os.path.join(self.temp_downloads_dir, str(ttid))
@@ -192,34 +201,15 @@ class Impartus:
         return self._get_sanitized_path(mkv_path)
 
     def get_slides_path(self, video_metadata):
-        slides_path = self.conf.get('slides_path').format(**video_metadata, target_dir=self.download_dir)
-        return self._get_sanitized_path(slides_path)
+        try:
+            slides_path = self.conf.get('slides_path').format(**video_metadata, target_dir=self.download_dir)
+            return self._get_sanitized_path(slides_path)
+        except KeyError as ex:
+            print('error: {}'.format(ex))
 
     def get_captions_path(self, video_metadata):
         captions_path = self.conf.get('captions_path').format(**video_metadata, target_dir=self.download_dir)
         return self._get_sanitized_path(captions_path)
-
-    def get_mkv_ttid_map(self):
-        mkv_ttid_map = dict()
-        for path in Path(self.download_dir).rglob('*.mkv'):
-            try:
-                with open(path, 'rb') as f:
-                    mkv = enzyme.MKV(f)
-                    if mkv.tags:
-                        for x in mkv.tags:
-                            for y in x.simpletags:
-                                if y.name == 'TTID':
-                                    mkv_ttid_map[y.string] = str(path)
-                                    raise GetOutOfLoop
-            except GetOutOfLoop:
-                pass
-            except enzyme.MalformedMKVError as ex:
-                self.logger.warning("Exception while parsing file {}".format(str(path)))
-                self.logger.warning("You may want to delete and re-download this file.")
-                self.logger.warning("Exception: {}".format(ex))
-                pass
-
-        return mkv_ttid_map
 
     def slides_exist_on_disk(self, path):
         path_without_ext = path.rsplit('.', 1)[0]
@@ -229,7 +219,9 @@ class Impartus:
                 return True, path_with_ext
         return False, path
 
-    def get_lectures(self, root_url, subject):
+    def get_lectures(self, subject):
+        root_url = Variables().login_url()
+
         response = self.session.get('{}/api/subjects/{}/lectures/{}'.format(
             root_url, subject.get('subjectId'), subject.get('sessionId')))
 
@@ -238,7 +230,9 @@ class Impartus:
         else:
             return []
 
-    def get_flipped_lectures(self, root_url, subject):
+    def get_flipped_lectures(self, subject):
+        root_url = Variables().login_url()
+
         flipped_lectures = []
         response = self.session.get('{}/api/subjects/flipped/{}/{}'.format(
             root_url, subject.get('subjectId'), subject.get('sessionId')))
@@ -267,7 +261,8 @@ class Impartus:
                     flipped_lectures.append(flipped_lecture)
         return flipped_lectures
 
-    def get_slides(self, root_url, subject):
+    def get_slides(self, subject):
+        root_url = Variables().login_url()
         response = self.session.get('{}/api/subjects/backpack/{}/sessions/{}'.format(
             root_url, subject.get('subjectId'), subject.get('sessionId')))
         if response.status_code == 200:
@@ -275,14 +270,16 @@ class Impartus:
         else:
             return []
 
-    def get_subjects(self, root_url):
+    def get_subjects(self):
+        root_url = Variables().login_url()
         response = self.session.get('{}/api/subjects'.format(root_url))
         if response.status_code == 200:
             return response.json()
         else:
             return []
 
-    def get_chats(self, video_metadata, root_url):
+    def get_chats(self, video_metadata):
+        root_url = Variables().login_url()
         response = self.session.get('{}/api/videos/{}/chat'.format(
             root_url, video_metadata['ttid']))
 
@@ -291,7 +288,8 @@ class Impartus:
         else:
             return []
 
-    def download_slides(self, ttid, file_url, filepath, root_url):
+    def download_slides(self, ttid, file_url, filepath):
+        root_url = Variables().login_url()
 
         if str(file_url).startswith('http'):
             urls = re.findall(r'(https?://\S+)', file_url)
@@ -318,7 +316,11 @@ class Impartus:
                     ttid, response.status_code, response.text))
         return download_status
 
-    def map_slides_to_videos(self, videos_metadata, slides_metadata):
+    def map_slides_to_videos(self, videos_metadata: List, slides_metadata: List):
+        """
+        map all videos to corresponding backpack slides.
+        return a mapping dict.
+        """
         mapping = dict()
         # slides upload threshold... expect slides be uploaded within N days of video upload.
         threshold_duration = self.conf.get('slides_upload_window')
@@ -331,13 +333,17 @@ class Impartus:
                     mapping[video_item['ttid']] = slide_item['filePath']
         return mapping
 
-    def authenticate(self, username, password, url):
+    def login(self):
+        root_url = Variables().login_url()
+        username = Variables().login_email()
+        password = Variables().login_password()
+
         self.session = requests.Session()
         data = {
             'username': username,
             'password': password
         }
-        url = '{}/api/auth/signin'.format(url)
+        url = '{}/api/auth/signin'.format(root_url)
         response = self.session.post(url, json=data, timeout=30)
         if response.status_code == 200:
             self.token = response.json()['token']
@@ -348,6 +354,50 @@ class Impartus:
             self.logger.error('Error authenticating to {} with username {}.'.format(url, username))
             self.logger.error('Http response code: {}, response body: {}: '.format(response.status_code, response.text))
             return False
+
+    def logout(self):
+        self.session = None
+        self.token = None
+
+        # Really Impartus? No server api to logout ?
+        pass
+
+    def is_authenticated(self):
+        return True if self.session else False
+
+    def get_online_lectures(self):
+        online_lectures = dict()
+        for subject in self.get_subjects():
+            videos_per_subject = list()
+            regular_lectures = self.get_lectures(subject=subject)
+            flipped_lectures = self.get_flipped_lectures(subject=subject)
+
+            for metadata in regular_lectures:
+                online_lectures[metadata['ttid']] = Utils.add_new_fields(metadata)
+            for metadata in flipped_lectures:
+                online_lectures[metadata['fcid']] = Utils.add_new_fields(metadata)
+
+            videos_per_subject.extend(regular_lectures)
+            videos_per_subject.extend(flipped_lectures)
+
+            slides_per_subject = self.get_slides(subject)
+            mapping_dict = self.map_slides_to_videos(videos_per_subject, slides_per_subject)
+
+            # populate the mapped slide to video metadata item.
+            for item in videos_per_subject:
+                ttid = item['ttid']
+                slide_url = mapping_dict.get(ttid)
+                if slide_url:
+                    online_lectures[ttid]['slide_url'] = slide_url
+                    ext = slide_url.split('.')[-1]
+                    online_lectures[ttid]['ext'] = ext
+                    online_lectures[ttid]['slide_path'] = self.get_mkv_path(item)
+                else:
+                    online_lectures[ttid]['slide_url'] = ''
+                    online_lectures[ttid]['ext'] = ''
+                    online_lectures[ttid]['slide_path'] = ''
+
+        return online_lectures
 
 
 class GetOutOfLoop(Exception):

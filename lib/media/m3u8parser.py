@@ -3,6 +3,9 @@ import re
 
 
 class M3u8Parser:
+    """
+    m3u8 parsing logic.
+    """
 
     def __init__(self, content_list: List = None, num_tracks=1):
         if content_list:

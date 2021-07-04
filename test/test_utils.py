@@ -148,4 +148,4 @@ def test_add_new_fields(mocker):
     }
     from lib.utils import Utils
 
-    assert Utils.add_new_fields(metadata_given, video_slide_mapping) == metadata_processed
+    assert Utils.add_new_fields(metadata_given) == metadata_processed

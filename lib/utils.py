@@ -1,53 +1,68 @@
+import json
+import logging
 import os
+import platform
 import re
 import shutil
+import subprocess
 from typing import List
 import webbrowser
 from datetime import datetime
 
 from lib.config import Config, ConfigType
+from ui.data.columns import Columns
 
 
 class Utils:
+    """
+    Utility functions.
+    """
 
     @classmethod
-    def add_new_fields(cls, metadata, video_slide_mapping):
-        conf = Config.load(ConfigType.IMPARTUS)
+    def add_new_fields(cls, metadata):
+        try:
+            # pad the following fields
+            fixed_width_numeric = {
+                'seqNo': '{:02d}', 'views': '{:04d}', 'actualDuration': '{:05d}', 'sessionId': '{:04d}'
+            }
+            for key, val in fixed_width_numeric.items():
+                # format these numeric fields to fix width with leading zeros.
+                if metadata[key] is not None:
+                    metadata[key] = val.format(int(metadata[key]))
 
-        metadata['ext'] = None
-        slides = video_slide_mapping.get(metadata['ttid'])
-        if slides:
-            ext = video_slide_mapping.get(metadata['ttid']).split('.')[-1].lower()
-            if ext in conf.get('allowed_ext'):
-                metadata['ext'] = ext
+            date_fields = {'startTime': 'startDate', 'endTime': 'endDate'}
+            for key, val in date_fields.items():
+                # extract datetime fields, and create new fields named startDate, endDate
+                if metadata[key]:
+                    metadata[val] = str.split(metadata[key], ' ')[0]
+            # create new field to show human readable duration of the video.
+            duration_hour = int(metadata.get('actualDuration')) // 3600
+            duration_min = (int(metadata.get('actualDuration')) % 3600) // 60
+            metadata['actualDurationReadable'] = '{}:{:02d}h'.format(duration_hour, duration_min)
 
-        # pad the following fields
-        fixed_width_numeric = {'seqNo': '{:02d}', 'views': '{:04d}', 'actualDuration': '{:05d}', 'sessionId': '{:04d}'}
-        for key, val in fixed_width_numeric.items():
-            # format these numeric fields to fix width with leading zeros.
-            if metadata[key]:
-                metadata[key] = val.format(int(metadata[key]))
+            # We may want to display a shorter subject name, or a shorter faculty name (or any other field..)
+            # This is indicated by the presence of 'original_col_name' field in Columns.data_columns
+            col_mapping = {k: v['original_values_col'] for k, v in Columns.data_columns.items()
+                           if v.get('original_values_col')}
 
-        date_fields = {'startTime': 'startDate', 'endTime': 'endDate'}
-        for key, val in date_fields.items():
-            # extract datetime fields, and create new fields named startDate, endDate
-            if metadata[key]:
-                metadata[val] = str.split(metadata[key], ' ')[0]
+            # for all such columns, load (if any) mappings exist in etc/mappings.conf
+            mappings_conf = Config.load(ConfigType.MAPPINGS)
+            for new_col_name, orig_col_name in col_mapping.items():
 
-        # create new field to show human readable duration of the video.
-        duration_hour = int(metadata.get('actualDuration')) // 3600
-        duration_min = (int(metadata.get('actualDuration')) % 3600) // 60
-        metadata['actualDurationReadable'] = '{}:{:02d}h'.format(duration_hour, duration_min)
+                metadata[new_col_name] = metadata[orig_col_name]  # default, if we can't find a mapping.
 
-        # create new field to hold shortened subject names.
-        mapping_item = 'subjectName'
-        metadata['subjectNameShort'] = metadata[mapping_item]
-        mappings_conf = Config.load(ConfigType.MAPPINGS)
-        if mappings_conf.get(mapping_item):
-            for key, val in mappings_conf.get(mapping_item).items():
-                if key == metadata[mapping_item]:
-                    metadata['subjectNameShort'] = val
-                    break
+                if mappings_conf.get(new_col_name):
+                    for mapping_key, mapping_val in mappings_conf[new_col_name].items():
+
+                        # create a new field in the metadata with the mapping value
+                        # e.g. metadata['subjectMameShort'] = 'ML'
+                        # where there exists another field: metadata['subjectName'] == 'DSE_SEC-1-MACHINE-LEARNING'
+                        if metadata[orig_col_name] == mapping_key:
+                            metadata[new_col_name] = mapping_val
+                            break
+        except KeyError as ex:
+            logger = logging.getLogger(cls.__name__)
+            logger.warning('Error parsing lecture metadata - {}'.format(ex))
 
         return metadata
 
@@ -82,9 +97,14 @@ class Utils:
     @classmethod
     def open_file(cls, path, event=None):   # noqa
         if re.match('https?', path) or re.match('file:', path):
-            webbrowser.open('{}'.format(path))
+            webbrowser.open(r'{}'.format(path))
+        elif platform.system() == 'Darwin':
+            # when preview.app, keynote.app is already launched,
+            # a second window often throws an error: 'cannot import <file>'
+            # use 'open' launcher.
+            subprocess.run(["open", path])
         else:
-            webbrowser.open('file://{}'.format(path))
+            webbrowser.open(r'file://{}'.format(path))
 
     @classmethod
     def date_difference(cls, date1, date2):
@@ -97,3 +117,8 @@ class Utils:
         if source != destination:
             os.makedirs(os.path.dirname(destination), exist_ok=True)
             shutil.move(source, destination)
+
+    @classmethod
+    def save_json(cls, content, filepath):
+        with open(filepath, "w") as fh:
+            json.dump(content, fh, indent=4)
