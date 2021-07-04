@@ -29,6 +29,7 @@ class Common:
                 pushbutton.setObjectName(val['text'])
                 pushbutton.setToolTip(val['tooltip'])
                 pushbutton.setMaximumWidth(48)
+                pushbutton.setIcon(val['text'])
 
                 yield pushbutton
 
