@@ -5,16 +5,16 @@ from typing import List
 
 import requests
 import logging
-from pathlib import Path
-import enzyme
 import platform
 from datetime import datetime, timedelta
 
 from lib.config import Config, ConfigType
+from lib.metadataparser import MetadataDictParser
 from lib.utils import Utils
 from lib.media.encoder import Encoder
 from lib.media.m3u8parser import M3u8Parser
 from lib.media.decrypter import Decrypter
+from ui.data.configkeys import ConfigKeys
 from ui.data.variables import Variables
 
 
@@ -191,25 +191,23 @@ class Impartus:
                     Utils.delete_files(list(temp_files_to_delete))
                     os.rmdir(download_dir)
 
-    def _get_sanitized_path(self, filepath):
+    def _get_filepath(self, video_metadata, config_key: str):
         if self.conf.get('use_safe_paths'):
-            filepath = Utils.sanitize(filepath)
-        return filepath
+            sanitized_components = MetadataDictParser.sanitize(MetadataDictParser.parse_metadata(video_metadata))
+            file_path = self.conf.get(config_key).format(**{**video_metadata, **sanitized_components},
+                                                         target_dir=self.download_dir)
+        else:
+            file_path = self.conf.get(config_key).format(**video_metadata, target_dir=self.download_dir)
+        return file_path
 
     def get_mkv_path(self, video_metadata):
-        mkv_path = self.conf.get('video_path').format(**video_metadata, target_dir=self.download_dir)
-        return self._get_sanitized_path(mkv_path)
+        return self._get_filepath(video_metadata, ConfigKeys.VIDEO_PATH.value)
 
     def get_slides_path(self, video_metadata):
-        try:
-            slides_path = self.conf.get('slides_path').format(**video_metadata, target_dir=self.download_dir)
-            return self._get_sanitized_path(slides_path)
-        except KeyError as ex:
-            print('error: {}'.format(ex))
+        return self._get_filepath(video_metadata, ConfigKeys.SLIDES_PATH.value)
 
     def get_captions_path(self, video_metadata):
-        captions_path = self.conf.get('captions_path').format(**video_metadata, target_dir=self.download_dir)
-        return self._get_sanitized_path(captions_path)
+        return self._get_filepath(video_metadata, ConfigKeys.CAPTIONS_PATH.value)
 
     def slides_exist_on_disk(self, path):
         path_without_ext = path.rsplit('.', 1)[0]
@@ -373,9 +371,9 @@ class Impartus:
             flipped_lectures = self.get_flipped_lectures(subject=subject)
 
             for metadata in regular_lectures:
-                online_lectures[metadata['ttid']] = Utils.add_new_fields(metadata)
+                online_lectures[metadata['ttid']] = MetadataDictParser.add_new_fields(metadata)
             for metadata in flipped_lectures:
-                online_lectures[metadata['fcid']] = Utils.add_new_fields(metadata)
+                online_lectures[metadata['fcid']] = MetadataDictParser.add_new_fields(metadata)
 
             videos_per_subject.extend(regular_lectures)
             videos_per_subject.extend(flipped_lectures)

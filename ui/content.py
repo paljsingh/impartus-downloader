@@ -69,9 +69,10 @@ class ContentWindow(QMainWindow):
         Callbacks().set_pushbutton_statuses()
 
     def work_online(self):
-        self.offline_data = Finder().get_offline_content()
         self.online_data = self.impartus.get_online_lectures()
         self.save_metadata(self.online_data)
+
+        self.offline_data = Finder().get_offline_content()
 
         # merge the two..
         for ttid, offline_item in self.offline_data.items():

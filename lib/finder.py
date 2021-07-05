@@ -2,13 +2,11 @@ import json
 import os
 import platform
 import logging
-import re
-
 import enzyme
 from typing import Dict, List
 
 from lib.config import Config, ConfigType
-from lib.utils import Utils
+from lib.metadataparser import MetadataFileParser, MetadataDictParser
 from ui.data.configkeys import ConfigKeys
 
 
@@ -40,6 +38,21 @@ class Finder:
         return offline_content
 
     def get_offline_video_metadata(self, path: str, files: List) -> (str, Dict):
+        """
+        Collect the offline video data...
+
+        For all videos found under {target_dir}/ :
+            - Find the ttid embedded in the mkv file.
+            - Check if we have a copy of metadata saved at {config_dir}/impartus/<ttid>.json . This will happen if the
+            user has connected to impartus site at least once.
+
+            - For any videos where {config_dir}/impartus/ does not have the metadata, try to reconstruct the fields
+            from {video_path} format
+                - Parse the actual file path to match the {video_path} format. This should provide some of the basic
+                fields (subject, topic, lecture #, professor name etc.
+                - Fill in the remaining fields with default values, or extract from the video file if possible.
+        """
+
         for filename in files:
             if not filename.endswith('.mkv'):
                 continue
@@ -51,52 +64,17 @@ class Finder:
                         self.conf.get(ConfigKeys.CONFIG_DIR.value).get(platform.system()),
                         ttid
                     )
-                    video_metadata = dict()
+                    # if json file is present ...
                     if os.path.exists(metadata_file):
                         with open(metadata_file, 'r') as fh:
                             video_metadata = json.load(fh)
-                            video_metadata = Utils.add_new_fields(video_metadata)
                     else:
-                        # construct from path.
-                        video_path_format = self.conf.get(ConfigKeys.VIDEO_PATH.value)
-                        placeholders = re.compile(r"{.*?}")
-                        matches = placeholders.findall(video_path_format)
-
-                        sep = r"[/\\-]"
-                        copy_filepath = filepath
-
-                        # path_components = {}
-                        for match in matches:
-                            # {target_dir}, {subjectNameShort}, ...
-                            video_path_format = video_path_format.replace(match, '')
-                            if match == '{target_dir}':
-                                pattern = self.conf.get(ConfigKeys.TARGET_DIR.value).get(platform.system())
-                            elif match == '{startDate}':
-                                pattern = r'[0-9]{4}-[0-9]{2}-[0-9]{2}'
-                            elif match == '{ext}':
-                                pattern = r'mkv'
-                            elif match == '{seqNo}':
-                                pattern = r'[0-9]{2}'
-                            elif match == '{tapNToggle}':
-                                pattern = r'[0-9]'
-                            elif match == '{professorName}':
-                                pattern = r'[a-zA-Z0-9-]+'
-                            else:
-                                pattern = r'([a-zA-Z0-9\._-]+)(?=.*-[0-9]{4}-[0-9]{2}-[0-9]{2})'
-                            field = match[1:len(match)-1]
-                            if re.match(repr(pattern), copy_filepath):
-                                video_metadata[field] = re.match(repr(pattern), copy_filepath).group(0)
-                            copy_filepath = re.sub(repr(pattern), '', copy_filepath, 1)
-                            copy_filepath = re.sub(repr(sep), '', copy_filepath, 1)
-
-                        video_metadata['tapNToggle'] = '?'
-                        video_metadata['actualDurationReadable'] = '--:--'
+                        # parse from the file path.
+                        parsed_items = MetadataFileParser.parse_from_filepath(filepath, ConfigKeys.VIDEO_PATH.value)
+                        video_metadata = MetadataDictParser.sanitize(parsed_items)
                         video_metadata['ttid'] = ttid
-                        video_metadata['ext'] = ''
-                        video_metadata['slide_url'] = ''
-                        del video_metadata['target_dir']
+                        video_metadata = MetadataDictParser.add_new_fields(video_metadata)
 
-                    # for all videos...
                     video_metadata['offline_filepath'] = filepath
                     yield ttid, video_metadata
 
@@ -104,6 +82,8 @@ class Finder:
                     self.logger.warning('config_dir not found, or does not exist. error: {}'.format(ex))
                 except SyntaxError as ex:
                     self.logger.warning('error reading metadata file: {}'.format(ex))
+                except KeyError as ex:
+                    self.logger.warning('error parsing offline filepath: {}'.format(ex))
 
         return None, None
 
