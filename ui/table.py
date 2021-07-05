@@ -23,6 +23,7 @@ from ui.data.Icons import Icons
 from ui.data.actionitems import ActionItems
 from ui.data.callbacks import Callbacks
 from ui.data.columns import Columns
+from ui.data.variables import Variables
 from ui.progressbar import SortableRoundProgressbar
 from ui.customwidgets.pushbutton import CustomPushButton
 from ui.rodelegate import ReadOnlyDelegate
@@ -271,7 +272,7 @@ class Table:
             pause_ev,
             resume_ev,
             partial(self.progress_callback, pushbuttons['download_video'], progressbar_widget),
-            video_quality='highest'
+            video_quality=Variables().flipped_lecture_quality()
         )
         pushbuttons['download_video'].setIcon(Icons.VIDEO__DOWNLOAD_VIDEO.value)
         pushbuttons['download_video'].setToolTip('Download Video')

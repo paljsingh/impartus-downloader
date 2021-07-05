@@ -8,8 +8,9 @@ from PySide2.QtWidgets import QMainWindow, QLabel, QTreeWidget, QTreeWidgetItem
 from lib import version
 from lib.utils import Utils
 from ui.data.docs import Docs
+from ui.data.variables import Variables
 from ui.dialog import Dialog
-
+from envyaml import EnvYAML
 
 class Callbacks:
     """
@@ -177,7 +178,7 @@ class Callbacks:
         self.content_window.search_box.set_focus()
 
     def on_video_quality_click(self, video_quality: str):
-        self.impartus.conf['flipped_lecture_quality'] = video_quality
+        Variables().set_flipped_lecture_quality(video_quality)
 
     def on_download_video_click(self):
         ttid = self.content_window.table_container.get_selected_row_ttid()
