@@ -3,6 +3,7 @@ from functools import partial
 
 from lib.config import ConfigType, Config
 from lib.utils import Utils
+from ui.data.Icons import Icons
 from ui.data.callbacks import Callbacks
 from ui.data.columns import Columns
 
@@ -16,16 +17,19 @@ class MenuItems:
     menu_items = {
         'Actions': {
             'Login': {
+                'icon': Icons.MENU__LOGIN.value,
                 'shortcut': 'Ctrl+L',
                 'status_tip': 'Login to Impartus',
                 'callback': Callbacks().on_login_click,
             },
             'Reload': {
+                'icon': Icons.MENU__RELOAD.value,
                 'shortcut': 'Ctrl+R',
                 'status_tip': 'Reload Table Content',
                 'callback': Callbacks().on_reload_click,
             },
             'Auto Organize': {
+                'icon': Icons.MENU__AUTO_ORGANIZE.value,
                 'shortcut': 'Ctrl+/',
                 'status_tip': 'Rename lecture videos, download missing captions...',
                 'callback': Callbacks().on_auto_organize_click,
@@ -34,6 +38,7 @@ class MenuItems:
                 'type': 'separator',
             },
             'Logout': {
+                'icon': Icons.MENU__LOGOUT.value,
                 'shortcut': 'Ctrl+Shift+L',
                 'status_tip': 'Logout from Impartus',
                 'callback': Callbacks().on_logout_click,
@@ -49,6 +54,7 @@ class MenuItems:
         },
         'View': {
             'Columns': {
+                'icon': Icons.MENU__COLUMNS.value,
                 'shortcut': None,
                 'status_tip': None,
                 'type': 'list',
@@ -63,6 +69,7 @@ class MenuItems:
                 'type': 'separator',
             },
             'Search': {
+                'icon': Icons.MENU__SEARCH.value,
                 'shortcut': 'Ctrl+F',
                 'status_tip': 'Search Content...',
                 'callback': Callbacks().on_search_click,
@@ -70,6 +77,7 @@ class MenuItems:
         },
         'Video': {
             'Flipped Video Lecture Quality': {
+                'icon': Icons.MENU__FLIPPED_VIDEO_QUALITY.value,
                 'shortcut': None,
                 'type': 'list',
                 'status_tip': None,
@@ -90,16 +98,19 @@ class MenuItems:
                 'type': 'separator',
             },
             'Download Video': {
+                'icon': Icons.MENU__DOWNLOAD_VIDEO.value,
                 'shortcut': 'Ctrl+J',
                 'status_tip': 'Download Lecture Video',
                 'callback': Callbacks().on_download_video_click,
             },
             'Play Video': {
+                'icon': Icons.MENU__PLAY_VIDEO.value,
                 'shortcut': 'Ctrl+P',
                 'status_tip': 'Play Lecture Video',
                 'callback': Callbacks().on_play_video_click,
             },
             'Download Lecture Chats': {
+                'icon': Icons.MENU__DOWNLOAD_CAPTIONS.value,
                 'shortcut': 'Shift+Ctrl+J',
                 'status_tip': 'Download Lecture Chats',
                 'callback': Callbacks().on_download_chats_click,
@@ -107,16 +118,19 @@ class MenuItems:
         },
         'Slides': {
             'Download Backpack Slides': {
+                'icon': Icons.MENU__DOWNLOAD_SLIDES.value,
                 'shortcut': 'Ctrl+K',
                 'status_tip': 'Download Lecture Slides',
                 'callback': Callbacks().on_download_slides_click,
             },
             'Open Folder': {
+                'icon': Icons.MENU__OPEN_FOLDER.value,
                 'shortcut': 'Ctrl+O',
                 'status_tip': 'Open Lecture Content Folder',
                 'callback': Callbacks().on_open_folder_click,
             },
             'Attach Lecture Slides': {
+                'icon': Icons.MENU__ATTACH_SLIDES.value,
                 'shortcut': 'Shift+Ctrl+O',
                 'status_tip': 'Attach Downloaded Slides to a Lecture',
                 'callback': Callbacks().on_attach_slides_click,
@@ -124,11 +138,13 @@ class MenuItems:
         },
         'Help': {
             'Help': {
+                'icon': Icons.MENU__HELP.value,
                 'shortcut': None,
                 'status_tip': 'Help docs',
                 'callback': Callbacks().on_help_doc,
             },
             'Check For Updates': {
+                'icon': Icons.MENU__RELEASE_NOTES.value,
                 'shortcut': None,
                 'status_tip': 'Check for new version, release notes...',
                 'callback': Callbacks().on_check_for_updates_click,
