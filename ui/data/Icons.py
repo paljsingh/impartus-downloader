@@ -39,7 +39,19 @@ class Icons(enum.Enum):
     MENU__RELOAD = 'fa5s.redo-alt'
     MENU__AUTO_ORGANIZE = 'fa5s.magic'
     MENU__LOGOUT = 'fa5s.sign-out-alt'
-    MENU__SEARCH = 'fa5s.solid'
     # MENU__QUIT = ''
+
+    MENU__COLUMNS = 'fa5s.columns'
+    MENU__SEARCH = 'fa5s.search'
+
+    MENU__FLIPPED_VIDEO_QUALITY = 'fa5s.exchange-alt'
+    MENU__DOWNLOAD_VIDEO = 'fa5s.download'
+    MENU__PLAY_VIDEO = 'fa5.play-circle'
+    MENU__OPEN_FOLDER = 'fa5.folder-open'
+
+    MENU__DOWNLOAD_SLIDES = 'fa5s.file-download'
+    MENU__DOWNLOAD_CAPTIONS = 'fa5.closed-captioning'
+    MENU__ATTACH_SLIDES = 'fa5s.link'
+
     MENU__HELP = 'fa5s.info'
     MENU__RELEASE_NOTES = 'fa5s.list-ul'
