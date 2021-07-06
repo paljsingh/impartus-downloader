@@ -47,14 +47,15 @@ class Encoder:
         move(tmp_file_path, ts_files[0])
 
     @classmethod
-    def encode_mkv(cls, ttid, ts_files, filepath, duration, debug=False):
+    def encode_mkv(cls, rf_id, ts_files, filepath, duration, debug=False, flipped=False):
         """
         Encode to mkv using ffmpeg and create a multiview video file.
-        :param ttid: video ttid
+        :param rf_id: video ttid (for regular) or fcid (for flipped)
         :param ts_files: list of track files.
         :param filepath: path of the output mkv file to be created.
         :param duration: duration from the metadata.
         :param debug: debug flag, if True print verbose output from ffmpeg.
+        :param flipped: Whether the video is a flipped video.
         :return: True if encode successful.
         """
 
@@ -84,19 +85,26 @@ class Encoder:
                     split_flag = True
 
             if split_flag:
-                logger.info("[{}]: splitting track 0 .. ".format(ttid))
+                logger.info("[{}]: splitting track 0 .. ".format(rf_id))
                 Encoder.split_track(ts_files, duration, debug)
 
-            logger.info("[{}]: encoding output file ..".format(ttid))
-            # adding ttid to metadata.
-            (
-                os.system("ffmpeg -y -loglevel {level} {input} -metadata ttid={ttid} -c copy {maps} {output}"
-                          .format(level=log_level, ttid=ttid, input=' '.join(in_args), maps=' '.join(map_args),
-                                  output=filepath))
-            )
+            logger.info("[{}]: encoding output file ..".format(rf_id))
+            # adding rf_id to metadata.
+            if flipped:
+                (
+                    os.system("ffmpeg -y -loglevel {level} {input} -metadata fcid={fcid} -c copy {maps} {output}"
+                              .format(level=log_level, fcid=rf_id, input=' '.join(in_args), maps=' '.join(map_args),
+                                      output=filepath))
+                )
+            else:
+                (
+                    os.system("ffmpeg -y -loglevel {level} {input} -metadata ttid={ttid} -c copy {maps} {output}"
+                              .format(level=log_level, ttid=rf_id, input=' '.join(in_args), maps=' '.join(map_args),
+                                      output=filepath))
+                )
         except Exception as ex:
-            logger.error("[{}]: ffmpeg exception: {}".format(ttid, ex))
-            logger.error("[{}]: Check the ts file(s) generated at location: {}".format(ttid, ', '.join(ts_files)))
+            logger.error("[{}]: ffmpeg exception: {}".format(rf_id, ex))
+            logger.error("[{}]: Check the ts file(s) generated at location: {}".format(rf_id, ', '.join(ts_files)))
             return False
 
         return True

@@ -53,13 +53,7 @@ class Impartus:
         self.temp_downloads_dir = os.path.join(Utils.get_temp_dir(), 'impartus.media')
         os.makedirs(self.temp_downloads_dir, exist_ok=True)
 
-    def _download_m3u8(self, ttid, flipped=False, flipped_lecture_quality='highest'):
-        root_url = Variables().login_url()
-
-        if flipped:
-            master_url = '{}/api/fetchvideo?fcid={}&token={}&type=index.m3u8'.format(root_url, ttid, self.token)
-        else:
-            master_url = '{}/api/fetchvideo?ttid={}&token={}&type=index.m3u8'.format(root_url, ttid, self.token)
+    def _download_m3u8(self, master_url):
         response = self.session.get(master_url)
         m3u8_urls = []
         if response.status_code == 200:
@@ -67,23 +61,34 @@ class Impartus:
             for line in lines:
                 if re.match('^http', line):
                     m3u8_urls.append(line.strip())
+        return m3u8_urls
 
-        url = None
-        if flipped:
-            if flipped_lecture_quality == 'highest':
-                url = self.get_url_for_highest_quality_video(m3u8_urls)
-            elif flipped_lecture_quality == 'lowest':
-                url = self.get_url_for_lowest_quality_video(m3u8_urls)
-            else:  # given a specific resolution.
-                url = self.get_url_for_resolution(m3u8_urls, flipped_lecture_quality)
-        elif len(m3u8_urls) > 0:
-            url = m3u8_urls[0]
+    def download_m3u8_regular(self, ttid):
+        root_url = Variables().login_url()
+        master_url = '{}/api/fetchvideo?ttid={}&token={}&type=index.m3u8'.format(root_url, ttid, self.token)
+        m3u8_urls = self._download_m3u8(master_url)
+
+        if len(m3u8_urls) > 0:
+            response = self.session.get(m3u8_urls[0])
+            if response.status_code == 200:
+                return response.text.splitlines()
+
+    def download_m3u8_flipped(self, fcid, flipped_lecture_quality='highest'):
+        root_url = Variables().login_url()
+        master_url = '{}/api/fetchvideo?fcid={}&token={}&type=index.m3u8'.format(root_url, fcid, self.token)
+
+        m3u8_urls = self._download_m3u8(master_url)
+        if flipped_lecture_quality == 'highest':
+            url = self.get_url_for_highest_quality_video(m3u8_urls)
+        elif flipped_lecture_quality == 'lowest':
+            url = self.get_url_for_lowest_quality_video(m3u8_urls)
+        else:  # given a specific resolution.
+            url = self.get_url_for_resolution(m3u8_urls, flipped_lecture_quality)
 
         if url:
             response = self.session.get(url)
             if response.status_code == 200:
                 return response.text.splitlines()
-        return None
 
     def get_url_for_highest_quality_video(self, m3u8_urls):
         for resolution in self.conf.get('flipped_lecture_quality_order'):
@@ -108,23 +113,21 @@ class Impartus:
         Download video and decrypt, join, encode to mkv
         :return:
         """
-        if video_metadata.get('fcid'):
-            ttid = video_metadata['fcid']
-            flipped = True
-        else:
-            ttid = video_metadata['ttid']
-            flipped = False
-
         number_of_tracks = int(video_metadata['tapNToggle'])
         duration = int(video_metadata['actualDuration'])
         encryption_keys = dict()
 
-        self.logger.info("[{}]: Starting download for {}".format(ttid, mkv_filepath))
+        rf_id = video_metadata['ttid'] if video_metadata.get('ttid') else video_metadata['fcid']
+        self.logger.info("[{}]: Starting download for {}".format(rf_id, mkv_filepath))
+        if video_metadata.get('fcid'):
+            m3u8_content = self.download_m3u8_flipped(rf_id, video_quality)
+        else:
+            m3u8_content = self.download_m3u8_regular(rf_id)
+
         # download media files for this video.
-        m3u8_content = self._download_m3u8(ttid, flipped, video_quality)
         if m3u8_content:
             summary, tracks_info = M3u8Parser(m3u8_content, num_tracks=number_of_tracks).parse()
-            download_dir = os.path.join(self.temp_downloads_dir, str(ttid))
+            download_dir = os.path.join(self.temp_downloads_dir, str(rf_id))
             os.makedirs(download_dir, exist_ok=True)
 
             temp_files_to_delete = set()
@@ -140,9 +143,9 @@ class Impartus:
                     download_flag = False
                     while not download_flag:
                         if pause_ev.is_set():
-                            self.logger.info("[{}]: Pausing download for {}".format(ttid, mkv_filepath))
+                            self.logger.info("[{}]: Pausing download for {}".format(rf_id, mkv_filepath))
                             resume_ev.wait()
-                            self.logger.info("[{}]: Resuming download for {}".format(ttid, mkv_filepath))
+                            self.logger.info("[{}]: Resuming download for {}".format(rf_id, mkv_filepath))
                             resume_ev.clear()
                         try:
                             with open(enc_stream_filepath, 'wb') as fh:
@@ -151,7 +154,7 @@ class Impartus:
                                 download_flag = True
                         except TimeoutError:
                             self.logger.warning("[{}]: Timeout error. retrying download for {}...".format(
-                                ttid, item['url']))
+                                rf_id, item['url']))
                             time.sleep(self.conf.get('retry_wait'))
 
                     # decrypt files if encrypted.
@@ -174,17 +177,17 @@ class Impartus:
                     progress_callback_func(items_processed_percent)
 
                 # All stream files for this track are decrypted, join them.
-                self.logger.info("[{}]: joining streams for track {} ..".format(ttid, track_index))
+                self.logger.info("[{}]: joining streams for track {} ..".format(rf_id, track_index))
                 ts_file = Encoder.join(streams_to_join, download_dir, track_index)
                 ts_files.append(ts_file)
                 temp_files_to_delete.add(ts_file)
 
             # Encode all ts files into a single output mkv.
             os.makedirs(os.path.dirname(mkv_filepath), exist_ok=True)
-            success = Encoder.encode_mkv(ttid, ts_files, mkv_filepath, duration, self.conf.get('debug'))
+            success = Encoder.encode_mkv(rf_id, ts_files, mkv_filepath, duration, self.conf.get('debug'))
 
             if success:
-                self.logger.info("[{}]: Processed {}\n---".format(ttid, mkv_filepath))
+                self.logger.info("[{}]: Processed {}\n---".format(rf_id, mkv_filepath))
 
                 # delete temp files.
                 if not self.conf.get('debug'):
@@ -242,13 +245,9 @@ class Impartus:
                 # lecture with seq-no=1. By default impartus portal return lectures with highest ttid/fcid first.
                 num_lectures = len(category['lectures'])
                 for i, lecture in enumerate(category['lectures']):
-                    # quick fix: add ttid and other fields that are not present in flipped videos,
-                    # but used elsewhere in the code.
-                    # TODO: refactor code later.
-
                     # cannot update the original dict while in loop, shallow copy is fine for now.
                     flipped_lecture = lecture.copy()
-                    flipped_lecture['ttid'] = lecture['fcid']
+                    flipped_lecture['ttid'] = 0
                     flipped_lecture['seqNo'] = num_lectures - i
                     flipped_lecture['slideCount'] = 0
                     flipped_lecture['createdBy'] = ''  # duplicate info, present elsewhere.
@@ -286,7 +285,7 @@ class Impartus:
         else:
             return []
 
-    def download_slides(self, ttid, file_url, filepath):
+    def download_slides(self, rf_id, file_url, filepath):
         root_url = Variables().login_url()
 
         if str(file_url).startswith('http'):
@@ -309,9 +308,9 @@ class Impartus:
                     fh.write(response.content)
                 download_status = True
             else:
-                self.logger.error('[{}]: Error fetching slides from url: {}'.format(ttid, file_url))
+                self.logger.error('[{}]: Error fetching slides from url: {}'.format(rf_id, file_url))
                 self.logger.error('[{}]: Http response code: {}, response body: {}: '.format(
-                    ttid, response.status_code, response.text))
+                    rf_id, response.status_code, response.text))
         return download_status
 
     def map_slides_to_videos(self, videos_metadata: List, slides_metadata: List):
@@ -383,17 +382,17 @@ class Impartus:
 
             # populate the mapped slide to video metadata item.
             for item in videos_per_subject:
-                ttid = item['ttid']
-                slide_url = mapping_dict.get(ttid)
+                rf_id = item['ttid'] if item.get('ttid') else item['fcid']
+                slide_url = mapping_dict.get(rf_id)
                 if slide_url:
-                    online_lectures[ttid]['slide_url'] = slide_url
+                    online_lectures[rf_id]['slide_url'] = slide_url
                     ext = slide_url.split('.')[-1]
-                    online_lectures[ttid]['ext'] = ext
-                    online_lectures[ttid]['slide_path'] = self.get_mkv_path(item)
+                    online_lectures[rf_id]['ext'] = ext
+                    online_lectures[rf_id]['slide_path'] = self.get_mkv_path(item)
                 else:
-                    online_lectures[ttid]['slide_url'] = ''
-                    online_lectures[ttid]['ext'] = ''
-                    online_lectures[ttid]['slide_path'] = ''
+                    online_lectures[rf_id]['slide_url'] = ''
+                    online_lectures[rf_id]['ext'] = ''
+                    online_lectures[rf_id]['slide_path'] = ''
 
         return online_lectures
 

@@ -25,12 +25,12 @@ class Finder:
         offline_content = dict()
         count = 0
         for dirpath, subdirs, files in os.walk(self.conf.get('target_dir').get(platform.system())):
-            for ttid, video_metadata in self.get_offline_video_metadata(dirpath, files):
-                if ttid:
+            for rf_id, video_metadata in self.get_offline_video_metadata(dirpath, files):
+                if rf_id:
                     count += 1
                     backpack_slides = self.get_offline_backpack_slides(dirpath, files)
                     chats = self.get_offline_chats(dirpath, files)
-                    offline_content[ttid] = {
+                    offline_content[rf_id] = {
                         'backpack_slides': backpack_slides,
                         'chats': chats,
                         **video_metadata,
@@ -42,8 +42,8 @@ class Finder:
         Collect the offline video data...
 
         For all videos found under {target_dir}/ :
-            - Find the ttid embedded in the mkv file.
-            - Check if we have a copy of metadata saved at {config_dir}/impartus/<ttid>.json . This will happen if the
+            - Find the ttid/fcid embedded in the mkv file.
+            - Check if we have a copy of metadata saved at {config_dir}/impartus/<ttid/fcid>.json . This will happen if the
             user has connected to impartus site at least once.
 
             - For any videos where {config_dir}/impartus/ does not have the metadata, try to reconstruct the fields
@@ -57,12 +57,12 @@ class Finder:
             if not filename.endswith('.mkv'):
                 continue
             filepath = os.path.join(path, filename)
-            ttid = self._get_ttid(filepath)
-            if ttid:
+            rf_id, flipped = self._get_rfid(filepath)
+            if rf_id:
                 try:
                     metadata_file = '{}/{}.json'.format(
                         self.conf.get(ConfigKeys.CONFIG_DIR.value).get(platform.system()),
-                        ttid
+                        rf_id
                     )
                     # if json file is present ...
                     if os.path.exists(metadata_file):
@@ -72,11 +72,14 @@ class Finder:
                         # parse from the file path.
                         parsed_items = MetadataFileParser.parse_from_filepath(filepath, ConfigKeys.VIDEO_PATH.value)
                         video_metadata = MetadataDictParser.sanitize(parsed_items)
-                        video_metadata['ttid'] = ttid
+                        if flipped:
+                            video_metadata['fcid'] = rf_id
+                        else:
+                            video_metadata['ttid'] = rf_id
                         video_metadata = MetadataDictParser.add_new_fields(video_metadata)
 
                     video_metadata['offline_filepath'] = filepath
-                    yield ttid, video_metadata
+                    yield rf_id, video_metadata
 
                 except NameError as ex:
                     self.logger.warning('config_dir not found, or does not exist. error: {}'.format(ex))
@@ -100,7 +103,7 @@ class Finder:
             if filename.endswith('.vtt'):
                 return os.path.join(path, filename)
 
-    def _get_ttid(self, filepath: str):
+    def _get_rfid(self, filepath: str):
         try:
             with open(filepath, 'rb') as f:
                 mkv = enzyme.MKV(f)
@@ -108,7 +111,9 @@ class Finder:
                     for x in mkv.tags:
                         for y in x.simpletags:
                             if y.name == 'TTID':
-                                return int(y.string)
+                                return int(y.string), False
+                            if y.name == 'FCID':
+                                return int(y.string), True
         except enzyme.MalformedMKVError as ex:
             self.logger.warning("Exception while parsing file {}".format(str(filepath)))
             self.logger.warning("You may want to delete and re-download this file.")
