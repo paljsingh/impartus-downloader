@@ -1,6 +1,6 @@
 from functools import partial
 
-from PySide2.QtCore import QModelIndex, SIGNAL
+from PySide2.QtCore import QModelIndex
 from PySide2.QtWidgets import QWidget, QStyleOptionViewItem, QLineEdit
 from PySide2.QtWidgets import QStyledItemDelegate
 from typing import Callable
@@ -31,9 +31,17 @@ class WriteDelegate(QStyledItemDelegate):
         """
         table = editor.parent().parent()
         ttid_col_index = Columns.get_column_index_by_key('ttid')
-        ttid = int(table.item(index.row(), ttid_col_index).text())
+        fcid_col_index = Columns.get_column_index_by_key('fcid')
+        ttid_text = table.item(index.row(), ttid_col_index).text()
+        fcid_text = table.item(index.row(), fcid_col_index).text()
+        rf_id = 0
+        if ttid_text and ttid_text != '0':
+            rf_id = int(ttid_text)
+        elif fcid_text and fcid_text != '0':
+            rf_id = int(fcid_text)
+
         column_name = Columns.get_display_columns()[index.column() - 1]
-        original_value = self.data_callback()[ttid][column_name]
+        original_value = self.data_callback()[rf_id][column_name]
         new_value = editor.text()
 
         # update mapping config.

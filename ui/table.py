@@ -10,6 +10,7 @@ from threading import Event
 import qtawesome as qta
 
 from PySide2 import QtCore, QtWidgets
+from PySide2.QtGui import QIcon
 from PySide2.QtWidgets import QTableWidget, QAbstractScrollArea, QTableWidgetItem, QHeaderView, QFileDialog, \
     QAbstractItemView, QCheckBox
 
@@ -117,7 +118,7 @@ class Table:
 
     def set_row_content(self, data: Dict):
         self.data = data
-        for index, (ttid, item) in enumerate(data.items()):
+        for index, (rf_id, item) in enumerate(data.items()):
             # for each row, add a checkbox first.
             container_widget = Common.add_checkbox_widget(self.on_click_checkbox)
             self.table.setCellWidget(index, 0, container_widget)
@@ -131,6 +132,20 @@ class Table:
             # total columns so far...
             col = len(Columns.data_columns) + 1
 
+            # flipped icon column.
+
+            flipped_col = Columns.widget_columns['flipped']
+            flipped_icon = qta.icon(flipped_col['icon']) if data[rf_id].get('fcid') else QIcon()
+            flipped_icon_widget = CustomTableWidgetItem()
+            flipped_icon_widget.setIcon(flipped_icon)
+            flipped_icon_widget.setTextAlignment(Columns.widget_columns['flipped']['alignment'])
+            int_value = 1 if data[rf_id].get('fcid') else 0
+            flipped_icon_widget.setValue(int_value)
+            flipped_icon_widget.setToolTip(Columns.widget_columns['flipped']['menu_tooltip'])
+
+            self.table.setItem(index, col, flipped_icon_widget)
+            col += 1
+
             # progress bar.
             progress_bar_widget = SortableRoundProgressbar()
             progress_bar_widget.setValue(0)
@@ -143,9 +158,9 @@ class Table:
 
             # video actions
             callbacks = {
-                'download_video': partial(self.on_click_download_video, ttid),
-                'play_video': partial(self.on_click_play_video, ttid),
-                'download_chats': partial(self.on_click_download_chats, ttid)
+                'download_video': partial(self.on_click_download_video, rf_id),
+                'play_video': partial(self.on_click_play_video, rf_id),
+                'download_chats': partial(self.on_click_download_chats, rf_id)
             }
             video_actions_widget, cell_value = Videos.add_video_actions_buttons(item, self.impartus, callbacks)
             self.table.setCellWidget(index, col, video_actions_widget)
@@ -159,9 +174,9 @@ class Table:
 
             # slides actions
             callbacks = {
-                'download_slides': partial(self.on_click_download_slides, ttid),
-                'open_folder': partial(self.on_click_open_folder, ttid),
-                'attach_slides': partial(self.on_click_attach_slides, ttid),
+                'download_slides': partial(self.on_click_download_slides, rf_id),
+                'open_folder': partial(self.on_click_open_folder, rf_id),
+                'attach_slides': partial(self.on_click_attach_slides, rf_id),
             }
             slides_actions_widget, cell_value = Slides.add_slides_actions_buttons(item, self.impartus, callbacks)
             self.table.setCellWidget(index, col, slides_actions_widget)
@@ -280,22 +295,22 @@ class Table:
         pushbuttons['open_folder'].setEnabled(True)
         pushbuttons['play_video'].setEnabled(True)
 
-    def on_click_download_video(self, ttid: int):
+    def on_click_download_video(self, rf_id: int):
         """
         callback function for Download button.
         Creates a thread to download the request video.
         """
-        row = self.get_row_from_ttid(ttid)
-        video_metadata = self.data[ttid]
+        row = self.get_row_from_rfid(rf_id)
+        video_metadata = self.data[rf_id]
         video_filepath = self.impartus.get_mkv_path(video_metadata)
 
         # as pause/resume uses the same download button,
         # the event will show up here.
         # pass the earlier saved fields to pause_resume_button_callback.
-        if self.threads.get(ttid):
-            pushbutton = self.threads.get(ttid)['pushbuttons']['download_video']
-            pause_ev = self.threads.get(ttid)['pause_event']
-            resume_ev = self.threads.get(ttid)['resume_event']
+        if self.threads.get(rf_id):
+            pushbutton = self.threads.get(rf_id)['pushbuttons']['download_video']
+            pause_ev = self.threads.get(rf_id)['pause_event']
+            resume_ev = self.threads.get(rf_id)['resume_event']
             self.pause_resume_button_click(pushbutton, pause_ev, resume_ev)
             return
 
@@ -332,21 +347,21 @@ class Table:
             args=(video_metadata, video_filepath, progresbar_widget, pushbuttons,
                   pause_event, resume_event,)
         )
-        self.threads[ttid] = {
+        self.threads[rf_id] = {
             'pause_event': pause_event,
             'resume_event': resume_event,
             'pushbuttons': pushbuttons,
         }
         thread.start()
-        self.data[ttid]['offline_filepath'] = video_filepath
+        self.data[rf_id]['offline_filepath'] = video_filepath
 
-    def on_click_play_video(self, ttid):
-        video_file = self.data[ttid]['offline_filepath']
+    def on_click_play_video(self, rf_id: int):
+        video_file = self.data[rf_id]['offline_filepath']
         if video_file:
             Utils.open_file(video_file)
 
-    def on_click_download_chats(self, ttid):
-        row = self.get_row_from_ttid(ttid)
+    def on_click_download_chats(self, rf_id: int):
+        row = self.get_row_from_rfid(rf_id)
         col = Columns.get_column_index_by_key('video_actions')
         dc_field = ActionItems.get_action_item_index('video_actions', 'download_chats')
         dc_button = self.table.cellWidget(row, col).layout().itemAt(dc_field).widget()
@@ -356,12 +371,12 @@ class Table:
         of_button = self.table.cellWidget(row, col).layout().itemAt(of_field).widget()
 
         dc_button.setEnabled(False)
-        chat_msgs = self.impartus.get_chats(self.data[ttid])
-        captions_path = self.impartus.get_captions_path(self.data[ttid])
-        status = Captions.save_as_captions(self.data.get(ttid), chat_msgs, captions_path)
+        chat_msgs = self.impartus.get_chats(self.data[rf_id])
+        captions_path = self.impartus.get_captions_path(self.data[rf_id])
+        status = Captions.save_as_captions(self.data.get(rf_id), chat_msgs, captions_path)
 
         # also update local copy of data
-        self.data[ttid]['captions_path'] = captions_path
+        self.data[rf_id]['captions_path'] = captions_path
 
         # set chat button false
         if not status:
@@ -374,29 +389,29 @@ class Table:
     Slides.
     """
 
-    def _download_slides(self, ttid, slide_url, filepath):
+    def _download_slides(self, rf_id: int, slide_url: str, filepath: str):
         """
         Download a slide doc in a thread. Update the UI upon completion.
         """
         # create a new Impartus session reusing existing token.
         imp = Impartus(self.impartus.token)
-        if imp.download_slides(ttid, slide_url, filepath):
+        if imp.download_slides(rf_id, slide_url, filepath):
             return True
         else:
             logger = logging.getLogger(self.__class__.__name__)
             logger.error('Error', 'Error downloading slides, see console logs for details.')
             return False
 
-    def on_click_download_slides(self, ttid):  # noqa
+    def on_click_download_slides(self, rf_id: int):  # noqa
         """
         callback function for Download button.
         Creates a thread to download the request video.
         """
-        metadata = self.data.get(ttid)
+        metadata = self.data.get(rf_id)
         slide_url = metadata.get('slide_url')
         filepath = self.impartus.get_slides_path(metadata)
 
-        row = self.get_row_from_ttid(ttid)
+        row = self.get_row_from_rfid(rf_id)
         col = Columns.get_column_index_by_key('slides_actions')
         ds_field = ActionItems.get_action_item_index('slides_actions', 'download_slides')
         ds_button = self.table.cellWidget(row, col).layout().itemAt(ds_field).widget()
@@ -414,7 +429,7 @@ class Table:
         }
         ds_button.setEnabled(False)
         with concurrent.futures.ThreadPoolExecutor(3) as executor:
-            future = executor.submit(self._download_slides, ttid, slide_url, filepath)
+            future = executor.submit(self._download_slides, rf_id, slide_url, filepath)
             return_value = future.result()
 
             if return_value:
@@ -422,12 +437,12 @@ class Table:
             else:
                 widgets['download_slides'].setEnabled(True)
 
-    def on_click_open_folder(self, ttid):     # noqa
-        folder_path = self.get_folder_from_ttid(ttid)
+    def on_click_open_folder(self, rf_id: int):     # noqa
+        folder_path = self.get_folder_from_rfid(rf_id)
         Utils.open_file(folder_path)
 
-    def on_click_attach_slides(self, ttid):       # noqa
-        folder_path = self.get_folder_from_ttid(ttid)
+    def on_click_attach_slides(self, rf_id: int):       # noqa
+        folder_path = self.get_folder_from_rfid(rf_id)
         conf = Config.load(ConfigType.IMPARTUS)
         filters = ['{} files (*.{})'.format(str(x).title(), x) for x in conf.get('allowed_ext')]
         filters_str = ';;'.join(filters)
@@ -440,7 +455,7 @@ class Table:
         if not filepaths:
             return
 
-        row = self.get_row_from_ttid(ttid)
+        row = self.get_row_from_rfid(rf_id)
         col = Columns.get_column_index_by_key('slides_actions')
         ss_field = ActionItems.get_action_item_index('slides_actions', 'show_slides')
         ss_combobox = self.table.cellWidget(row, col).layout().itemAt(ss_field).widget()
@@ -457,34 +472,46 @@ class Table:
             if self.table.cellWidget(i, 0).layout().itemAt(0).widget().isChecked():
                 return i
 
-    def get_ttid_col(self):      # noqa
-        for i, key in enumerate(Columns.hidden_columns.keys(),
-                                1 + len(Columns.data_columns) + len(Columns.widget_columns)):
-            if key == 'ttid':
-                return i
-
-    def get_selected_row_ttid(self):
+    def get_selected_row_rfid(self):
+        """
+        Return ttid or fcid, whichever applicable, also return a flag 'flipped'=True if it is a flipped lecture.
+        """
         row_index = self.get_selected_row()
         if row_index is None:
             return
 
-        col = self.get_ttid_col()
-        if col:
-            return int(self.table.item(row_index, col).text())
+        ttid_col = Columns.get_column_index_by_key('ttid')
+        if ttid_col:
+            ttid = self.table.item(row_index, ttid_col).text()
+            if ttid:
+                return int(ttid), False
 
-    def get_row_from_ttid(self, ttid: int):
-        ttid_col_index = self.get_ttid_col()
-        for i in range(self.table.rowCount()):
-            if int(self.table.item(i, ttid_col_index).text()) == ttid:
-                return i
+        fcid_col = Columns.get_column_index_by_key('fcid')
+        if fcid_col:
+            fcid = self.table.item(row_index, fcid_col).text()
+            if fcid:
+                return int(fcid), True
 
-    def get_folder_from_ttid(self, ttid: int):
-        video_path = self.data.get(ttid)['offline_filepath'] if self.data.get(ttid).get('offline_filepath') else None
+    def get_row_from_rfid(self, rf_id: int, flipped=False):
+        if flipped:
+            fcid_col_index = Columns.get_column_index_by_key('fcid')
+            for i in range(self.table.rowCount()):
+                if int(self.table.item(i, fcid_col_index).text()) == rf_id:
+                    return i
+        else:
+            ttid_col_index = Columns.get_column_index_by_key('ttid')
+            for i in range(self.table.rowCount()):
+                if int(self.table.item(i, ttid_col_index).text()) == rf_id:
+                    return i
+
+    def get_folder_from_rfid(self, rf_id: int):
+        video_path = self.data.get(rf_id)['offline_filepath'] if self.data.get(rf_id).get('offline_filepath') else None
         if video_path:
             return os.path.dirname(video_path)
-        slides_path = self.data.get(ttid)['backpack_slides'][0] if self.data.get(ttid).get('backpack_slides') else None
+        slides_path = self.data.get(rf_id)['backpack_slides'][0]\
+            if self.data.get(rf_id).get('backpack_slides') else None
         if slides_path:
             return os.path.dirname(slides_path)
-        captions_path = self.data.get(ttid)['captions_path'] if self.data.get(ttid).get('captions_path') else None
+        captions_path = self.data.get(rf_id)['captions_path'] if self.data.get(rf_id).get('captions_path') else None
         if captions_path:
             return os.path.dirname(captions_path)

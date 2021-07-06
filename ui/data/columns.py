@@ -1,6 +1,8 @@
 from PySide2.QtCore import Qt
 from PySide2.QtWidgets import QHeaderView
 
+from ui.data.Icons import Icons
+
 
 class Columns:
     """
@@ -97,6 +99,19 @@ class Columns:
     }
 
     widget_columns = {
+        'flipped': {
+            'alignment': Qt.AlignRight | Qt.AlignVCenter,
+            'display_name': 'F',
+            'editable': False,
+            'hidden': False,
+            'menu_tooltip': 'Flipped Lecture ?',
+            'original_values_col': None,
+            'resize_policy': QHeaderView.ResizeMode.ResizeToContents,
+            'initial_size': 20,
+            'sortable': True,
+            'title_case': False,
+            'icon': Icons.MENU__FLIPPED_VIDEO_QUALITY.value,
+        },
         'progress_bar': {
             'alignment': Qt.AlignHCenter | Qt.AlignVCenter,
             'display_name': 'Downloaded?',

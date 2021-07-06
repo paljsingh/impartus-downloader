@@ -1,14 +1,10 @@
-import os
-
-from PySide2.QtCore import QPoint
 from PySide2.QtGui import QIcon
 from PySide2.QtWidgets import QAction, QMainWindow, QActionGroup
 
 from lib.config import ConfigType, Config
 from lib.impartus import Impartus
-from lib.utils import Utils
-from ui.data.docs import Docs
 from ui.data.menuitems import MenuItems
+import qtawesome as qta
 
 
 class Menubar:
@@ -38,7 +34,8 @@ class Menubar:
                     level_1.addSeparator()
                 elif properties.get('type') == 'list':
                     # list root    [flipped lecture video, Columns ... ]
-                    submenu_item = QAction(QIcon(), child_name, self.content_window)
+                    icon = qta.icon(properties['icon']) if properties.get('icon') else QIcon()
+                    submenu_item = QAction(icon, child_name, self.content_window)
                     submenu_item.setCheckable(False)
                     submenu_item.setObjectName(child_name)
                     submenu_item.setEnabled(False)
@@ -71,7 +68,8 @@ class Menubar:
                         level_1.addAction(submenu_item)
 
                 else:
-                    level_2 = QAction(QIcon(), child_name, self.content_window)
+                    icon = qta.icon(properties['icon']) if properties.get('icon') else QIcon()
+                    level_2 = QAction(icon, child_name, self.content_window)
                     level_2.setShortcut(properties['shortcut'])
                     level_2.setStatusTip(properties['status_tip'])
                     level_2.setObjectName(child_name)

@@ -10,7 +10,7 @@ from lib.utils import Utils
 from ui.data.docs import Docs
 from ui.data.variables import Variables
 from ui.dialog import Dialog
-from envyaml import EnvYAML
+
 
 class Callbacks:
     """
@@ -41,7 +41,7 @@ class Callbacks:
         else:
             self.login_window.login_form.login_button.setEnabled(True)
 
-    def get_action(self, menu, action_name):
+    def get_action(self, menu, action_name):    # noqa
         for act in menu.actions():
             if act.objectName() == action_name:
                 return act
@@ -82,7 +82,7 @@ class Callbacks:
             logout_menu.setEnabled(False)
 
         table = self.content_window.table_container
-        ttid = table.get_selected_row_ttid()
+        rf_id = table.get_selected_row_rfid()
 
         # video menu
         video_menu = self.content_window.menuBar().findChild(QObject, 'Video')
@@ -91,20 +91,20 @@ class Callbacks:
         download_chats_menu = self.get_action(video_menu, 'Download Lecture Chats')
         # enable video download menu, when -
         # a row is checked, and the checked row needs a download.
-        if is_authenticated and ttid and not table.data[ttid].get('offline_filepath'):
+        if is_authenticated and rf_id and not table.data[rf_id].get('offline_filepath'):
             download_video_menu.setEnabled(True)
         else:
             download_video_menu.setEnabled(False)
 
-        if ttid and table.data[ttid].get('offline_filepath') \
-                and os.path.exists(table.data[ttid].get('offline_filepath')):
+        if rf_id and table.data[rf_id].get('offline_filepath') \
+                and os.path.exists(table.data[rf_id].get('offline_filepath')):
             play_video_menu.setEnabled(True)
         else:
             play_video_menu.setEnabled(False)
 
         # enable download captions, if captions file does not exist locally.
-        if is_authenticated and ttid and table.data[ttid]:
-            captions_path = self.impartus.get_captions_path(table.data[ttid])
+        if is_authenticated and rf_id and table.data[rf_id]:
+            captions_path = self.impartus.get_captions_path(table.data[rf_id])
             if captions_path and not os.path.exists(captions_path):
                 download_chats_menu.setEnabled(True)
             else:
@@ -119,21 +119,21 @@ class Callbacks:
         attach_slides_menu = self.get_action(slides_menu, 'Attach Lecture Slides')
 
         # download slides button will ve enabled, if the slide exists on server, but not locally.
-        if is_authenticated and ttid and table.data[ttid].get('slide_url') and \
-                table.data[ttid].get('slide_path') and not os.path.exists(table.data[ttid].get('slide_path')):
+        if is_authenticated and rf_id and table.data[rf_id].get('slide_url') and \
+                table.data[rf_id].get('slide_path') and not os.path.exists(table.data[rf_id].get('slide_path')):
             download_slides_menu.setEnabled(True)
         else:
             download_slides_menu.setEnabled(False)
 
         filepath = None
-        if ttid:
+        if rf_id:
             for field in ['offline_filepath', 'slide_path', 'captions_path']:
-                if table.data[ttid].get(field):
-                    filepath = table.data[ttid].get(field)
+                if table.data[rf_id].get(field):
+                    filepath = table.data[rf_id].get(field)
                     break
 
         directory = os.path.dirname(filepath) if filepath else None
-        if ttid and table.data[ttid].get('offline_filepath') and os.path.exists(directory):
+        if rf_id and table.data[rf_id].get('offline_filepath') and os.path.exists(directory):
             open_folder_menu.setEnabled(True)
             attach_slides_menu.setEnabled(True)
         else:
@@ -159,7 +159,7 @@ class Callbacks:
     def on_reload_click(self):
         self.content_window.work_online()
 
-    def on_auto_organize_click(self):
+    def on_auto_organize_click(self):   # noqa
         print('auto organize called...')
 
     def on_logout_click(self):
@@ -177,32 +177,32 @@ class Callbacks:
     def on_search_click(self):
         self.content_window.search_box.set_focus()
 
-    def on_video_quality_click(self, video_quality: str):
+    def on_video_quality_click(self, video_quality: str):   # noqa
         Variables().set_flipped_lecture_quality(video_quality)
 
     def on_download_video_click(self):
-        ttid = self.content_window.table_container.get_selected_row_ttid()
-        self.content_window.table_container.on_click_download_video(ttid)
+        rf_id = self.content_window.table_container.get_selected_row_rfid()
+        self.content_window.table_container.on_click_download_video(rf_id)
 
     def on_play_video_click(self):
-        ttid = self.content_window.table_container.get_selected_row_ttid()
-        self.content_window.table_container.on_click_play_video(ttid)
+        rf_id = self.content_window.table_container.get_selected_row_rfid()
+        self.content_window.table_container.on_click_play_video(rf_id)
 
     def on_download_chats_click(self):
-        ttid = self.content_window.table_container.get_selected_row_ttid()
-        self.content_window.table_container.on_click_download_chats(ttid)
+        rf_id = self.content_window.table_container.get_selected_row_rfid()
+        self.content_window.table_container.on_click_download_chats(rf_id)
 
     def on_download_slides_click(self):
-        ttid = self.content_window.table_container.get_selected_row_ttid()
-        self.content_window.table_container.on_click_download_slides(ttid)
+        rf_id = self.content_window.table_container.get_selected_row_rfid()
+        self.content_window.table_container.on_click_download_slides(rf_id)
 
     def on_open_folder_click(self):
-        ttid = self.content_window.table_container.get_selected_row_ttid()
-        self.content_window.table_container.on_click_open_folder(ttid)
+        rf_id = self.content_window.table_container.get_selected_row_rfid()
+        self.content_window.table_container.on_click_open_folder(rf_id)
 
     def on_attach_slides_click(self):
-        ttid = self.content_window.table_container.get_selected_row_ttid()
-        self.content_window.table_container.on_click_attach_slides(ttid)
+        rf_id = self.content_window.table_container.get_selected_row_rfid()
+        self.content_window.table_container.on_click_attach_slides(rf_id)
 
     def on_check_for_updates_click(self):
         current_version = version.__version_info__
@@ -271,11 +271,11 @@ class Callbacks:
             index = treewidget.model().index(i, 0)
             treewidget.collapse(index)
 
-    def on_help_doc(self):  # noqa
+    def on_help_doc(self):      # noqa
         document_path = os.path.join(os.path.abspath(os.curdir), Docs.HELPDOC.value)
         Utils.open_file(document_path)
 
-    def get_releases(self):
+    def get_releases(self):     # noqa
         url = 'https://api.github.com/repos/paljsingh/impartus-downloader/releases'
         response = requests.get(url)
         if response.status_code == 200:
