@@ -478,7 +478,7 @@ class Table:
         """
         row_index = self.get_selected_row()
         if row_index is None:
-            return
+            return None, False
 
         ttid_col = Columns.get_column_index_by_key('ttid')
         if ttid_col:
@@ -491,6 +491,8 @@ class Table:
             fcid = self.table.item(row_index, fcid_col).text()
             if fcid:
                 return int(fcid), True
+
+        return None, False
 
     def get_row_from_rfid(self, rf_id: int, flipped=False):
         if flipped:

@@ -82,7 +82,7 @@ class Callbacks:
             logout_menu.setEnabled(False)
 
         table = self.content_window.table_container
-        rf_id = table.get_selected_row_rfid()
+        rf_id, is_flipped = table.get_selected_row_rfid()
 
         # video menu
         video_menu = self.content_window.menuBar().findChild(QObject, 'Video')
@@ -181,27 +181,27 @@ class Callbacks:
         Variables().set_flipped_lecture_quality(video_quality)
 
     def on_download_video_click(self):
-        rf_id = self.content_window.table_container.get_selected_row_rfid()
+        rf_id, is_flipped = self.content_window.table_container.get_selected_row_rfid()
         self.content_window.table_container.on_click_download_video(rf_id)
 
     def on_play_video_click(self):
-        rf_id = self.content_window.table_container.get_selected_row_rfid()
+        rf_id, is_flipped = self.content_window.table_container.get_selected_row_rfid()
         self.content_window.table_container.on_click_play_video(rf_id)
 
     def on_download_chats_click(self):
-        rf_id = self.content_window.table_container.get_selected_row_rfid()
+        rf_id, is_flipped = self.content_window.table_container.get_selected_row_rfid()
         self.content_window.table_container.on_click_download_chats(rf_id)
 
     def on_download_slides_click(self):
-        rf_id = self.content_window.table_container.get_selected_row_rfid()
+        rf_id, is_flipped = self.content_window.table_container.get_selected_row_rfid()
         self.content_window.table_container.on_click_download_slides(rf_id)
 
     def on_open_folder_click(self):
-        rf_id = self.content_window.table_container.get_selected_row_rfid()
+        rf_id, is_flipped = self.content_window.table_container.get_selected_row_rfid()
         self.content_window.table_container.on_click_open_folder(rf_id)
 
     def on_attach_slides_click(self):
-        rf_id = self.content_window.table_container.get_selected_row_rfid()
+        rf_id, is_flipped = self.content_window.table_container.get_selected_row_rfid()
         self.content_window.table_container.on_click_attach_slides(rf_id)
 
     def on_check_for_updates_click(self):
