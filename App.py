@@ -26,7 +26,8 @@ class App:
         Callbacks().setup(
             impartus=self.impartus,
             login_window=self.login_window,
-            content_window=self.content_window
+            content_window=self.content_window,
+            app=self.app,
         )
         self.content_window.set_layout()
 
