@@ -1,9 +1,10 @@
+from datetime import datetime
 import os
 
 import requests
 from PySide2 import QtCore
 from PySide2.QtCore import QObject
-from PySide2.QtWidgets import QMainWindow, QLabel, QTreeWidget, QTreeWidgetItem
+from PySide2.QtWidgets import QMainWindow, QLabel, QTreeWidget, QTreeWidgetItem, QTableWidget
 
 from lib import version
 from lib.utils import Utils
@@ -29,11 +30,14 @@ class Callbacks:
     impartus = None
     login_window = None
     content_window = None
+    app = None
+    last_timestamp = 0.0
 
-    def setup(self, impartus, login_window, content_window):
+    def setup(self, impartus, login_window, content_window, app):
         self.impartus = impartus
         self.login_window = login_window
         self.content_window = content_window
+        self.app = app
 
     def set_pushbutton_statuses(self):
         if self.impartus.is_authenticated():
@@ -145,24 +149,32 @@ class Callbacks:
         switch between two windows.
         """
         to_window.show()
-        from_window.hide()
+        to_window.setVisible(True)
         to_window.setFocus()
+        from_window.hide()
         return to_window
 
-    def on_login_click(self):
+    def processEvents(self):
+        # process every n seconds at most
+        n = 0.5
+        if datetime.now().timestamp() - self.last_timestamp >= n:
+            self.app.processEvents()
+            self.last_timestamp = datetime.now().timestamp()
+
+    def on_menu_login_click(self):
         self.switch_windows(
             from_window=self.content_window,
             to_window=self.login_window
         )
         self.set_menu_statuses()
 
-    def on_reload_click(self):
+    def on_menu_reload_click(self):
         self.content_window.work_online()
 
-    def on_auto_organize_click(self):   # noqa
+    def on_menu_auto_organize_click(self):   # noqa
         print('auto organize called...')
 
-    def on_logout_click(self):
+    def on_menu_logout_click(self):
         self.impartus.logout()
         self.switch_windows(
             from_window=self.content_window,
@@ -171,40 +183,40 @@ class Callbacks:
         self.set_menu_statuses()
         self.login_window.validate_inputs()
 
-    def on_column_click(self, column_name: str):
+    def on_menu_column_click(self, column_name: str):
         self.content_window.table_container.show_hide_column(column_name)
 
-    def on_search_click(self):
+    def on_menu_search_click(self):
         self.content_window.search_box.set_focus()
 
-    def on_video_quality_click(self, video_quality: str):   # noqa
+    def on_menu_video_quality_click(self, video_quality: str):   # noqa
         Variables().set_flipped_lecture_quality(video_quality)
 
-    def on_download_video_click(self):
+    def on_menu_download_video_click(self):
         rf_id, is_flipped = self.content_window.table_container.get_selected_row_rfid()
         self.content_window.table_container.on_click_download_video(rf_id)
 
-    def on_play_video_click(self):
+    def on_menu_play_video_click(self):
         rf_id, is_flipped = self.content_window.table_container.get_selected_row_rfid()
         self.content_window.table_container.on_click_play_video(rf_id)
 
-    def on_download_chats_click(self):
+    def on_menu_download_chats_click(self):
         rf_id, is_flipped = self.content_window.table_container.get_selected_row_rfid()
         self.content_window.table_container.on_click_download_chats(rf_id)
 
-    def on_download_slides_click(self):
+    def on_menu_download_slides_click(self):
         rf_id, is_flipped = self.content_window.table_container.get_selected_row_rfid()
         self.content_window.table_container.on_click_download_slides(rf_id)
 
-    def on_open_folder_click(self):
+    def on_menu_open_folder_click(self):
         rf_id, is_flipped = self.content_window.table_container.get_selected_row_rfid()
         self.content_window.table_container.on_click_open_folder(rf_id)
 
-    def on_attach_slides_click(self):
+    def on_menu_attach_slides_click(self):
         rf_id, is_flipped = self.content_window.table_container.get_selected_row_rfid()
         self.content_window.table_container.on_click_attach_slides(rf_id)
 
-    def on_check_for_updates_click(self):
+    def on_menu_check_for_updates_click(self):
         current_version = version.__version_info__
         releases = self.get_releases()
 
@@ -271,7 +283,7 @@ class Callbacks:
             index = treewidget.model().index(i, 0)
             treewidget.collapse(index)
 
-    def on_help_doc(self):      # noqa
+    def on_menu_help_doc_click(self):      # noqa
         document_path = os.path.join(os.path.abspath(os.curdir), Docs.HELPDOC.value)
         Utils.open_file(document_path)
 

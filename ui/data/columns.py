@@ -15,6 +15,7 @@ class Columns:
             'display_name': 'Subject',
             'editable': True,
             'hidden': False,
+            'menu_name': 'Subject',
             'menu_tooltip': 'Subject',
             # provide a mapping to original values column, if you want to present a column values differently, *and*
             # need to persist the changes via etc/mappings.conf
@@ -29,6 +30,7 @@ class Columns:
             'display_name': 'Faculty',
             'editable': False,
             'hidden': False,
+            'menu_name': 'Faculty',
             'menu_tooltip': 'Faculty Name',
             'original_values_col': None,
             'resize_policy': QHeaderView.ResizeMode.ResizeToContents,
@@ -41,6 +43,7 @@ class Columns:
             'display_name': 'Topic',
             'editable': False,
             'hidden': False,
+            'menu_name': 'Topic',
             'menu_tooltip': 'Lecture Topic',
             'original_values_col': None,
             'resize_policy': QHeaderView.ResizeMode.Stretch,    # only 1 column can be 'Stretch'
@@ -53,6 +56,7 @@ class Columns:
             'display_name': 'Lecture #',
             'editable': False,
             'hidden': False,
+            'menu_name': 'Lecture #',
             'menu_tooltip': 'Lecture id',
             'original_values_col': None,
             'resize_policy': QHeaderView.ResizeMode.ResizeToContents,
@@ -65,6 +69,7 @@ class Columns:
             'display_name': 'Duration',
             'editable': False,
             'hidden': False,
+            'menu_name': 'Duration',
             'menu_tooltip': 'Lecture Duration',
             'original_values_col': None,
             'resize_policy': QHeaderView.ResizeMode.ResizeToContents,
@@ -77,6 +82,7 @@ class Columns:
             'display_name': 'Tracks',
             'editable': False,
             'hidden': False,
+            'menu_name': 'Tracks',
             'menu_tooltip': 'Number of tracks / view',
             'original_values_col': None,
             'resize_policy': QHeaderView.ResizeMode.ResizeToContents,
@@ -89,6 +95,7 @@ class Columns:
             'display_name': 'Date',
             'editable': False,
             'hidden': False,
+            'menu_name': 'Date',
             'menu_tooltip': 'Lecture Date',
             'original_values_col': None,
             'resize_policy': QHeaderView.ResizeMode.ResizeToContents,
@@ -103,11 +110,12 @@ class Columns:
             'alignment': Qt.AlignRight | Qt.AlignVCenter,
             'display_name': 'F',
             'editable': False,
-            'hidden': False,
+            'hidden': True,
+            'menu_name': 'Flipped?',
             'menu_tooltip': 'Flipped Lecture ?',
             'original_values_col': None,
             'resize_policy': QHeaderView.ResizeMode.ResizeToContents,
-            'initial_size': 20,
+            'initial_size': 30,
             'sortable': True,
             'title_case': False,
             'icon': Icons.MENU__FLIPPED_VIDEO_QUALITY.value,
@@ -117,6 +125,7 @@ class Columns:
             'display_name': 'Downloaded?',
             'editable': False,
             'hidden': False,
+            'menu_name': 'Downloaded?',
             'menu_tooltip': 'Download Status',
             'original_values_col': None,
             'resize_policy': QHeaderView.ResizeMode.Fixed,
@@ -129,6 +138,7 @@ class Columns:
             'display_name': 'Video',
             'editable': False,
             'hidden': False,
+            'menu_name': 'Video',
             'menu_tooltip': 'Video Actions',
             'original_values_col': None,
             'resize_policy': QHeaderView.ResizeMode.Fixed,
@@ -141,6 +151,7 @@ class Columns:
             'display_name': 'Slides',
             'editable': False,
             'hidden': False,
+            'menu_name': 'Slides',
             'menu_tooltip': 'Slides Actions',
             'original_values_col': None,
             'resize_policy': QHeaderView.ResizeMode.Fixed,
@@ -157,6 +168,7 @@ class Columns:
             'editable': False,
             'hidden': True,
             'initial_size': 50,
+            'menu_name': 'ttid',
             'menu_tooltip': 'ttid',
             'original_values_col': None,
             'resize_policy': QHeaderView.ResizeMode.Fixed,
@@ -168,6 +180,10 @@ class Columns:
     @classmethod
     def get_display_columns(cls):
         return [*Columns.data_columns, *Columns.widget_columns]
+
+    @classmethod
+    def get_display_columns_dict(cls):
+        return {**Columns.data_columns, **Columns.widget_columns}
 
     @classmethod
     def get_column_index_by_key(cls, key_name):
