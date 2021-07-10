@@ -2,7 +2,7 @@ from functools import partial
 from typing import Callable
 
 from PySide2 import QtWidgets
-from PySide2.QtCore import QFile
+from PySide2.QtCore import QFile, QTimer
 from PySide2.QtUiTools import QUiLoader
 from PySide2.QtWidgets import QMainWindow
 
@@ -113,7 +113,7 @@ class LoginWindow(QMainWindow):
                 from_window=self,
                 to_window=self.content_window
             )
-            self.content_window.work_online()
+            QTimer.singleShot(1, self.content_window.work_online)
         else:
             QtWidgets.QErrorMessage().showMessage(
                 'Error authenticating to {}. See console logs for details.'.format(url)
@@ -124,4 +124,4 @@ class LoginWindow(QMainWindow):
             from_window=self,
             to_window=self.content_window
         )
-        self.content_window.work_offline()
+        QTimer.singleShot(1, self.content_window.work_offline)

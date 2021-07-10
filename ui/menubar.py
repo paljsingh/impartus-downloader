@@ -3,6 +3,7 @@ from PySide2.QtWidgets import QAction, QMainWindow, QActionGroup
 
 from lib.config import ConfigType, Config
 from lib.impartus import Impartus
+from ui.data.columns import Columns
 from ui.data.menuitems import MenuItems
 import qtawesome as qta
 
@@ -48,21 +49,29 @@ class Menubar:
                         action_group.setExclusive(True)
 
                     # level_2: View:Col1,  View:Col2, Video: ...
-                    for i, (level2_child_name, callback) in enumerate(
-                            zip(properties['child_items'], properties['child_callbacks'])):
-                        submenu_item = QAction(QIcon(), level2_child_name, self.content_window)
+                    for i, ((level2_child_key, level2_child_display_name), callback) in enumerate(
+                            zip(properties['child_items'].items(), properties['child_callbacks'])):
+                        submenu_item = QAction(QIcon(), level2_child_display_name, self.content_window)
                         submenu_item.setCheckable(True)
-                        submenu_item.setObjectName(level2_child_name)       # submenu_item: Col1_menu, Col2_menu ...
+                        submenu_item.setObjectName(level2_child_display_name)   # submenu_item: Col1_menu, Col2_menu ...
                         submenu_item.setEnabled(True)
                         action_group.addAction(submenu_item)
 
                         if properties.get('behavior') == 'multiselect':
                             submenu_item.setChecked(True)
                         elif properties.get('behavior') == 'singleselect':
-                            submenu_item.setChecked(True) if level2_child_name == properties.get('default') \
+                            submenu_item.setChecked(True) if level2_child_display_name == properties.get('default') \
                                 else submenu_item.setChecked(False)
                         else:
                             pass
+
+                        # however, if the column is default hidden, set the menu item to unchecked.
+                        if Columns.get_display_columns_dict().get(level2_child_key) \
+                                and Columns.get_display_columns_dict().get(level2_child_key).get('hidden'):
+                            submenu_item.setChecked(False)
+                        else:
+                            submenu_item.setChecked(True)
+
                         submenu_item.triggered.connect(callback)
 
                         level_1.addAction(submenu_item)

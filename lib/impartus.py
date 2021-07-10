@@ -394,7 +394,8 @@ class Impartus:
                     online_lectures[rf_id]['ext'] = ''
                     online_lectures[rf_id]['slide_path'] = ''
 
-        return online_lectures
+                yield online_lectures[rf_id]
+        # return online_lectures
 
 
 class GetOutOfLoop(Exception):

@@ -1,5 +1,6 @@
 import logging
 import os
+import platform
 import shutil
 import threading
 from functools import partial
@@ -12,7 +13,7 @@ import qtawesome as qta
 from PySide2 import QtCore, QtWidgets
 from PySide2.QtGui import QIcon
 from PySide2.QtWidgets import QTableWidget, QAbstractScrollArea, QTableWidgetItem, QHeaderView, QFileDialog, \
-    QAbstractItemView, QCheckBox
+    QAbstractItemView, QCheckBox, QMainWindow
 
 from lib.captions import Captions
 from lib.config import Config, ConfigType
@@ -51,7 +52,7 @@ class Table:
         self.conf = Config.load(ConfigType.IMPARTUS)
         self.impartus = impartus
         self.table = None
-        self.data = None
+        self.data = dict()
         self.prev_checkbox = None
 
         self.readonly_delegate = ReadOnlyDelegate()
@@ -75,12 +76,10 @@ class Table:
         buffer = 70     # includes the window borders, vertical scrollbar, padding, row number field...
         table.viewport().setMaximumWidth(screen_width - buffer)
         self.table = table
+        self.table.show()
         return table
 
-    def _set_size(self, row_count: int, col_count: int):
-        self.table.setColumnCount(col_count)
-        self.table.setRowCount(row_count)
-
+    # def _set_size(self, row_count: int, col_count: int):
     def _set_headers(self):
         # header item for checkboxes column (TODO: check if it is possible to add a 'select all' checkbox here.)
         widget = QTableWidgetItem()
@@ -101,11 +100,6 @@ class Table:
                 widget.setIcon(qta.icon(Icons.TABLE__EDITABLE_COLUMN.value))
                 self.table.setItemDelegateForColumn(index, self.write_delegate)
 
-            # disable sorting for some columns.
-            if not val['sortable']:
-                # TODO -
-                pass
-
             self.table.horizontalHeader().setSectionResizeMode(index, val['resize_policy'])
             if val['hidden']:
                 self.table.setColumnHidden(index, True)
@@ -116,87 +110,110 @@ class Table:
         self.table.horizontalHeader().setSortIndicatorShown(True)
         return self
 
-    def set_row_content(self, data: Dict):
-        self.data = data
-        for index, (rf_id, item) in enumerate(data.items()):
-            # for each row, add a checkbox first.
-            container_widget = Common.add_checkbox_widget(self.on_click_checkbox)
-            self.table.setCellWidget(index, 0, container_widget)
+    def set_row_content(self, offline_data, online_data_gen=None):
+        # if we have generator for fetching online data
+        # pick one item at a time, merge it with offline data item if present (that gives you it's offline location,
+        # attached slides and chats location etc.
+        # Later, add any remaining offline videos (which might have been downloaded from other sources, or
+        # the ones that may not be accessible online any more.)
+        index = 0
+        if online_data_gen:
+            while True:
+                online_item = next(online_data_gen, None)
+                if not online_item:
+                    self.save_metadata(self.data)
+                    break
+                rf_id = online_item['ttid'] if online_item.get('ttid') else online_item['fcid']
+                if offline_data.get(rf_id):
+                    online_item = self.merge_items(online_item, offline_data[rf_id])
+                    del offline_data[rf_id]
+                self.data[rf_id] = online_item
+                self.add_row_item(index, rf_id, online_item)
+                index += 1
+        for i, (rf_id, offline_item) in enumerate(offline_data.items(), index):
+            self.add_row_item(i, rf_id, offline_item)
 
-            # enumerate rest of the columns from 1
-            for col, (key, val) in enumerate(Columns.data_columns.items(), 1):
-                widget = QTableWidgetItem(str(item.get(key)))
-                widget.setTextAlignment(val['alignment'])
-                self.table.setItem(index, col, widget)
+    def add_row_item(self, index, rf_id, data_item):
+        self.table.setRowCount(index + 1)
 
-            # total columns so far...
-            col = len(Columns.data_columns) + 1
+        # for each row, add a checkbox first.
+        container_widget = Common.add_checkbox_widget(self.on_click_checkbox)
+        self.table.setCellWidget(index, 0, container_widget)
 
-            # flipped icon column.
+        # enumerate rest of the columns from 1
+        for col, (key, val) in enumerate(Columns.data_columns.items(), 1):
+            widget = QTableWidgetItem(str(data_item.get(key)))
+            widget.setTextAlignment(val['alignment'])
+            self.table.setItem(index, col, widget)
 
-            flipped_col = Columns.widget_columns['flipped']
-            flipped_icon = qta.icon(flipped_col['icon']) if data[rf_id].get('fcid') else QIcon()
-            flipped_icon_widget = CustomTableWidgetItem()
-            flipped_icon_widget.setIcon(flipped_icon)
-            flipped_icon_widget.setTextAlignment(Columns.widget_columns['flipped']['alignment'])
-            int_value = 1 if data[rf_id].get('fcid') else 0
-            flipped_icon_widget.setValue(int_value)
-            flipped_icon_widget.setToolTip(Columns.widget_columns['flipped']['menu_tooltip'])
+        # total columns so far...
+        col = len(Columns.data_columns) + 1
 
-            self.table.setItem(index, col, flipped_icon_widget)
-            col += 1
+        # flipped icon column.
 
-            # progress bar.
-            progress_bar_widget = SortableRoundProgressbar()
-            progress_bar_widget.setValue(0)
-            progress_bar_widget.setAlignment(Columns.widget_columns['progress_bar']['alignment'])
-            self.table.setItem(index, col, progress_bar_widget.table_widget_item)
-            self.table.setCellWidget(index, col, progress_bar_widget)
-            if item.get('offline_filepath'):
-                progress_bar_widget.setValue(100)
-            col += 1
+        flipped_col = Columns.widget_columns['flipped']
+        flipped_icon = qta.icon(flipped_col['icon']) if data_item.get('fcid') else QIcon()
+        flipped_icon_widget = CustomTableWidgetItem()
+        flipped_icon_widget.setIcon(flipped_icon)
+        flipped_icon_widget.setTextAlignment(Columns.widget_columns['flipped']['alignment'])
+        int_value = 1 if data_item.get('fcid') else 0
+        flipped_icon_widget.setValue(int_value)
+        flipped_icon_widget.setToolTip(Columns.widget_columns['flipped']['menu_tooltip'])
 
-            # video actions
-            callbacks = {
-                'download_video': partial(self.on_click_download_video, rf_id),
-                'play_video': partial(self.on_click_play_video, rf_id),
-                'download_chats': partial(self.on_click_download_chats, rf_id)
-            }
-            video_actions_widget, cell_value = Videos.add_video_actions_buttons(item, self.impartus, callbacks)
-            self.table.setCellWidget(index, col, video_actions_widget)
-            self.table.cellWidget(index, col).setContentsMargins(0, 0, 0, 0)
+        self.table.setItem(index, col, flipped_icon_widget)
+        col += 1
 
-            custom_item = CustomTableWidgetItem()
-            custom_item.setValue(cell_value)
-            self.table.setItem(index, col, custom_item)
+        # progress bar.
+        progress_bar_widget = SortableRoundProgressbar()
+        progress_bar_widget.setValue(0)
+        progress_bar_widget.setAlignment(Columns.widget_columns['progress_bar']['alignment'])
+        self.table.setItem(index, col, progress_bar_widget.table_widget_item)
+        self.table.setCellWidget(index, col, progress_bar_widget)
+        if data_item.get('offline_filepath'):
+            progress_bar_widget.setValue(100)
+        col += 1
 
-            col += 1
+        # video actions
+        callbacks = {
+            'download_video': partial(self.on_click_download_video, rf_id),
+            'play_video': partial(self.on_click_play_video, rf_id),
+            'download_chats': partial(self.on_click_download_chats, rf_id)
+        }
+        video_actions_widget, cell_value = Videos.add_video_actions_buttons(data_item, self.impartus, callbacks)
+        self.table.setCellWidget(index, col, video_actions_widget)
+        self.table.cellWidget(index, col).setContentsMargins(0, 0, 0, 0)
 
-            # slides actions
-            callbacks = {
-                'download_slides': partial(self.on_click_download_slides, rf_id),
-                'open_folder': partial(self.on_click_open_folder, rf_id),
-                'attach_slides': partial(self.on_click_attach_slides, rf_id),
-            }
-            slides_actions_widget, cell_value = Slides.add_slides_actions_buttons(item, self.impartus, callbacks)
-            self.table.setCellWidget(index, col, slides_actions_widget)
+        custom_item = CustomTableWidgetItem()
+        custom_item.setValue(cell_value)
+        self.table.setItem(index, col, custom_item)
 
-            # numeric sort implemented via a Custom QTableWidgetItem
-            custom_item = CustomTableWidgetItem()
-            custom_item.setValue(cell_value)
-            self.table.setItem(index, col, custom_item)
+        col += 1
 
-            col += 1
+        # slides actions
+        callbacks = {
+            'download_slides': partial(self.on_click_download_slides, rf_id),
+            'open_folder': partial(self.on_click_open_folder, rf_id),
+            'attach_slides': partial(self.on_click_attach_slides, rf_id),
+        }
+        slides_actions_widget, cell_value = Slides.add_slides_actions_buttons(data_item, self.impartus, callbacks)
+        self.table.setCellWidget(index, col, slides_actions_widget)
 
-            # hidden columns
-            for col_index, (key, val) in enumerate(Columns.hidden_columns.items(), col):
-                widget = QTableWidgetItem(str(item[key]))
-                widget.setTextAlignment(Columns.hidden_columns[key]['alignment'])
-                self.table.setItem(index, col_index, widget)
+        # numeric sort implemented via a Custom QTableWidgetItem
+        custom_item = CustomTableWidgetItem()
+        custom_item.setValue(cell_value)
+        self.table.setItem(index, col, custom_item)
 
-        for index in range(len(data)):
-            self.table.setRowHeight(index, 48)
-        return self
+        col += 1
+
+        # hidden columns
+        for col_index, (key, val) in enumerate(Columns.hidden_columns.items(), col):
+            widget = QTableWidgetItem(str(data_item[key]))
+            widget.setTextAlignment(Columns.hidden_columns[key]['alignment'])
+            self.table.setItem(index, col_index, widget)
+
+        # for index in range(len(online_data)):
+        self.table.setRowHeight(index, 48)
+        Callbacks().processEvents()
 
     def resizable_headers(self):
         # Todo ...
@@ -225,21 +242,19 @@ class Table:
         else:
             self.table.setColumnHidden(col_index, True)
 
-    def fill_table(self, data):
+    def fill_table(self, offline_data, online_data=None):
         # clear does not reset the table size, do it explicitly.
         self.table.setSortingEnabled(False)
         self.table.clear()
-        self._set_size(0, 0)
+
+        col_count = Columns.get_columns_count()
+        self.table.setColumnCount(col_count)
 
         self.prev_checkbox = None
 
-        col_count = Columns.get_columns_count()
-        row_count = len(data)
-
-        self._set_size(row_count, col_count)
         self._set_headers()
 
-        self.set_row_content(data)
+        self.set_row_content(offline_data, online_data)
         self.resizable_headers()
         self.table.setSortingEnabled(True)
 
@@ -517,3 +532,20 @@ class Table:
         captions_path = self.data.get(rf_id)['captions_path'] if self.data.get(rf_id).get('captions_path') else None
         if captions_path:
             return os.path.dirname(captions_path)
+
+    def merge_items(self, offline_item, online_item):   # noqa
+        for key, val in offline_item.items():
+            if not online_item.get(key):
+                online_item[key] = offline_item[key]
+        return online_item
+
+    def save_metadata(self, online_data):   # noqa
+        conf = Config.load(ConfigType.IMPARTUS)
+        if conf.get('config_dir') and conf.get('config_dir').get(platform.system()) \
+                and conf.get('save_offline_lecture_metadata'):
+            folder = conf['config_dir'][platform.system()]
+            os.makedirs(folder, exist_ok=True)
+            for ttid, item in online_data.items():
+                filepath = os.path.join(folder, '{}.json'.format(ttid))
+                if not os.path.exists(filepath):
+                    Utils.save_json(item, filepath)

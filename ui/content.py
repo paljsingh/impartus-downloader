@@ -29,8 +29,7 @@ class ContentWindow(QMainWindow):
 
         self.table_container = Table(self.impartus)
         self.table_widget = self.table_container.add_table()
-        self.offline_data = None
-        self.online_data = None
+        self.data = list()
         self.root_url = None
         self.lecture_slides_mapping = dict()
 
@@ -61,49 +60,30 @@ class ContentWindow(QMainWindow):
             self.search_box.search_next()
 
     def work_offline(self):
-        self.offline_data = Finder().get_offline_content()
-        self.table_container.fill_table(self.offline_data)
+        offline_data = Finder().get_offline_content()
+        self.table_container.fill_table(offline_data)
         self.search_box.set_table_widget_to_search(self.table_widget)
 
         Callbacks().set_menu_statuses()
         Callbacks().set_pushbutton_statuses()
+
+    # def merge_data(self, online_item, offline_item):
+    #     # merge the two..
+    #     for ttid, offline_item in offline_data.items():
+    #         if self.online_data.get(ttid):
+    #             self.online_data[ttid] = self.merge_items(offline_item, self.online_data[ttid])
+    #         else:
+    #             self.online_data[ttid] = offline_item
 
     def work_online(self):
-        self.online_data = self.impartus.get_online_lectures()
-        self.save_metadata(self.online_data)
+        online_data_gen = self.impartus.get_online_lectures()
+        offline_data = Finder().get_offline_content()
 
-        self.offline_data = Finder().get_offline_content()
-
-        # merge the two..
-        for ttid, offline_item in self.offline_data.items():
-            if self.online_data.get(ttid):
-                self.online_data[ttid] = self.merge_items(offline_item, self.online_data[ttid])
-            else:
-                self.online_data[ttid] = offline_item
-
-        self.table_container.fill_table(self.online_data)
+        self.table_container.fill_table(offline_data, online_data_gen)
         self.search_box.set_table_widget_to_search(self.table_widget)
 
         Callbacks().set_menu_statuses()
         Callbacks().set_pushbutton_statuses()
-
-    def save_metadata(self, online_data):   # noqa
-        # TODO: move elsewhere.
-        conf = Config.load(ConfigType.IMPARTUS)
-        if conf.get('config_dir') and conf.get('config_dir').get(platform.system()) \
-                and conf.get('save_offline_lecture_metadata'):
-            folder = conf['config_dir'][platform.system()]
-            os.makedirs(folder, exist_ok=True)
-            for ttid, item in online_data.items():
-                filepath = os.path.join(folder, '{}.json'.format(ttid))
-                if not os.path.exists(filepath):
-                    Utils.save_json(item, filepath)
-
-    def merge_items(self, offline_item, online_item):   # noqa
-        for key, val in offline_item.items():
-            if not online_item.get(key):
-                online_item[key] = offline_item[key]
-        return online_item
 
     def needs_lecture_rename(self):
         return False
