@@ -194,7 +194,7 @@ class Callbacks:
 
     def on_menu_download_video_click(self):
         rf_id, is_flipped = self.content_window.table_container.get_selected_row_rfid()
-        self.content_window.table_container.on_click_download_video(rf_id)
+        self.content_window.table_container.on_click_download_video(rf_id, is_flipped)
 
     def on_menu_play_video_click(self):
         rf_id, is_flipped = self.content_window.table_container.get_selected_row_rfid()

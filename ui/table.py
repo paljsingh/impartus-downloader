@@ -123,17 +123,23 @@ class Table:
                 if not online_item:
                     self.save_metadata(self.data)
                     break
-                rf_id = online_item['ttid'] if online_item.get('ttid') else online_item['fcid']
+                if online_item.get('ttid'):
+                    rf_id = online_item['ttid']
+                    is_flipped = False
+                else:
+                    rf_id = online_item['fcid']
+                    is_flipped = True
+
                 if offline_data.get(rf_id):
                     online_item = self.merge_items(online_item, offline_data[rf_id])
                     del offline_data[rf_id]
                 self.data[rf_id] = online_item
-                self.add_row_item(index, rf_id, online_item)
+                self.add_row_item(index, rf_id, online_item, is_flipped)
                 index += 1
         for i, (rf_id, offline_item) in enumerate(offline_data.items(), index):
             self.add_row_item(i, rf_id, offline_item)
 
-    def add_row_item(self, index, rf_id, data_item):
+    def add_row_item(self, index, rf_id, data_item, is_flipped=False):
         self.table.setRowCount(index + 1)
 
         # for each row, add a checkbox first.
@@ -142,7 +148,7 @@ class Table:
 
         # enumerate rest of the columns from 1
         for col, (key, val) in enumerate(Columns.data_columns.items(), 1):
-            widget = QTableWidgetItem(str(data_item.get(key)))
+            widget = QTableWidgetItem(str(data_item[key]))
             widget.setTextAlignment(val['alignment'])
             self.table.setItem(index, col, widget)
 
@@ -175,7 +181,7 @@ class Table:
 
         # video actions
         callbacks = {
-            'download_video': partial(self.on_click_download_video, rf_id),
+            'download_video': partial(self.on_click_download_video, rf_id, is_flipped),
             'play_video': partial(self.on_click_play_video, rf_id),
             'download_chats': partial(self.on_click_download_chats, rf_id)
         }
@@ -207,7 +213,8 @@ class Table:
 
         # hidden columns
         for col_index, (key, val) in enumerate(Columns.hidden_columns.items(), col):
-            widget = QTableWidgetItem(str(data_item[key]))
+            str_value = str(data_item[key]) if data_item.get(key) else ''
+            widget = QTableWidgetItem(str_value)
             widget.setTextAlignment(Columns.hidden_columns[key]['alignment'])
             self.table.setItem(index, col_index, widget)
 
@@ -310,12 +317,12 @@ class Table:
         pushbuttons['open_folder'].setEnabled(True)
         pushbuttons['play_video'].setEnabled(True)
 
-    def on_click_download_video(self, rf_id: int):
+    def on_click_download_video(self, rf_id: int, is_flipped=False):
         """
         callback function for Download button.
         Creates a thread to download the request video.
         """
-        row = self.get_row_from_rfid(rf_id)
+        row = self.get_row_from_rfid(rf_id, is_flipped)
         video_metadata = self.data[rf_id]
         video_filepath = self.impartus.get_mkv_path(video_metadata)
 

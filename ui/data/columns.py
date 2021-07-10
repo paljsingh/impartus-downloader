@@ -175,6 +175,19 @@ class Columns:
             'sortable': True,
             'title_case': False,
         },
+        'fcid': {
+            'alignment': Qt.AlignRight,
+            'display_name': 'fcid',
+            'editable': False,
+            'hidden': True,
+            'initial_size': 50,
+            'menu_name': 'fcid',
+            'menu_tooltip': 'fcid',
+            'original_values_col': None,
+            'resize_policy': QHeaderView.ResizeMode.Fixed,
+            'sortable': True,
+            'title_case': False,
+        },
     }
 
     @classmethod
