@@ -69,8 +69,6 @@ class Menubar:
                         if Columns.get_display_columns_dict().get(level2_child_key) \
                                 and Columns.get_display_columns_dict().get(level2_child_key).get('hidden'):
                             submenu_item.setChecked(False)
-                        else:
-                            submenu_item.setChecked(True)
 
                         submenu_item.triggered.connect(callback)
 
