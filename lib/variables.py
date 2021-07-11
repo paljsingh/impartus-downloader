@@ -4,7 +4,6 @@ from lib.config import Config, ConfigType
 class Variables(object):
     """
     Class to hold shared variables, implements a singleton.
-    TODO: Should table.offline_data / table.online_data be moved here?
     """
 
     _login_url = None
@@ -26,6 +25,8 @@ class Variables(object):
     _menu_slides_attach_slides_item = None
     _menu_slides_show_slides_item = None
 
+    _log_window = None
+
     def __new__(cls, *args, **kw):
         if not hasattr(cls, '_instance'):
             orig = super(Variables, cls)
@@ -33,29 +34,45 @@ class Variables(object):
 
         # any other initializations.
         cls._flipped_lecture_quality = Config.load(ConfigType.IMPARTUS).get('flipped_lecture_quality')
+
         return cls._instance
 
-    def login_url(self):
-        return self._login_url
+    @classmethod
+    def login_url(cls):
+        return cls._login_url
 
-    def set_login_url(self, value: str):
-        self._login_url = value
+    @classmethod
+    def set_login_url(cls, value: str):
+        cls._login_url = value
 
-    def login_email(self):
-        return self._login_email
+    @classmethod
+    def login_email(cls):
+        return cls._login_email
 
-    def set_login_email(self, value: str):
-        self._login_email = value
+    @classmethod
+    def set_login_email(cls, value: str):
+        cls._login_email = value
 
-    def login_password(self):
-        return self._login_password
+    @classmethod
+    def login_password(cls):
+        return cls._login_password
 
-    def set_login_password(self, value: str):
-        self._login_password = value
+    @classmethod
+    def set_login_password(cls, value: str):
+        cls._login_password = value
 
-    def flipped_lecture_quality(self):
-        return self._flipped_lecture_quality
+    @classmethod
+    def flipped_lecture_quality(cls):
+        return cls._flipped_lecture_quality
 
-    def set_flipped_lecture_quality(self, value: str):
-        self._flipped_lecture_quality = value
+    @classmethod
+    def set_flipped_lecture_quality(cls, value: str):
+        cls._flipped_lecture_quality = value
 
+    @classmethod
+    def log_window(cls):
+        return cls._log_window
+
+    @classmethod
+    def set_log_window(cls, _log_window):
+        cls._log_window = _log_window
