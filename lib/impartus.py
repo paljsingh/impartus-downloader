@@ -4,18 +4,18 @@ import time
 from typing import List
 
 import requests
-import logging
 import platform
 from datetime import datetime, timedelta
 
 from lib.config import Config, ConfigType
 from lib.metadataparser import MetadataDictParser
+from lib.threadlogging import ThreadLogger
 from lib.utils import Utils
 from lib.media.encoder import Encoder
 from lib.media.m3u8parser import M3u8Parser
 from lib.media.decrypter import Decrypter
 from ui.data.configkeys import ConfigKeys
-from ui.data.variables import Variables
+from lib.variables import Variables
 
 
 class Impartus:
@@ -23,14 +23,14 @@ class Impartus:
     wrapper methods to authenticate and fetch content from impartus platorm.
     TODO: move the content aggregation / restructuring logic out of this class.
     """
+    thread_logger = ThreadLogger(__name__)
+
     def __init__(self, token=None):
         self.session = None
         self.token = None
-        logging.basicConfig(level=logging.INFO)
-        self.logger = logging.getLogger(self.__class__.__name__)
-
+        self.logger = Impartus.thread_logger.logger
         # enzyme library logs too much, suppress it's logs.
-        logging.getLogger("enzyme").setLevel(logging.FATAL)
+        # logging.getLogger("enzyme").setLevel(logging.FATAL)
 
         # reuse the auth token, if we are already authenticated.
         if token:
@@ -177,7 +177,7 @@ class Impartus:
                     progress_callback_func(items_processed_percent)
 
                 # All stream files for this track are decrypted, join them.
-                self.logger.info("[{}]: joining streams for track {} ..".format(rf_id, track_index))
+                self.logger.info("[{}]: Joining streams for track {} ..".format(rf_id, track_index))
                 ts_file = Encoder.join(streams_to_join, download_dir, track_index)
                 ts_files.append(ts_file)
                 temp_files_to_delete.add(ts_file)
@@ -277,12 +277,14 @@ class Impartus:
 
     def get_chats(self, video_metadata):
         root_url = Variables().login_url()
-        response = self.session.get('{}/api/videos/{}/chat'.format(
-            root_url, video_metadata['ttid']))
+        chat_url = '{}/api/videos/{}/chat'.format(root_url, video_metadata['ttid'])
+        self.logger.info('[{}]: Downloading lecture chats from {}'.format(video_metadata['ttid'], chat_url))
+        response = self.session.get(chat_url)
 
         if response.status_code == 200:
             return response.json()
         else:
+            self.logger.info("[{}]: No lecture chats found for {}".format(video_metadata['ttid'], chat_url))
             return []
 
     def download_slides(self, rf_id, file_url, filepath):
@@ -294,13 +296,15 @@ class Impartus:
             urls = ['{}/{}'.format(root_url, file_url)]
 
         download_status = False
-        for url in urls:
-            ext = url.split('.')[-1].lower()
+        for slides_url in urls:
+            ext = slides_url.split('.')[-1].lower()
             if ext not in self.conf.get('allowed_ext'):
-                self.logger.warning('Downloading {}. Files of type {} not allowed, see config.'.format(url, ext))
+                self.logger.warning('[{}]: Downloading {}. Files of type {} not allowed, see config.'.format(
+                    rf_id, slides_url, ext))
                 continue
 
-            response = requests.get(url, headers={'Cookie': 'Bearer={}'.format(self.token)})
+            self.logger.info('[{}]: Downloading slides from {}'.format(rf_id, slides_url))
+            response = requests.get(slides_url, headers={'Cookie': 'Bearer={}'.format(self.token)})
             if response.status_code == 200:
                 os.makedirs(os.path.dirname(filepath), exist_ok=True)
 
@@ -341,6 +345,7 @@ class Impartus:
             'password': password
         }
         url = '{}/api/auth/signin'.format(root_url)
+        self.logger.info('Logging in to {} with username {}.'.format(url, username))
         response = self.session.post(url, json=data, timeout=30)
         if response.status_code == 200:
             self.token = response.json()['token']
@@ -355,7 +360,7 @@ class Impartus:
     def logout(self):
         self.session = None
         self.token = None
-
+        self.logger.info('Logged out from impartus!.')
         # Really Impartus? No server api to logout ?
         pass
 
@@ -395,7 +400,6 @@ class Impartus:
                     online_lectures[rf_id]['slide_path'] = ''
 
                 yield online_lectures[rf_id]
-        # return online_lectures
 
 
 class GetOutOfLoop(Exception):

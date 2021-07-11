@@ -4,11 +4,13 @@ import re
 from typing import Dict, List
 
 from lib.config import Config, ConfigType
+from lib.threadlogging import ThreadLogger
 from ui.data.columns import Columns
-import logging
 
 
 class MetadataDictParser:
+
+    thread_logger = ThreadLogger(__name__).logger
 
     fields = {
         "trending": {
@@ -427,7 +429,7 @@ class MetadataDictParser:
                             metadata[new_col_name] = mapping_val
                             break
         except KeyError as ex:
-            logger = logging.getLogger(cls.__name__)
+            logger = MetadataDictParser.logger
             logger.warning('Error parsing lecture metadata - {}'.format(ex))
 
         return metadata

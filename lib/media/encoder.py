@@ -1,10 +1,14 @@
 import os
-import logging
 from shutil import move
 from typing import List
 
+from lib.threadlogging import ThreadLogger
+
 
 class Encoder:
+
+    thread_logger = ThreadLogger(__name__)
+
     """
     Utility functions to split, join, encode media streams using ffmpeg.
     """
@@ -65,7 +69,7 @@ class Encoder:
 
         # ffmpeg log_level.
         log_level = "verbose" if debug else "quiet"
-        logger = logging.getLogger(cls.__name__)
+        logger = Encoder.thread_logger.logger
 
         try:
             # ffmpeg command syntax we expect to run
@@ -85,10 +89,10 @@ class Encoder:
                     split_flag = True
 
             if split_flag:
-                logger.info("[{}]: splitting track 0 .. ".format(rf_id))
+                logger.info("[{}]: Splitting track 0 .. ".format(rf_id))
                 Encoder.split_track(ts_files, duration, debug)
 
-            logger.info("[{}]: encoding output file ..".format(rf_id))
+            logger.info("[{}]: Encoding output file ..".format(rf_id))
             # adding rf_id to metadata.
             if flipped:
                 (

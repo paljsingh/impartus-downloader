@@ -1,12 +1,12 @@
 import json
 import os
 import platform
-import logging
 import enzyme
 from typing import Dict, List
 
 from lib.config import Config, ConfigType
 from lib.metadataparser import MetadataFileParser, MetadataDictParser
+from lib.threadlogging import ThreadLogger
 from ui.data.configkeys import ConfigKeys
 
 
@@ -18,7 +18,7 @@ class Finder:
 
     def __init__(self):
         self.conf = Config.load(ConfigType.IMPARTUS)
-        self.logger = logging.getLogger(self.__class__.__name__)
+        self.logger = ThreadLogger(self.__class__.__name__).logger
         pass
 
     def get_offline_content(self):

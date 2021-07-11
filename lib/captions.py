@@ -2,9 +2,9 @@ from datetime import datetime
 from typing import List
 import html
 import os
-import logging
 
 from lib.config import ConfigType, Config
+from lib.threadlogging import ThreadLogger
 
 
 class Captions:
@@ -13,6 +13,8 @@ class Captions:
     It uses the lecture chat data obtained from impartus api to create a captions file, that can be overlay-ed
     as a subtitle/cc window while playing a lecture video.
     """
+
+    thread_logger = ThreadLogger(__name__)
 
     @classmethod
     def time_vtt_format(cls, value: int):
@@ -121,15 +123,17 @@ STYLE
             fh.write(vtt_content)
 
     @classmethod
-    def save_as_captions(cls, video_metadata, chat_msgs, captions_path):
+    def save_as_captions(cls, rf_id, video_metadata, chat_msgs, captions_path):
         date_format = "%Y-%m-%d %H:%M:%S"
         start_epoch = int(datetime.strptime(video_metadata['startTime'], date_format).timestamp())
+        logger = Captions.thread_logger.logger
         try:
             vtt_content = Captions.get_vtt(chat_msgs, start_epoch)
             Captions.save_vtt(vtt_content, captions_path)
+            logger.info("[{}]: Lecture chats saved at {}".format(rf_id, captions_path))
         except CaptionsNotFound:
-            logger = logging.getLogger(cls.__name__)
-            logger.info("no lecture chat found for {}".format(captions_path))
+            logger.error("[{}]: Error saving lecture chats (or no lecture chats found) for {}".format(
+                rf_id, captions_path))
             return
         return True
 

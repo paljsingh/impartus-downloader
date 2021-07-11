@@ -32,7 +32,6 @@ class ThreadLogHandler(logging.Handler):
 
 class ThreadLogger:
 
-    # root_logger = logging.getLogger()
     loggers = dict()
 
     def __init__(self, logger_name: str ='Worker'):
