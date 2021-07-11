@@ -4,12 +4,12 @@ import os
 import requests
 from PySide2 import QtCore
 from PySide2.QtCore import QObject
-from PySide2.QtWidgets import QMainWindow, QLabel, QTreeWidget, QTreeWidgetItem, QTableWidget
+from PySide2.QtWidgets import QMainWindow, QLabel, QTreeWidget, QTreeWidgetItem
 
 from lib import version
 from lib.utils import Utils
 from ui.data.docs import Docs
-from ui.data.variables import Variables
+from lib.variables import Variables
 from ui.dialog import Dialog
 
 
@@ -64,7 +64,7 @@ class Callbacks:
             login_menu.setEnabled(True)
 
         # disable reload menu if any downloads are in progress, or working offline.
-        if not is_authenticated or len(self.content_window.table_container.threads) > 0:
+        if not is_authenticated or len(self.content_window.table_container.workers) > 0:
             reload_menu.setEnabled(False)
         else:
             reload_menu.setEnabled(True)
@@ -220,7 +220,7 @@ class Callbacks:
         current_version = version.__version_info__
         releases = self.get_releases()
 
-        dialog = Dialog(file='ui/about.ui', parent=self.content_window).dialog
+        dialog = Dialog(file='ui/views/about.ui', parent=self.content_window).dialog
 
         latest_version = releases[0]['tag_name']
         version_label = dialog.findChild(QLabel, 'version_label')

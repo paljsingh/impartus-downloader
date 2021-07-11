@@ -11,7 +11,7 @@ from lib.impartus import Impartus
 from ui.data.callbacks import Callbacks
 from ui.data.configkeys import ConfigKeys
 from ui.data.labels import Labels
-from ui.data.variables import Variables
+from lib.variables import Variables
 
 
 class LoginWindow(QMainWindow):
@@ -31,7 +31,7 @@ class LoginWindow(QMainWindow):
     def setup_ui(self, content_window):
         self.content_window = content_window
         loader = QUiLoader()
-        file = QFile("ui/login.ui")
+        file = QFile("ui/views/login.ui")
         file.open(QFile.ReadOnly)
         login_form = loader.load(file, self)
         self.setGeometry(400, 200, 800, 300)
