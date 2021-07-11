@@ -2,6 +2,8 @@ from PySide2 import QtWidgets, QtCore
 from PySide2.QtGui import QIcon, QGuiApplication, Qt
 
 from lib.impartus import Impartus
+from lib.threadlogging import ThreadLogger
+from lib.variables import Variables
 from ui.data.callbacks import Callbacks
 from ui.content import ContentWindow
 from ui.data.iconfiles import IconFiles
@@ -22,6 +24,10 @@ class App:
         self.login_window = LoginWindow(self.impartus)
         self.content_window = ContentWindow(self.impartus)
 
+        Variables().set_log_window(self.content_window.log_window)
+        self.thread_logger = ThreadLogger(self.__class__.__name__)
+        self.logger = self.thread_logger.logger
+
         # initialize callbacks
         Callbacks().setup(
             impartus=self.impartus,
@@ -29,7 +35,6 @@ class App:
             content_window=self.content_window,
             app=self.app,
         )
-        self.content_window.set_layout()
 
         self.login_window.setup_ui(self.content_window)
         self.login_window.show()

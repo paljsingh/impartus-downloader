@@ -10,38 +10,19 @@ class SearchBox:
     TODO: separate the search_box creation code from the content search logic.
     """
 
-    def __init__(self, window: QMainWindow):
-        self.window = window
+    def __init__(self, content_window: QMainWindow, table: QTableWidget):
+        self.content_window = content_window
         self.last_index = -1    # first search should yield position 0 (for 0 based indexed results)
         self.search_results = None
         self.search_term = None
 
-        self.search_box = None
-        self.results_label = None
+        self.search_box = self.content_window.findChild(QLineEdit, "search_box")
+        self.search_box.textChanged.connect(self.search)
+        QtCore.QMetaObject.connectSlotsByName(self.content_window)
+        self.results_label = self.content_window.findChild(QLabel, "results_label")
 
-        self.table = None
-        pass
-
-    def add_search_box(self):
-        search_box = QLineEdit()
-        search_box.setPlaceholderText('Search...')
-        search_box.textChanged.connect(self.search)
-        QtCore.QMetaObject.connectSlotsByName(self.window)
-
-        results_label = QLabel()
-
-        # create a horizontal container.
-        widget = QWidget()
-        hbox_layout = QHBoxLayout(widget)
-        hbox_layout.addWidget(search_box)
-        hbox_layout.addWidget(results_label)
-
-        self.search_box = search_box
-        self.results_label = results_label
-        return widget
-
-    def set_table_widget_to_search(self, table: QTableWidget):
         self.table = table
+        pass
 
     def search_next(self, direction: int = SearchDirection.FORWARD.value):
         if not self.search_results:

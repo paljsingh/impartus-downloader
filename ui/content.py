@@ -1,13 +1,10 @@
-import os
-import platform
+from PySide2 import QtCore, QtWidgets
+from PySide2.QtCore import QFile
+from PySide2.QtUiTools import QUiLoader
+from PySide2.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QTextEdit, QTableWidget, QPlainTextEdit
 
-from PySide2 import QtCore
-from PySide2.QtWidgets import QMainWindow, QWidget, QVBoxLayout
-
-from lib.config import Config, ConfigType
 from lib.finder import Finder
 from lib.impartus import Impartus
-from lib.utils import Utils
 from ui.data.callbacks import Callbacks
 from ui.data.labels import Labels
 from ui.search import SearchBox
@@ -22,32 +19,35 @@ class ContentWindow(QMainWindow):
     """
 
     def __init__(self, impartus: Impartus):
-        QMainWindow.__init__(self, None)
+        super().__init__()
         self.impartus = impartus
-        self._set_window_properties()
-        self.search_box = SearchBox(self)
 
-        self.table_container = Table(self.impartus)
-        self.table_widget = self.table_container.add_table()
+        loader = QUiLoader()
+        file = QFile("ui/views/content.ui")
+        file.open(QFile.ReadOnly)
+        self.content_form = loader.load(file, self)
+        file.close()
+
+        self.setWindowTitle(Labels.APPLICATION_TITLE.value)
+        self.setGeometry(0, 0, self.maximumWidth(), self.maximumHeight())
+
+        self.table_widget = self.content_form.findChild(QTableWidget, "table")
+        self.table_container = Table(self.impartus, self.table_widget)
+
+        self.setContentsMargins(5, 0, 5, 0)
+        screen_size = QtWidgets.QApplication.primaryScreen().size()
+        buffer = 70     # includes the window borders, vertical scrollbar, padding, row number field...
+        self.setMaximumSize(screen_size)
+
+        self.search_box = SearchBox(self.content_form, self.table_widget)
+        self.log_window = self.content_form.findChild(QPlainTextEdit, "log_window")
+
         self.data = list()
         self.root_url = None
         self.lecture_slides_mapping = dict()
 
-    def _set_window_properties(self):
-        # full screen
-        self.setGeometry(0, 0, self.maximumWidth(), self.maximumHeight())
-        # window title
-        self.setWindowTitle(Labels.APPLICATION_TITLE.value)
-
-    def set_layout(self):
-        # create a vbox layout and add search button, table to it.
-        vcontainer_widget = QWidget()
-        vbox_layout = QVBoxLayout(vcontainer_widget)
-
-        search_lineedit = self.search_box.add_search_box()
-        vbox_layout.addWidget(search_lineedit)
-        vbox_layout.addWidget(self.table_widget)
-        self.setCentralWidget(vcontainer_widget)
+    def setup(self):
+        pass
 
     def keyPressEvent(self, e):
         # TODO: this can be moved to search class.
@@ -62,25 +62,15 @@ class ContentWindow(QMainWindow):
     def work_offline(self):
         offline_data = Finder().get_offline_content()
         self.table_container.fill_table(offline_data)
-        self.search_box.set_table_widget_to_search(self.table_widget)
 
         Callbacks().set_menu_statuses()
         Callbacks().set_pushbutton_statuses()
-
-    # def merge_data(self, online_item, offline_item):
-    #     # merge the two..
-    #     for ttid, offline_item in offline_data.items():
-    #         if self.online_data.get(ttid):
-    #             self.online_data[ttid] = self.merge_items(offline_item, self.online_data[ttid])
-    #         else:
-    #             self.online_data[ttid] = offline_item
 
     def work_online(self):
         online_data_gen = self.impartus.get_online_lectures()
         offline_data = Finder().get_offline_content()
 
         self.table_container.fill_table(offline_data, online_data_gen)
-        self.search_box.set_table_widget_to_search(self.table_widget)
 
         Callbacks().set_menu_statuses()
         Callbacks().set_pushbutton_statuses()

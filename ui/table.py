@@ -1,8 +1,6 @@
-import logging
 import os
 import platform
 import shutil
-import threading
 from functools import partial
 from typing import Dict
 import concurrent.futures
@@ -10,14 +8,14 @@ from threading import Event
 
 import qtawesome as qta
 
-from PySide2 import QtCore, QtWidgets
+from PySide2 import QtCore
 from PySide2.QtGui import QIcon
-from PySide2.QtWidgets import QTableWidget, QAbstractScrollArea, QTableWidgetItem, QHeaderView, QFileDialog, \
-    QAbstractItemView, QCheckBox, QMainWindow
+from PySide2.QtWidgets import QTableWidget, QTableWidgetItem, QHeaderView, QFileDialog, QCheckBox
 
 from lib.captions import Captions
 from lib.config import Config, ConfigType
 from lib.impartus import Impartus
+from lib.threadlogging import ThreadLogger
 from lib.utils import Utils
 from ui.common import Common
 from ui.customwidgets.tablewidgetitem import CustomTableWidgetItem
@@ -25,12 +23,13 @@ from ui.data.Icons import Icons
 from ui.data.actionitems import ActionItems
 from ui.data.callbacks import Callbacks
 from ui.data.columns import Columns
-from ui.data.variables import Variables
+from lib.variables import Variables
 from ui.progressbar import SortableRoundProgressbar
 from ui.customwidgets.pushbutton import CustomPushButton
 from ui.rodelegate import ReadOnlyDelegate
 from ui.slides import Slides
 from ui.videos import Videos
+from ui.worker import Worker
 from ui.writedelegate import WriteDelegate
 
 
@@ -47,39 +46,23 @@ class Table:
     and then pass on that info to the handlers defined in this class.
     """
 
-    def __init__(self, impartus: Impartus):
-        self.threads = dict()
+    def __init__(self, impartus: Impartus, table: QTableWidget):
+        self.signal_connected = False
+        self.workers = dict()
         self.conf = Config.load(ConfigType.IMPARTUS)
         self.impartus = impartus
-        self.table = None
-        self.data = dict()
-        self.prev_checkbox = None
 
         self.readonly_delegate = ReadOnlyDelegate()
         self.write_delegate = WriteDelegate(self.get_data)
+        self.logger = ThreadLogger(self.__class__.__name__).logger
+
+        self.table = table
+        self.data = dict()
+        self.prev_checkbox = None
 
     def get_data(self):
         return self.data
 
-    def add_table(self):    # noqa
-        table = QTableWidget()
-
-        table.setAlternatingRowColors(True)
-        table.setContentsMargins(5, 0, 5, 0)
-        table.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
-        table.setSizeAdjustPolicy(QAbstractScrollArea.AdjustToContents)
-
-        # disable multiple selection
-        table.setSelectionMode(QAbstractItemView.SingleSelection)
-
-        screen_width = QtWidgets.QApplication.primaryScreen().size().width()
-        buffer = 70     # includes the window borders, vertical scrollbar, padding, row number field...
-        table.viewport().setMaximumWidth(screen_width - buffer)
-        self.table = table
-        self.table.show()
-        return table
-
-    # def _set_size(self, row_count: int, col_count: int):
     def _set_headers(self):
         # header item for checkboxes column (TODO: check if it is possible to add a 'select all' checkbox here.)
         widget = QTableWidgetItem()
@@ -137,6 +120,7 @@ class Table:
                 self.add_row_item(index, rf_id, online_item, is_flipped)
                 index += 1
         for i, (rf_id, offline_item) in enumerate(offline_data.items(), index):
+            self.data[rf_id] = offline_item
             self.add_row_item(i, rf_id, offline_item)
 
     def add_row_item(self, index, rf_id, data_item, is_flipped=False):
@@ -300,8 +284,6 @@ class Table:
 
     def _download_video(self, video_metadata, video_filepath, progressbar_widget: SortableRoundProgressbar,
                         pushbuttons: Dict, pause_ev, resume_ev):
-        pushbuttons['download_video'].setIcon(Icons.VIDEO__PAUSE_DOWNLOAD.value)
-        pushbuttons['download_video'].setToolTip('Pause Download')
 
         self.impartus.process_video(
             video_metadata,
@@ -311,11 +293,6 @@ class Table:
             partial(self.progress_callback, pushbuttons['download_video'], progressbar_widget),
             video_quality=Variables().flipped_lecture_quality()
         )
-        pushbuttons['download_video'].setIcon(Icons.VIDEO__DOWNLOAD_VIDEO.value)
-        pushbuttons['download_video'].setToolTip('Download Video')
-        pushbuttons['download_video'].setEnabled(False)
-        pushbuttons['open_folder'].setEnabled(True)
-        pushbuttons['play_video'].setEnabled(True)
 
     def on_click_download_video(self, rf_id: int, is_flipped=False):
         """
@@ -329,10 +306,10 @@ class Table:
         # as pause/resume uses the same download button,
         # the event will show up here.
         # pass the earlier saved fields to pause_resume_button_callback.
-        if self.threads.get(rf_id):
-            pushbutton = self.threads.get(rf_id)['pushbuttons']['download_video']
-            pause_ev = self.threads.get(rf_id)['pause_event']
-            resume_ev = self.threads.get(rf_id)['resume_event']
+        if self.workers.get(rf_id):
+            pushbutton = self.workers.get(rf_id)['pushbuttons']['download_video']
+            pause_ev = self.workers.get(rf_id)['pause_event']
+            resume_ev = self.workers.get(rf_id)['resume_event']
             self.pause_resume_button_click(pushbutton, pause_ev, resume_ev)
             return
 
@@ -363,19 +340,30 @@ class Table:
         pause_event = Event()
         resume_event = Event()
 
-        # note: args is a tuple.
-        thread = threading.Thread(
-            target=self._download_video,
-            args=(video_metadata, video_filepath, progresbar_widget, pushbuttons,
-                  pause_event, resume_event,)
-        )
-        self.threads[rf_id] = {
+        thread = Worker()
+        thread.set_task(partial(self._download_video, video_metadata, video_filepath, progresbar_widget, pushbuttons,
+                                pause_event, resume_event))
+        thread.finished.connect(partial(self.thread_finished, pushbuttons))
+
+        # we don't want to enable user to start another thread while this one
+        pushbuttons['download_video'].setIcon(Icons.VIDEO__PAUSE_DOWNLOAD.value)
+        pushbuttons['download_video'].setToolTip('Pause Download')
+
+        self.workers[rf_id] = {
             'pause_event': pause_event,
             'resume_event': resume_event,
             'pushbuttons': pushbuttons,
+            'thread':   thread,
         }
         thread.start()
         self.data[rf_id]['offline_filepath'] = video_filepath
+
+    def thread_finished(self, pushbuttons):     # noqa
+        pushbuttons['download_video'].setIcon(Icons.VIDEO__DOWNLOAD_VIDEO.value)
+        pushbuttons['download_video'].setToolTip('Download Video')
+        pushbuttons['download_video'].setEnabled(False)
+        pushbuttons['open_folder'].setEnabled(True)
+        pushbuttons['play_video'].setEnabled(True)
 
     def on_click_play_video(self, rf_id: int):
         video_file = self.data[rf_id]['offline_filepath']
@@ -395,7 +383,7 @@ class Table:
         dc_button.setEnabled(False)
         chat_msgs = self.impartus.get_chats(self.data[rf_id])
         captions_path = self.impartus.get_captions_path(self.data[rf_id])
-        status = Captions.save_as_captions(self.data.get(rf_id), chat_msgs, captions_path)
+        status = Captions.save_as_captions(rf_id, self.data.get(rf_id), chat_msgs, captions_path)
 
         # also update local copy of data
         self.data[rf_id]['captions_path'] = captions_path
@@ -420,8 +408,7 @@ class Table:
         if imp.download_slides(rf_id, slide_url, filepath):
             return True
         else:
-            logger = logging.getLogger(self.__class__.__name__)
-            logger.error('Error', 'Error downloading slides, see console logs for details.')
+            # self.log_window.logger.error('Error', 'Error downloading slides.')
             return False
 
     def on_click_download_slides(self, rf_id: int):  # noqa
