@@ -9,6 +9,7 @@ from threading import Event
 import qtawesome as qta
 
 from PySide2 import QtCore
+from PySide2.QtCore import QThread
 from PySide2.QtGui import QIcon
 from PySide2.QtWidgets import QTableWidget, QTableWidgetItem, QHeaderView, QFileDialog, QCheckBox
 
@@ -355,7 +356,7 @@ class Table:
             'pushbuttons': pushbuttons,
             'thread':   thread,
         }
-        thread.start()
+        thread.start(priority=QThread.Priority.IdlePriority)
         self.data[rf_id]['offline_filepath'] = video_filepath
 
     def thread_finished(self, pushbuttons):     # noqa

@@ -30,7 +30,7 @@ class CustomPushButton(QPushButton):
                 self.objectName(),
                 color=text_color,
                 color_active=highlight_color,
-                animation=qta.Spin(self)
+                animation=qta.Spin(self, interval=100, step=2)
             )
         else:
             qicon = qta.icon(
