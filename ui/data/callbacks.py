@@ -63,8 +63,8 @@ class Callbacks:
         else:
             login_menu.setEnabled(True)
 
-        # disable reload menu if any downloads are in progress, or working offline.
-        if not is_authenticated or len(self.content_window.table_container.workers) > 0:
+        # disable reload menu if working offline.
+        if not is_authenticated:
             reload_menu.setEnabled(False)
         else:
             reload_menu.setEnabled(True)
