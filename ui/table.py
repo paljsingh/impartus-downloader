@@ -286,7 +286,7 @@ class Table:
     def _download_video(self, video_metadata, video_filepath, progressbar_widget: SortableRoundProgressbar,
                         pushbuttons: Dict, pause_ev, resume_ev):
 
-        self.impartus.process_video(
+        return self.impartus.process_video(
             video_metadata,
             video_filepath,
             pause_ev,
@@ -344,7 +344,7 @@ class Table:
         thread = Worker()
         thread.set_task(partial(self._download_video, video_metadata, video_filepath, progresbar_widget, pushbuttons,
                                 pause_event, resume_event))
-        thread.finished.connect(partial(self.thread_finished, pushbuttons))
+        thread.finished.connect(partial(self.thread_finished, pushbuttons, rf_id))
 
         # we don't want to enable user to start another thread while this one is going on.
         pushbuttons['download_video'].setIcon(Icons.VIDEO__PAUSE_DOWNLOAD.value)
@@ -359,12 +359,22 @@ class Table:
         thread.start(priority=QThread.Priority.IdlePriority)
         self.data[rf_id]['offline_filepath'] = video_filepath
 
-    def thread_finished(self, pushbuttons):     # noqa
-        pushbuttons['download_video'].setIcon(Icons.VIDEO__DOWNLOAD_VIDEO.value)
-        pushbuttons['download_video'].setToolTip('Download Video')
-        pushbuttons['download_video'].setEnabled(False)
-        pushbuttons['open_folder'].setEnabled(True)
-        pushbuttons['play_video'].setEnabled(True)
+    def thread_finished(self, pushbuttons, rf_id):     # noqa
+
+        if self.workers.get(rf_id):
+            # successful run.
+            if self.workers[rf_id]['thread'].status:
+                pushbuttons['download_video'].setIcon(Icons.VIDEO__DOWNLOAD_VIDEO.value)
+                pushbuttons['download_video'].setToolTip('Download Video')
+                pushbuttons['download_video'].setEnabled(False)
+                pushbuttons['open_folder'].setEnabled(True)
+                pushbuttons['play_video'].setEnabled(True)
+            else:
+                try:
+                    pushbuttons['download_video'].setEnabled(True)
+                except RuntimeError as ex:
+                    pass
+            del self.workers[rf_id]
 
     def on_click_play_video(self, rf_id: int):
         video_file = self.data[rf_id]['offline_filepath']
