@@ -1,10 +1,11 @@
 from datetime import datetime
 import os
 
+import qtawesome
 import requests
 from PySide2 import QtCore
 from PySide2.QtCore import QObject
-from PySide2.QtWidgets import QMainWindow, QLabel, QTreeWidget, QTreeWidgetItem
+from PySide2.QtWidgets import QMainWindow, QLabel, QTreeWidget, QTreeWidgetItem, QMessageBox
 
 from lib import version
 from lib.utils import Utils
@@ -169,7 +170,20 @@ class Callbacks:
         self.set_menu_statuses()
 
     def on_menu_reload_click(self):
-        self.content_window.work_online()
+        reload = True
+
+        # downloads in progress? warn the user.
+        if len(self.content_window.table_container.workers) > 0:
+            question = "1 or more downloads are in progress.\nYou may lose the progress on refreshing the page.\n" \
+                       "Do you want to continue ? "
+            dialog = QMessageBox()
+            dialog.setIcon(QMessageBox.Icon.Warning)
+            reply = dialog.question(self.content_window, "Warning!", question, QMessageBox.Yes, QMessageBox.No)
+            if reply == QMessageBox.No:
+                reload = False
+
+        if reload:
+            self.content_window.work_online()
 
     def on_menu_auto_organize_click(self):   # noqa
         print('auto organize called...')
