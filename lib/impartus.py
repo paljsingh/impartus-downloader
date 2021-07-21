@@ -156,10 +156,10 @@ class Impartus:
                             self.logger.info("[{}]: Resuming download for {}".format(rf_id, mkv_filepath))
                             resume_ev.clear()
                         try:
+                            content = requests.get(item['url'], timeout=self.timeouts).content
+                            download_flag = True
                             with open(enc_stream_filepath, 'wb') as fh:
-                                content = requests.get(item['url'], timeout=self.timeouts).content
                                 fh.write(content)
-                                download_flag = True
                         except TimeoutError:
                             self.logger.warning("[{}]: Timeout error. retrying download for {}...".format(
                                 rf_id, item['url']))

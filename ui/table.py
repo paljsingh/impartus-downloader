@@ -346,7 +346,7 @@ class Table:
                                 pause_event, resume_event))
         thread.finished.connect(partial(self.thread_finished, pushbuttons))
 
-        # we don't want to enable user to start another thread while this one
+        # we don't want to enable user to start another thread while this one is going on.
         pushbuttons['download_video'].setIcon(Icons.VIDEO__PAUSE_DOWNLOAD.value)
         pushbuttons['download_video'].setToolTip('Pause Download')
 
