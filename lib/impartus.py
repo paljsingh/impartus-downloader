@@ -17,6 +17,10 @@ from lib.media.decrypter import Decrypter
 from ui.data.configkeys import ConfigKeys
 from lib.variables import Variables
 
+from urllib3.util.retry import Retry
+from requests.adapters import HTTPAdapter
+from http import HTTPStatus
+
 
 class Impartus:
     """
@@ -28,18 +32,21 @@ class Impartus:
     def __init__(self, token=None):
         self.session = None
         self.token = None
+
         self.logger = Impartus.thread_logger.logger
-        # enzyme library logs too much, suppress it's logs.
-        # logging.getLogger("enzyme").setLevel(logging.FATAL)
+        self.conf = Config.load(ConfigType.IMPARTUS)
+
+        self.timeouts = tuple([
+            self.conf.get('connect_timeout', default=5.0),
+            self.conf.get('read_timeout', default=5.0)
+        ])
 
         # reuse the auth token, if we are already authenticated.
         if token:
             self.token = token
-            self.session = requests.Session()
+            self.session = self._get_session_with_retry()
             self.session.cookies.update({'Bearer': token})
             self.session.headers.update({'Authorization': 'Bearer {}'.format(token)})
-
-        self.conf = Config.load(ConfigType.IMPARTUS)
 
         # save the files here.
         platform_name = platform.system()
@@ -54,7 +61,8 @@ class Impartus:
         os.makedirs(self.temp_downloads_dir, exist_ok=True)
 
     def _download_m3u8(self, master_url):
-        response = self.session.get(master_url)
+        response = self.session.get(master_url, timeout=self.timeouts)
+
         m3u8_urls = []
         if response.status_code == 200:
             lines = response.text.splitlines()
@@ -69,7 +77,7 @@ class Impartus:
         m3u8_urls = self._download_m3u8(master_url)
 
         if len(m3u8_urls) > 0:
-            response = self.session.get(m3u8_urls[0])
+            response = self.session.get(m3u8_urls[0], timeout=self.timeouts)
             if response.status_code == 200:
                 return response.text.splitlines()
 
@@ -86,7 +94,7 @@ class Impartus:
             url = self.get_url_for_resolution(m3u8_urls, flipped_lecture_quality)
 
         if url:
-            response = self.session.get(url)
+            response = self.session.get(url, timeout=self.timeouts)
             if response.status_code == 200:
                 return response.text.splitlines()
 
@@ -149,7 +157,7 @@ class Impartus:
                             resume_ev.clear()
                         try:
                             with open(enc_stream_filepath, 'wb') as fh:
-                                content = requests.get(item['url']).content
+                                content = requests.get(item['url'], timeout=self.timeouts).content
                                 fh.write(content)
                                 download_flag = True
                         except TimeoutError:
@@ -162,7 +170,7 @@ class Impartus:
                         streams_to_join.append(enc_stream_filepath)
                     else:
                         if not encryption_keys.get(item['encryption_key_id']):
-                            key = self.session.get(item['encryption_key_url']).content[2:]
+                            key = self.session.get(item['encryption_key_url'], timeout=self.timeouts).content[2:]
                             key = key[::-1]  # reverse the bytes.
                             encryption_keys[item['encryption_key_id']] = key
                         encryption_key = encryption_keys[item['encryption_key_id']]
@@ -224,7 +232,9 @@ class Impartus:
         root_url = Variables().login_url()
 
         response = self.session.get('{}/api/subjects/{}/lectures/{}'.format(
-            root_url, subject.get('subjectId'), subject.get('sessionId')))
+            root_url, subject.get('subjectId'), subject.get('sessionId')),
+            timeout=self.timeouts
+        )
 
         if response.status_code == 200:
             return response.json()
@@ -236,7 +246,9 @@ class Impartus:
 
         flipped_lectures = []
         response = self.session.get('{}/api/subjects/flipped/{}/{}'.format(
-            root_url, subject.get('subjectId'), subject.get('sessionId')))
+            root_url, subject.get('subjectId'), subject.get('sessionId')),
+            timeout=self.timeouts
+        )
         if response.status_code == 200:
             categories = response.json()
             for category in categories:
@@ -261,7 +273,9 @@ class Impartus:
     def get_slides(self, subject):
         root_url = Variables().login_url()
         response = self.session.get('{}/api/subjects/backpack/{}/sessions/{}'.format(
-            root_url, subject.get('subjectId'), subject.get('sessionId')))
+            root_url, subject.get('subjectId'), subject.get('sessionId')),
+            timeout=self.timeouts
+        )
         if response.status_code == 200:
             return response.json()
         else:
@@ -269,7 +283,7 @@ class Impartus:
 
     def get_subjects(self):
         root_url = Variables().login_url()
-        response = self.session.get('{}/api/subjects'.format(root_url))
+        response = self.session.get('{}/api/subjects'.format(root_url), timeout=self.timeouts)
         if response.status_code == 200:
             return response.json()
         else:
@@ -279,7 +293,7 @@ class Impartus:
         root_url = Variables().login_url()
         chat_url = '{}/api/videos/{}/chat'.format(root_url, video_metadata['ttid'])
         self.logger.info('[{}]: Downloading lecture chats from {}'.format(video_metadata['ttid'], chat_url))
-        response = self.session.get(chat_url)
+        response = self.session.get(chat_url, timeout=self.timeouts)
 
         if response.status_code == 200:
             return response.json()
@@ -304,7 +318,11 @@ class Impartus:
                 continue
 
             self.logger.info('[{}]: Downloading slides from {}'.format(rf_id, slides_url))
-            response = requests.get(slides_url, headers={'Cookie': 'Bearer={}'.format(self.token)})
+            response = requests.get(
+                slides_url,
+                timeout=self.timeouts,
+                headers={'Cookie': 'Bearer={}'.format(self.token)}
+            )
             if response.status_code == 200:
                 os.makedirs(os.path.dirname(filepath), exist_ok=True)
 
@@ -334,19 +352,47 @@ class Impartus:
                     mapping[video_item['ttid']] = slide_item['filePath']
         return mapping
 
+    def _get_session_with_retry(self):
+        session = requests.Session()
+        retries = Retry(
+            total=self.conf.get('max_retries', 3),  # number of retries
+            backoff_factor=1.0,                     # retry after 1.0, 2.0, 3.0 ... seconds
+            status_forcelist=[
+                # 4xx
+                HTTPStatus.REQUEST_TIMEOUT,
+                HTTPStatus.TOO_EARLY,
+                HTTPStatus.TOO_MANY_REQUESTS,
+
+                # 5xx
+                HTTPStatus.INTERNAL_SERVER_ERROR,
+                HTTPStatus.BAD_GATEWAY,
+                HTTPStatus.SERVICE_UNAVAILABLE,
+                HTTPStatus.GATEWAY_TIMEOUT,
+            ])
+
+        adapter_options = {
+            'pool_connections': self.conf.get('pool_connections', default=5),
+            'pool_maxsize': self.conf.get('pool_maxsize', default=5),
+            'max_retries': retries,
+        }
+
+        # retry/timeout only for impartus site.
+        session.mount(Variables().login_url(), HTTPAdapter(**adapter_options))
+        return session
+
     def login(self):
         root_url = Variables().login_url()
         username = Variables().login_email()
         password = Variables().login_password()
 
-        self.session = requests.Session()
+        self.session = self._get_session_with_retry()
         data = {
             'username': username,
             'password': password
         }
         url = '{}/api/auth/signin'.format(root_url)
         self.logger.info('Logging in to {} with username {}.'.format(url, username))
-        response = self.session.post(url, json=data, timeout=30)
+        response = self.session.post(url, json=data, timeout=self.timeouts)
         if response.status_code == 200:
             self.token = response.json()['token']
             self.session.cookies.update({'Bearer': self.token})
