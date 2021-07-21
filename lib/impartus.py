@@ -160,7 +160,7 @@ class Impartus:
                             download_flag = True
                             with open(enc_stream_filepath, 'wb') as fh:
                                 fh.write(content)
-                        except TimeoutError:
+                        except (ConnectionError, TimeoutError):
                             self.logger.warning("[{}]: Timeout error. retrying download for {}...".format(
                                 rf_id, item['url']))
                             time.sleep(self.conf.get('retry_wait'))
@@ -182,7 +182,11 @@ class Impartus:
                     # update progress bar
                     items_processed += 1
                     items_processed_percent = items_processed * 100 // summary.get('media_files')
-                    progress_callback_func(items_processed_percent)
+                    try:
+                        progress_callback_func(items_processed_percent)
+                    except RuntimeError as ex:
+                        self.logger.warning("Download interrupted - {}".format(ex))
+                        return False
 
                 # All stream files for this track are decrypted, join them.
                 self.logger.info("[{}]: Joining streams for track {} ..".format(rf_id, track_index))
@@ -192,21 +196,23 @@ class Impartus:
 
             # Encode all ts files into a single output mkv.
             os.makedirs(os.path.dirname(mkv_filepath), exist_ok=True)
-            success = Encoder.encode_mkv(rf_id, ts_files, mkv_filepath, duration, self.conf.get('debug'))
+            flag = Encoder.encode_mkv(rf_id, ts_files, mkv_filepath, duration, self.conf.get('debug'))
 
-            if success:
+            if flag:
                 self.logger.info("[{}]: Processed {}\n---".format(rf_id, mkv_filepath))
 
                 # delete temp files.
                 if not self.conf.get('debug'):
                     Utils.delete_files(list(temp_files_to_delete))
                     os.rmdir(download_dir)
+            return flag
 
     def _get_filepath(self, video_metadata, config_key: str):
         if self.conf.get('use_safe_paths'):
             sanitized_components = MetadataDictParser.sanitize(MetadataDictParser.parse_metadata(video_metadata))
-            file_path = self.conf.get(config_key).format(**{**video_metadata, **sanitized_components},
-                                                         target_dir=self.download_dir)
+            file_path = self.conf.get(config_key).format(
+                **{**video_metadata, **sanitized_components}, target_dir=self.download_dir
+            )
         else:
             file_path = self.conf.get(config_key).format(**video_metadata, target_dir=self.download_dir)
         return file_path
