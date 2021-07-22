@@ -25,7 +25,6 @@ class Slides:
         widget_layout.setAlignment(Columns.widget_columns.get('slides_actions')['alignment'])
 
         # make the widget searchable based on button states.
-        combobox_count = None
         download_slides_state = None
         open_folder_state = None
         attach_slides_state = None

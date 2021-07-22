@@ -1,7 +1,6 @@
 from datetime import datetime
 import os
 
-import qtawesome
 import requests
 from PySide2 import QtCore
 from PySide2.QtCore import QObject

@@ -1,4 +1,4 @@
-from Crypto.Cipher import AES  # noqa
+from Crypto.Cipher import AES   # noqa
 from typing import Any
 import os
 

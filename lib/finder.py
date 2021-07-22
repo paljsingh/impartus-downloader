@@ -43,8 +43,8 @@ class Finder:
 
         For all videos found under {target_dir}/ :
             - Find the ttid/fcid embedded in the mkv file.
-            - Check if we have a copy of metadata saved at {config_dir}/impartus/<ttid/fcid>.json . This will happen if the
-            user has connected to impartus site at least once.
+            - Check if we have a copy of metadata saved at {config_dir}/impartus/<ttid/fcid>.json .
+              This will happen if the user has connected to impartus site at least once.
 
             - For any videos where {config_dir}/impartus/ does not have the metadata, try to reconstruct the fields
             from {video_path} format

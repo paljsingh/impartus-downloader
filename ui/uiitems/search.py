@@ -1,5 +1,5 @@
 from PySide2 import QtCore
-from PySide2.QtWidgets import QHBoxLayout, QWidget, QLabel, QLineEdit, QMainWindow, QTableWidget
+from PySide2.QtWidgets import QLabel, QLineEdit, QMainWindow, QTableWidget
 
 from ui.data.searchdirections import SearchDirection
 
@@ -9,6 +9,8 @@ class SearchBox:
     Class to provide search functionality.
     TODO: separate the search_box creation code from the content search logic.
     """
+    search_box: QLineEdit
+    results_label: QLabel
 
     def __init__(self, content_window: QMainWindow, table: QTableWidget):
         self.content_window = content_window
@@ -16,10 +18,10 @@ class SearchBox:
         self.search_results = None
         self.search_term = None
 
-        self.search_box = self.content_window.findChild(QLineEdit, "search_box")
-        self.search_box.textChanged.connect(self.search)
+        self.search_box = self.content_window.findChild(QLineEdit, "search_box")        # noqa
+        self.search_box.textChanged.connect(self.search)        # noqa
         QtCore.QMetaObject.connectSlotsByName(self.content_window)
-        self.results_label = self.content_window.findChild(QLabel, "results_label")
+        self.results_label = self.content_window.findChild(QLabel, "results_label")     # noqa
 
         self.table = table
         pass

@@ -53,4 +53,3 @@ class ActionItems:
         for i, key in enumerate(getattr(ActionItems, action_item).keys()):
             if key == field:
                 return i
-

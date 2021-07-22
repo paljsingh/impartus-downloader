@@ -1,14 +1,14 @@
 from PySide2 import QtCore, QtWidgets
 from PySide2.QtCore import QFile
 from PySide2.QtUiTools import QUiLoader
-from PySide2.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QTextEdit, QTableWidget, QPlainTextEdit
+from PySide2.QtWidgets import QMainWindow, QTableWidget, QPlainTextEdit
 
 from lib.finder import Finder
 from lib.impartus import Impartus
 from ui.data.callbacks import Callbacks
 from ui.data.labels import Labels
-from ui.search import SearchBox
-from ui.table import Table
+from ui.uiitems.search import SearchBox
+from ui.uiitems.table import Table
 
 
 class ContentWindow(QMainWindow):
@@ -32,14 +32,13 @@ class ContentWindow(QMainWindow):
         self.setGeometry(0, 0, self.maximumWidth(), self.maximumHeight())
 
         self.table_widget = self.content_form.findChild(QTableWidget, "table")
-        self.table_container = Table(self.impartus, self.table_widget)
+        self.table_container = Table(self.impartus, self.table_widget)  # noqa
 
         self.setContentsMargins(5, 0, 5, 0)
         screen_size = QtWidgets.QApplication.primaryScreen().size()
-        buffer = 70     # includes the window borders, vertical scrollbar, padding, row number field...
         self.setMaximumSize(screen_size)
 
-        self.search_box = SearchBox(self.content_form, self.table_widget)
+        self.search_box = SearchBox(self.content_form, self.table_widget)   # noqa
         self.log_window = self.content_form.findChild(QPlainTextEdit, "log_window")
 
         self.data = list()
@@ -75,14 +74,14 @@ class ContentWindow(QMainWindow):
         Callbacks().set_menu_statuses()
         Callbacks().set_pushbutton_statuses()
 
-    def needs_lecture_rename(self):
+    def needs_lecture_rename(self):     # noqa
         return False
 
-    def needs_video_download(self):
+    def needs_video_download(self):     # noqa
         return False
 
-    def needs_chat_download(self):
+    def needs_chat_download(self):      # noqa
         return False
 
-    def needs_backpack_slides_download(self):
+    def needs_backpack_slides_download(self):   # noqa
         return False

@@ -325,7 +325,8 @@ class MetadataDictParser:
                     match = re.search(pattern, value)
                     if match:
                         return True, match.group(0), str.replace(value, match.group(0), '', 1)
-            except (KeyError, SyntaxError, NameError, TypeError) as ex:
+            except (KeyError, SyntaxError, NameError, TypeError):
+                # ignore these silently.
                 pass
 
         # return NoMatch, match_str: None, remaining_str: same-as-original
@@ -429,8 +430,8 @@ class MetadataDictParser:
                             metadata[new_col_name] = mapping_val
                             break
         except KeyError as ex:
-            logger = MetadataDictParser.logger
-            logger.warning('Error parsing lecture metadata - {}'.format(ex))
+            logger = MetadataDictParser.thread_logger
+            logger.warning('Error parsing video metadata - {}'.format(ex))
 
         return metadata
 

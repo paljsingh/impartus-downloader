@@ -22,9 +22,9 @@ class ThreadLogHandler(logging.Handler):
     # logging.Handler.emit() is intended to be implemented by subclasses
     def emit(self, record):
         msg = self.format(record)
-        self.model.update.emit(msg)
+        self.model.update.emit(msg)     # noqa
 
-    @QtCore.Slot(str)
+    @QtCore.Slot(str)       # noqa
     def write_log(self, log_text):
         Variables().log_window().appendPlainText(log_text)
         Variables().log_window().centerCursor()  # scroll to the bottom
@@ -34,7 +34,7 @@ class ThreadLogger:
 
     loggers = dict()
 
-    def __init__(self, logger_name: str ='Worker'):
+    def __init__(self, logger_name: str = 'Worker'):
 
         # create logger for this class, and add it to a class dict.
         self.logger = logging.getLogger(logger_name)
@@ -57,7 +57,5 @@ class ThreadLogger:
         logger.setLevel(logging.DEBUG)
 
         # emit signal and write to app log window.
-        log_handler.model.update.connect(log_handler.write_log)
+        log_handler.model.update.connect(log_handler.write_log)     # noqa
         logger.addHandler(log_handler)
-
-

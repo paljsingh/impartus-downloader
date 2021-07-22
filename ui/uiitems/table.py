@@ -25,13 +25,13 @@ from ui.data.actionitems import ActionItems
 from ui.data.callbacks import Callbacks
 from ui.data.columns import Columns
 from lib.variables import Variables
-from ui.progressbar import SortableRoundProgressbar
+from ui.uiitems.progressbar import SortableRoundProgressbar
 from ui.customwidgets.pushbutton import CustomPushButton
-from ui.rodelegate import ReadOnlyDelegate
-from ui.slides import Slides
-from ui.videos import Videos
+from ui.delegates.rodelegate import ReadOnlyDelegate
+from ui.uiitems.slide_items import Slides
+from ui.uiitems.video_items import Videos
 from ui.worker import Worker
-from ui.writedelegate import WriteDelegate
+from ui.delegates.writedelegate import WriteDelegate
 
 
 class Table:
@@ -378,6 +378,7 @@ class Table:
                 try:
                     pushbuttons['download_video'].setEnabled(True)
                 except RuntimeError as ex:
+                    self.logger.error("Error in downloading video: {}".format(ex))
                     pass
             del self.workers[rf_id]
 

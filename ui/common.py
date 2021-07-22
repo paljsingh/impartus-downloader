@@ -37,7 +37,7 @@ class Common:
     def add_checkbox_widget(cls, callback: Callable):
         container_widget = QWidget()
         checkbox = QCheckBox()
-        checkbox.clicked.connect(partial(callback, checkbox))
+        checkbox.clicked.connect(partial(callback, checkbox))       # noqa
         container_widget_layout = QHBoxLayout(container_widget)
         container_widget_layout.addWidget(checkbox)
         container_widget_layout.setAlignment(QtCore.Qt.AlignCenter)
