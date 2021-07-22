@@ -329,6 +329,9 @@ class Table:
         of_field = ActionItems.get_action_item_index('slides_actions', 'open_folder')
         of_button = self.table.cellWidget(row, col).layout().itemAt(of_field).widget()
 
+        as_field = ActionItems.get_action_item_index('slides_actions', 'attach_slides')
+        as_button = self.table.cellWidget(row, col).layout().itemAt(as_field).widget()
+
         pb_col = Columns.get_column_index_by_key('progress_bar')
         progresbar_widget = self.table.cellWidget(row, pb_col)
 
@@ -337,6 +340,7 @@ class Table:
             'play_video': pl_button,
             'download_chats': cc_button,
             'open_folder': of_button,
+            'attach_slides': as_button,
         }
         pause_event = Event()
         resume_event = Event()
@@ -369,6 +373,7 @@ class Table:
                 pushbuttons['download_video'].setEnabled(False)
                 pushbuttons['open_folder'].setEnabled(True)
                 pushbuttons['play_video'].setEnabled(True)
+                pushbuttons['attach_slides'].setEnabled(True)
             else:
                 try:
                     pushbuttons['download_video'].setEnabled(True)
@@ -391,6 +396,9 @@ class Table:
         of_field = ActionItems.get_action_item_index('slides_actions', 'open_folder')
         of_button = self.table.cellWidget(row, col).layout().itemAt(of_field).widget()
 
+        as_field = ActionItems.get_action_item_index('slides_actions', 'attach_slides')
+        as_button = self.table.cellWidget(row, col).layout().itemAt(as_field).widget()
+
         dc_button.setEnabled(False)
         chat_msgs = self.impartus.get_chats(self.data[rf_id])
         captions_path = self.impartus.get_captions_path(self.data[rf_id])
@@ -405,6 +413,7 @@ class Table:
         else:
             dc_button.setEnabled(False)
             of_button.setEnabled(True)
+            as_button.setEnabled(True)
 
     """
     Slides.
@@ -419,7 +428,7 @@ class Table:
         if imp.download_slides(rf_id, slide_url, filepath):
             return True
         else:
-            # self.log_window.logger.error('Error', 'Error downloading slides.')
+            self.logger.error('Error', 'Error downloading slides.')
             return False
 
     def on_click_download_slides(self, rf_id: int):  # noqa
@@ -442,10 +451,14 @@ class Table:
         ss_field = ActionItems.get_action_item_index('slides_actions', 'show_slides')
         ss_combo = self.table.cellWidget(row, col).layout().itemAt(ss_field).widget()
 
+        as_field = ActionItems.get_action_item_index('slides_actions', 'attach_slides')
+        as_button = self.table.cellWidget(row, col).layout().itemAt(as_field).widget()
+
         widgets = {
             'download_slides': ds_button,
             'open_folder': of_button,
             'show_slides': ss_combo,
+            'attach_slides': as_button,
         }
         ds_button.setEnabled(False)
         with concurrent.futures.ThreadPoolExecutor(3) as executor:
@@ -453,7 +466,14 @@ class Table:
             return_value = future.result()
 
             if return_value:
+                # add new slides file to the existing list.
+                if not self.data[rf_id].get('backpack_slides'):
+                    self.data[rf_id]['backpack_slides'] = list()
+                self.data.get(rf_id)['backpack_slides'].append(filepath)
+
                 widgets['show_slides'].add_items([filepath])
+                widgets['open_folder'].setEnabled(True)
+                widgets['attach_slides'].setEnabled(True)
             else:
                 widgets['download_slides'].setEnabled(True)
 

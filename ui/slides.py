@@ -88,10 +88,10 @@ class Slides:
                         (slides_path and os.path.exists(slides_path)) or \
                         (captions_path and os.path.exists(captions_path)):
                     attach_slides_state = True
-                    pushbutton.clicked.connect(callbacks['attach_slides'])
                 else:
                     attach_slides_state = False
 
+                pushbutton.clicked.connect(callbacks['attach_slides'])
                 pushbutton.setEnabled(attach_slides_state)
 
         # a slightly hackish way to sort widgets -
