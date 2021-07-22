@@ -10,3 +10,4 @@ PySide2~=5.15.2
 PySide2extn~=1.0.0
 
 QtAwesome~=1.0.3
+urllib3~=1.26.6
