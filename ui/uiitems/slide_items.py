@@ -6,8 +6,8 @@ from PySide2.QtWidgets import QWidget
 
 from lib.impartus import Impartus
 from lib.utils import Utils
-from ui.customwidgets.combobox import CustomComboBox
-from ui.common import Common
+from ui.uiitems.customwidgets.combobox import CustomComboBox
+from ui.helpers.widgetcreator import WidgetCreator
 from ui.data.actionitems import ActionItems
 from ui.data.columns import Columns
 
@@ -21,7 +21,7 @@ class Slides:
     @classmethod
     def add_slides_actions_buttons(cls, metadata, impartus: Impartus, callbacks: Dict):
         widget = QWidget()
-        widget_layout = Common.get_layout_widget(widget)
+        widget_layout = WidgetCreator.get_layout_widget(widget)
         widget_layout.setAlignment(Columns.widget_columns.get('slides_actions')['alignment'])
 
         # make the widget searchable based on button states.
@@ -40,7 +40,7 @@ class Slides:
             combobox_count = 0
         widget_layout.addWidget(combo_box)
 
-        for pushbutton in Common.add_actions_buttons(ActionItems.slides_actions):
+        for pushbutton in WidgetCreator.add_actions_buttons(ActionItems.slides_actions):
             widget_layout.addWidget(pushbutton)
 
             # slides download is enabled if the slides file exists on server, but not locally.

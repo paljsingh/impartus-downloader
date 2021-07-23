@@ -18,19 +18,19 @@ from lib.config import Config, ConfigType
 from lib.impartus import Impartus
 from lib.threadlogging import ThreadLogger
 from lib.utils import Utils
-from ui.common import Common
-from ui.customwidgets.tablewidgetitem import CustomTableWidgetItem
+from ui.helpers.widgetcreator import WidgetCreator
+from ui.uiitems.customwidgets.tablewidgetitem import CustomTableWidgetItem
 from ui.data.Icons import Icons
 from ui.data.actionitems import ActionItems
 from ui.data.callbacks import Callbacks
 from ui.data.columns import Columns
 from lib.variables import Variables
 from ui.uiitems.progressbar import SortableRoundProgressbar
-from ui.customwidgets.pushbutton import CustomPushButton
+from ui.uiitems.customwidgets.pushbutton import CustomPushButton
 from ui.delegates.rodelegate import ReadOnlyDelegate
 from ui.uiitems.slide_items import Slides
 from ui.uiitems.video_items import Videos
-from ui.worker import Worker
+from ui.helpers.worker import Worker
 from ui.delegates.writedelegate import WriteDelegate
 
 
@@ -128,7 +128,7 @@ class Table:
         self.table.setRowCount(index + 1)
 
         # for each row, add a checkbox first.
-        container_widget = Common.add_checkbox_widget(self.on_click_checkbox)
+        container_widget = WidgetCreator.add_checkbox_widget(self.on_click_checkbox)
         self.table.setCellWidget(index, 0, container_widget)
 
         # enumerate rest of the columns from 1

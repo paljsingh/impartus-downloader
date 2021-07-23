@@ -4,12 +4,12 @@ from typing import Dict, Callable
 from PySide2 import QtCore
 from PySide2.QtWidgets import QHBoxLayout, QWidget, QPushButton, QCheckBox
 
-from ui.customwidgets.pushbutton import CustomPushButton
+from ui.uiitems.customwidgets.pushbutton import CustomPushButton
 
 
-class Common:
+class WidgetCreator:
     """
-    Common utility methods around ui/widget creation.
+    Helper utility methods around ui/widget creation.
     """
 
     @classmethod
@@ -44,4 +44,3 @@ class Common:
         container_widget_layout.setContentsMargins(0, 0, 0, 0)
         container_widget.setLayout(container_widget_layout)
         return container_widget
-

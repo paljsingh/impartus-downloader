@@ -70,7 +70,7 @@ class Menubar:
                                 and Columns.get_display_columns_dict().get(level2_child_key).get('hidden'):
                             submenu_item.setChecked(False)
 
-                        submenu_item.triggered.connect(callback)
+                        submenu_item.triggered.connect(callback)    # noqa
 
                         level_1.addAction(submenu_item)
 
@@ -80,7 +80,7 @@ class Menubar:
                     level_2.setShortcut(properties['shortcut'])
                     level_2.setStatusTip(properties['status_tip'])
                     level_2.setObjectName(child_name)
-                    level_2.triggered.connect(properties['callback'])
+                    level_2.triggered.connect(properties['callback'])   # noqa
                     level_1.addAction(level_2)
 
         return main_menu

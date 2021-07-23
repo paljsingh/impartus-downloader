@@ -4,7 +4,7 @@ from typing import Dict
 from PySide2.QtWidgets import QWidget
 
 from lib.impartus import Impartus
-from ui.common import Common
+from ui.helpers.widgetcreator import WidgetCreator
 from ui.data.actionitems import ActionItems
 from ui.data.columns import Columns
 
@@ -18,7 +18,7 @@ class Videos:
     def add_video_actions_buttons(cls, metadata, impartus: Impartus, callbacks: Dict):
         widget = QWidget()
         widget.setContentsMargins(0, 0, 0, 0)
-        widget_layout = Common.get_layout_widget(widget)
+        widget_layout = WidgetCreator.get_layout_widget(widget)
         widget_layout.setAlignment(Columns.widget_columns.get('video_actions')['alignment'])
 
         # make the widget searchable based on button states.
@@ -27,7 +27,7 @@ class Videos:
         download_chats_state = None
 
         is_authenticated = impartus.is_authenticated()
-        for pushbutton in Common.add_actions_buttons(ActionItems.video_actions):
+        for pushbutton in WidgetCreator.add_actions_buttons(ActionItems.video_actions):
             widget_layout.addWidget(pushbutton)
 
             # disable download button, if video exists locally.
