@@ -1,5 +1,4 @@
 import os
-import platform
 import shutil
 from functools import partial
 from typing import Dict
@@ -18,11 +17,13 @@ from lib.config import Config, ConfigType
 from lib.impartus import Impartus
 from lib.threadlogging import ThreadLogger
 from lib.utils import Utils
+from ui.callbacks.utils import CallbackUtils
+from ui.callbacks.menucallbacks import MenuCallbacks
+from ui.helpers.datautils import DataUtils
 from ui.helpers.widgetcreator import WidgetCreator
 from ui.uiitems.customwidgets.tablewidgetitem import CustomTableWidgetItem
 from ui.data.Icons import Icons
 from ui.data.actionitems import ActionItems
-from ui.data.callbacks import Callbacks
 from ui.data.columns import Columns
 from lib.variables import Variables
 from ui.uiitems.progressbar import SortableRoundProgressbar
@@ -105,7 +106,7 @@ class Table:
             while True:
                 online_item = next(online_data_gen, None)
                 if not online_item:
-                    self.save_metadata(self.data)
+                    DataUtils.save_metadata(self.data)
                     break
                 if online_item.get('ttid'):
                     rf_id = online_item['ttid']
@@ -115,7 +116,7 @@ class Table:
                     is_flipped = True
 
                 if offline_data.get(rf_id):
-                    online_item = self.merge_items(online_item, offline_data[rf_id])
+                    online_item = DataUtils.merge_items(online_item, offline_data[rf_id])
                     del offline_data[rf_id]
                 self.data[rf_id] = online_item
                 self.add_row_item(index, rf_id, online_item, is_flipped)
@@ -205,7 +206,7 @@ class Table:
 
         # for index in range(len(online_data)):
         self.table.setRowHeight(index, 48)
-        Callbacks().processEvents()
+        CallbackUtils().processEvents()
 
     def resizable_headers(self):
         # Todo ...
@@ -220,7 +221,7 @@ class Table:
         if self.prev_checkbox and self.prev_checkbox != checkbox:
             self.prev_checkbox.setChecked(False)
         self.prev_checkbox = checkbox
-        Callbacks().set_menu_statuses()
+        MenuCallbacks().set_menu_statuses()
 
     def show_hide_column(self, column):
         col_index = None
@@ -558,20 +559,3 @@ class Table:
         captions_path = self.data.get(rf_id)['captions_path'] if self.data.get(rf_id).get('captions_path') else None
         if captions_path:
             return os.path.dirname(captions_path)
-
-    def merge_items(self, offline_item, online_item):   # noqa
-        for key, val in offline_item.items():
-            if not online_item.get(key):
-                online_item[key] = offline_item[key]
-        return online_item
-
-    def save_metadata(self, online_data):   # noqa
-        conf = Config.load(ConfigType.IMPARTUS)
-        if conf.get('config_dir') and conf.get('config_dir').get(platform.system()) \
-                and conf.get('save_offline_lecture_metadata'):
-            folder = conf['config_dir'][platform.system()]
-            os.makedirs(folder, exist_ok=True)
-            for ttid, item in online_data.items():
-                filepath = os.path.join(folder, '{}.json'.format(ttid))
-                if not os.path.exists(filepath):
-                    Utils.save_json(item, filepath)

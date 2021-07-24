@@ -11,4 +11,3 @@ class Docs(enum.Enum):
 
     def __str__(self):
         return str(self.value)
-

@@ -8,7 +8,7 @@ from PySide2.QtWidgets import QMainWindow
 
 from lib.config import Config, ConfigType
 from lib.impartus import Impartus
-from ui.data.callbacks import Callbacks
+from ui.callbacks.utils import CallbackUtils
 from ui.data.configkeys import ConfigKeys
 from ui.data.labels import Labels
 from lib.variables import Variables
@@ -75,9 +75,10 @@ class LoginWindow(QMainWindow):
         # validate the prefilled inputs and enable login button if needed.
         self.validate_inputs()
 
-        login_form.login_button.clicked.connect(partial(self.on_login_click, Callbacks().switch_windows))
+        login_form.login_button.clicked.connect(partial(self.on_login_click, CallbackUtils().switch_windows))
 
-        login_form.work_offline_button.clicked.connect(partial(self.on_work_offline_click, Callbacks().switch_windows))
+        login_form.work_offline_button.clicked.connect(
+            partial(self.on_work_offline_click, CallbackUtils().switch_windows))
         login_form.show()
         return self.login_form
 

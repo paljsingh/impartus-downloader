@@ -20,7 +20,7 @@ from lib.variables import Variables
 from urllib3.util.retry import Retry
 from requests.adapters import HTTPAdapter
 from http import HTTPStatus
-from requests.exceptions import ConnectTimeout
+from requests.exceptions import ConnectTimeout, ConnectionError, Timeout
 
 
 class Impartus:
@@ -161,7 +161,7 @@ class Impartus:
                             download_flag = True
                             with open(enc_stream_filepath, 'wb') as fh:
                                 fh.write(content)
-                        except (ConnectionError, TimeoutError, ConnectTimeout):
+                        except (ConnectionError, Timeout, ConnectTimeout):
                             self.logger.warning("[{}]: Timeout error. retrying download for {}...".format(
                                 rf_id, item['url']))
                             time.sleep(self.conf.get('retry_wait'))

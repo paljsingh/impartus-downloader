@@ -5,7 +5,8 @@ from PySide2.QtWidgets import QMainWindow, QTableWidget, QPlainTextEdit
 
 from lib.finder import Finder
 from lib.impartus import Impartus
-from ui.data.callbacks import Callbacks
+from ui.callbacks.buttoncallbacks import ButtonCallbacks
+from ui.callbacks.menucallbacks import MenuCallbacks
 from ui.data.labels import Labels
 from ui.uiitems.search import SearchBox
 from ui.uiitems.table import Table
@@ -62,8 +63,8 @@ class ContentWindow(QMainWindow):
         offline_data = Finder().get_offline_content()
         self.table_container.fill_table(offline_data)
 
-        Callbacks().set_menu_statuses()
-        Callbacks().set_pushbutton_statuses()
+        MenuCallbacks().set_menu_statuses()
+        ButtonCallbacks().set_pushbutton_statuses()
 
     def work_online(self):
         online_data_gen = self.impartus.get_online_lectures()
@@ -71,8 +72,8 @@ class ContentWindow(QMainWindow):
 
         self.table_container.fill_table(offline_data, online_data_gen)
 
-        Callbacks().set_menu_statuses()
-        Callbacks().set_pushbutton_statuses()
+        MenuCallbacks().set_menu_statuses()
+        ButtonCallbacks().set_pushbutton_statuses()
 
     def needs_lecture_rename(self):     # noqa
         return False

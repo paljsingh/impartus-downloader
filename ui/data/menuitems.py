@@ -2,8 +2,8 @@ import sys
 from functools import partial
 
 from lib.config import ConfigType, Config
+from ui.callbacks.menucallbacks import MenuCallbacks
 from ui.data.Icons import Icons
-from ui.data.callbacks import Callbacks
 from ui.data.columns import Columns
 
 
@@ -19,19 +19,19 @@ class MenuItems:
                 'icon': Icons.MENU__LOGIN.value,
                 'shortcut': 'Ctrl+L',
                 'status_tip': 'Login to Impartus',
-                'callback': Callbacks().on_menu_login_click,
+                'callback': MenuCallbacks().on_click__menu__actions_login,
             },
             'Reload': {
                 'icon': Icons.MENU__RELOAD.value,
                 'shortcut': 'Ctrl+R',
                 'status_tip': 'Reload Table Content',
-                'callback': Callbacks().on_menu_reload_click,
+                'callback': MenuCallbacks().on_click__menu__actions_reload,
             },
             'Auto Organize': {
                 'icon': Icons.MENU__AUTO_ORGANIZE.value,
                 'shortcut': 'Ctrl+/',
                 'status_tip': 'Rename lecture videos, download missing captions...',
-                'callback': Callbacks().on_menu_auto_organize_click,
+                'callback': MenuCallbacks().on_click__menu__actions_auto_organize,
             },
             'sep1': {
                 'type': 'separator',
@@ -40,7 +40,7 @@ class MenuItems:
                 'icon': Icons.MENU__LOGOUT.value,
                 'shortcut': 'Ctrl+Shift+L',
                 'status_tip': 'Logout from Impartus',
-                'callback': Callbacks().on_menu_logout_click,
+                'callback': MenuCallbacks().on_click__menu__actions_logout,
             },
             'sep2': {
                 'type': 'separator',
@@ -61,7 +61,7 @@ class MenuItems:
                 'behavior': 'multiselect',
                 'child_items': {k: v['menu_name'] for k, v in
                                 {**Columns.data_columns, **Columns.widget_columns}.items()},
-                'child_callbacks': [partial(Callbacks().on_menu_column_click, key)
+                'child_callbacks': [partial(MenuCallbacks().on_click__menu__view_columns, key)
                                     for key in [*Columns.data_columns.keys(), *Columns.widget_columns.keys()]]
             },
             'sep': {
@@ -71,7 +71,7 @@ class MenuItems:
                 'icon': Icons.MENU__SEARCH.value,
                 'shortcut': 'Ctrl+F',
                 'status_tip': 'Search Content...',
-                'callback': Callbacks().on_menu_search_click,
+                'callback': MenuCallbacks().on_click__menu__view_search,
             },
         },
         'Video': {
@@ -89,7 +89,7 @@ class MenuItems:
                 },
                 'default': conf.get('flipped_lecture_quality').title(),
                 'child_callbacks': [
-                    partial(Callbacks().on_menu_video_quality_click, video_quality)
+                    partial(MenuCallbacks().on_click__menu__video_flipped_video_lecture_quality, video_quality)
                     for video_quality in ['highest', *conf.get('flipped_lecture_quality_order'), 'lowest']
                 ],
             },
@@ -100,19 +100,19 @@ class MenuItems:
                 'icon': Icons.MENU__DOWNLOAD_VIDEO.value,
                 'shortcut': 'Ctrl+J',
                 'status_tip': 'Download Lecture Video',
-                'callback': Callbacks().on_menu_download_video_click,
+                'callback': MenuCallbacks().on_click__menu__video_download_video,
             },
             'Play Video': {
                 'icon': Icons.MENU__PLAY_VIDEO.value,
                 'shortcut': 'Ctrl+P',
                 'status_tip': 'Play Lecture Video',
-                'callback': Callbacks().on_menu_play_video_click,
+                'callback': MenuCallbacks().on_click__menu__video_play_video,
             },
             'Download Lecture Chats': {
                 'icon': Icons.MENU__DOWNLOAD_CAPTIONS.value,
                 'shortcut': 'Shift+Ctrl+J',
                 'status_tip': 'Download Lecture Chats',
-                'callback': Callbacks().on_menu_download_chats_click,
+                'callback': MenuCallbacks().on_click__menu__video_download_lecture_videos,
             },
         },
         'Slides': {
@@ -120,19 +120,19 @@ class MenuItems:
                 'icon': Icons.MENU__DOWNLOAD_SLIDES.value,
                 'shortcut': 'Ctrl+K',
                 'status_tip': 'Download Lecture Slides',
-                'callback': Callbacks().on_menu_download_slides_click,
+                'callback': MenuCallbacks().on_click__menu__slides_download_backpack_slides,
             },
             'Open Folder': {
                 'icon': Icons.MENU__OPEN_FOLDER.value,
                 'shortcut': 'Ctrl+O',
                 'status_tip': 'Open Lecture Content Folder',
-                'callback': Callbacks().on_menu_open_folder_click,
+                'callback': MenuCallbacks().on_click__menu__slides_open_folder,
             },
             'Attach Lecture Slides': {
                 'icon': Icons.MENU__ATTACH_SLIDES.value,
                 'shortcut': 'Shift+Ctrl+O',
                 'status_tip': 'Attach Downloaded Slides to a Lecture',
-                'callback': Callbacks().on_menu_attach_slides_click,
+                'callback': MenuCallbacks().on_click__menu__slides_attach_lecture_slides,
             },
         },
         'Help': {
@@ -140,13 +140,13 @@ class MenuItems:
                 'icon': Icons.MENU__HELP.value,
                 'shortcut': None,
                 'status_tip': 'Help docs',
-                'callback': Callbacks().on_menu_help_doc_click,
+                'callback': MenuCallbacks().on_click__menu__help_help,
             },
             'Check For Updates': {
                 'icon': Icons.MENU__RELEASE_NOTES.value,
                 'shortcut': None,
                 'status_tip': 'Check for new version, release notes...',
-                'callback': Callbacks().on_menu_check_for_updates_click,
+                'callback': MenuCallbacks().on_click__menu__help_check_for_updates,
             },
         }
     }

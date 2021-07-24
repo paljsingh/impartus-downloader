@@ -11,4 +11,3 @@ class IconFiles(enum.Enum):
     EDITABLE_BLUE = 'ui/images/editable-blue.png'
     EDITABLE_RED = 'ui/images/editable-red.png'
     APP_LOGO = 'ui/images/logo.png'
-

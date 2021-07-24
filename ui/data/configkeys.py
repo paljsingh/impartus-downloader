@@ -20,4 +20,3 @@ class ConfigKeys(enum.Enum):
 
     def __str__(self):
         return str(self.value)
-
