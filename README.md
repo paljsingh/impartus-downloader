@@ -32,7 +32,11 @@ Downloader for impartus streaming videos.
 ---
 
 ### UI
-![Impartus Downloader](ui/images/ui-demo.gif "Impartus Downloader")
+Dark theme
+![Impartus Downloader - Dark theme](ui/images/dark-theme.png)
+
+Light theme
+![Impartus Downloader - Dark theme](ui/images/light-theme.png)
 
 
 ### Demo video
@@ -42,7 +46,7 @@ Downloader for impartus streaming videos.
 ## Prerequisites
 
 python >= v3.6
-ffmpeg >= v4.0
+ffmpeg >= v4.3
 
 ## Installation / Run
 
@@ -135,23 +139,6 @@ see etc/impartus.conf
 >
 ---
 
-**Connection issues when downloading**
->
-> Impartus site may start throttling the connections if there are too many parallel downloads. The application uses retry logic with induced delay. However, if the issue persists you may need to restart the app.
-> 
----
-
-**Application crashes on Linux**
-
-> On some systems the application crashes with error:
-> `X Error of failed request:  BadLength (poly request too large or internal Xlib length error)`
->
-> The issue is caused by a bug in libXft and can be resolved by uninstalling `fonts-noto-color-emoji`
->
->  `$ sudo apt-get remove fonts-noto-color-emoji`
->
----
-
 **Hard to read closed captions on white background**
 > 
 > With VLC, you can set the background opacity value to 255.
@@ -214,8 +201,7 @@ alternatively, one can run the app as:
 $ QT_API=PySide2 python3 App.py
 ```
 
-Ref: PySimpleGUI/PySimpleGUI#2437
-https://github.com/paljsingh/impartus-downloader/issues/80
+Ref: [PySimpleGUI/PySimpleGUI#2437](https://github.com/PySimpleGUI/PySimpleGUI/issues/2437)
 
 ---
 
