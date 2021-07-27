@@ -38,8 +38,8 @@ class Impartus:
         self.conf = Config.load(ConfigType.IMPARTUS)
 
         self.timeouts = tuple([
-            self.conf.get('connect_timeout', default=5.0),
-            self.conf.get('read_timeout', default=5.0)
+            self.conf.get('connect_timeout', 5.0),
+            self.conf.get('read_timeout', 5.0)
         ])
 
         # reuse the auth token, if we are already authenticated.
@@ -378,8 +378,8 @@ class Impartus:
             ])
 
         adapter_options = {
-            'pool_connections': self.conf.get('pool_connections', default=5),
-            'pool_maxsize': self.conf.get('pool_maxsize', default=5),
+            'pool_connections': self.conf.get('pool_connections', 5),
+            'pool_maxsize': self.conf.get('pool_maxsize', 5),
             'max_retries': retries,
         }
 
