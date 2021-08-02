@@ -367,7 +367,6 @@ class Impartus:
             status_forcelist=[
                 # 4xx
                 HTTPStatus.REQUEST_TIMEOUT,
-                HTTPStatus.TOO_EARLY,
                 HTTPStatus.TOO_MANY_REQUESTS,
 
                 # 5xx
