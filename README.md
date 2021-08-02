@@ -203,6 +203,21 @@ $ QT_API=PySide2 python3 App.py
 
 Ref: [PySimpleGUI/PySimpleGUI#2437](https://github.com/PySimpleGUI/PySimpleGUI/issues/2437)
 
+
+---
+
+**Error on application launch - "No module named Crypto"**
+
+The error may appear if 'crypto' package is installed on the system.
+crpyto is deperecated and no longer recommended due to various security issue.  
+Impartus application uses 'pycryptodome' that may conflict with 'crypto' package as they both provide the functions under 'Crypto' namespace.
+
+To resolve, unintal crypto, then reinstall pycryptodome:
+>
+> $ pip3 uninstall crypto  
+> $ pip3 uninstall pycryptodome  
+> $ pip3 install pycryptodome  
+
 ---
 
 
