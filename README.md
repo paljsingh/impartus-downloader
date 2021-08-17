@@ -235,6 +235,7 @@ If you still see the issue, you may try upgrading python version, at present the
 python / windows version seem to have compatibility issues with PySide2 v5.15.2
 
 Python3.7.3, Windows 8.1    -   https://bugreports.qt.io/browse/PYSIDE-1002
+
 Python3.9.0, Windows PE     -   https://bugreports.qt.io/browse/PYSIDE-1479
 
 ---
