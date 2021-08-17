@@ -209,10 +209,10 @@ Ref: [PySimpleGUI/PySimpleGUI#2437](https://github.com/PySimpleGUI/PySimpleGUI/i
 **Error on application launch - "No module named Crypto"**
 
 The error may appear if 'crypto' package is installed on the system.
-crpyto is deperecated and no longer recommended due to various security issue.  
+crpyto is deperecated and no longer recommended due to various security issues.  
 Impartus application uses 'pycryptodome' that may conflict with 'crypto' package as they both provide the functions under 'Crypto' namespace.
 
-To resolve, unintal crypto, then reinstall pycryptodome:
+To resolve the issue, uninstall crypto, then reinstall pycryptodome:
 >
 > $ pip3 uninstall crypto  
 > $ pip3 uninstall pycryptodome  
@@ -222,7 +222,7 @@ To resolve, unintal crypto, then reinstall pycryptodome:
 
 **Error on application launch - "ImportError: DLL load failed: The specified procedure could not be found."**
 
-On windows, this error may appear with incompatibility between the PySide2 and python versions.
+On windows, this error may appear due to incompatibility between the PySide2 and python versions.
 Upgrading to python version 3.7 or above should resolve the issue.
 
 You may also need to upgrade your pip version, in case
@@ -234,9 +234,9 @@ $ pip3 install --upgrade pip
 If you still see the issue, you may try upgrading python version, at present the following
 python / windows version seem to have compatibility issues with PySide2 v5.15.2
 
-Python3.7.3, Windows 8.1    -   https://bugreports.qt.io/browse/PYSIDE-1002
+Python v3.7.3, Windows 8.1    -   https://bugreports.qt.io/browse/PYSIDE-1002
 
-Python3.9.0, Windows PE     -   https://bugreports.qt.io/browse/PYSIDE-1479
+Python v3.9.0, Windows PE     -   https://bugreports.qt.io/browse/PYSIDE-1479
 
 ---
 
