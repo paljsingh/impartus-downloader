@@ -3,6 +3,7 @@ import os
 import platform
 import enzyme
 from typing import Dict, List
+import random
 
 from lib.config import Config, ConfigType
 from lib.metadataparser import MetadataFileParser, MetadataDictParser
@@ -57,7 +58,17 @@ class Finder:
             if not filename.endswith('.mkv'):
                 continue
             filepath = os.path.join(path, filename)
-            rf_id, flipped = self._get_rfid(filepath)
+
+            rf_id = None
+            flipped = False
+            try:
+                rf_id, flipped = self._get_rfid(filepath)
+            except TypeError as ex:
+                self.logger.warning('error fetching lecture id from file: {}'.format(filepath))
+                self.logger.warning('assigning a random (-ve) id to this lecture')
+                rf_id = random.randint(1, 1e6) * -1
+                pass
+
             if rf_id:
                 try:
                     metadata_file = '{}/{}.json'.format(
@@ -118,7 +129,7 @@ class Finder:
             self.logger.warning("Exception while parsing file {}".format(str(filepath)))
             self.logger.warning("You may want to delete and re-download this file.")
             self.logger.warning("Exception: {}".format(ex))
-            pass
+            return None, None
 
 
 if __name__ == '__main__':
