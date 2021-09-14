@@ -1,7 +1,7 @@
 from PySide2 import QtWidgets, QtCore
 from PySide2.QtGui import QIcon, QGuiApplication, Qt
 
-from lib.impartus import Impartus
+from lib.core.impartus import Impartus
 from lib.threadlogging import ThreadLogger
 from lib.variables import Variables
 from ui.callbacks.utils import CallbackUtils

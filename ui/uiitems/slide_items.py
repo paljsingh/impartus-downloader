@@ -4,7 +4,7 @@ from typing import Dict
 
 from PySide2.QtWidgets import QWidget
 
-from lib.impartus import Impartus
+from lib.core.impartus import Impartus
 from lib.utils import Utils
 from ui.uiitems.customwidgets.combobox import CustomComboBox
 from ui.helpers.widgetcreator import WidgetCreator

@@ -1,20 +1,55 @@
 import os
 import platform
+from collections import defaultdict
 
 import requests
 
 from lib.config import Config, ConfigType
+from lib.metadataparser import MetadataDictParser
 from lib.utils import Utils
 
 
 class DataUtils:
 
     @classmethod
-    def merge_items(cls, offline_item, online_item):
-        for key, val in offline_item.items():
-            if not online_item.get(key):
-                online_item[key] = offline_item[key]
-        return online_item
+    def merge_items(cls, offline_items, online_items):
+        merged_items = dict()
+        for key, val in offline_items.items():
+            if online_items.get(key):
+                # consider online info, it may have updated topic/metadata not available offline.
+                merged_items[key] = online_items[key]
+            else:
+                merged_items[key] = offline_items[key]
+        return merged_items
+
+    @classmethod
+    def merge_slides_items(cls, offline_items, online_items, mapping_by_id, mapping_by_name):
+        all_docs = dict()
+        if online_items:
+            for subject, documents in online_items.items():
+                for document in documents:
+                    all_docs[document['fileName']] = document
+
+        if offline_items:
+            for subject, documents in offline_items.items():
+                for document in documents:
+                    if not all_docs.get(document['fileName']):
+                        all_docs[document['fileName']] = document
+
+        merged_docs_by_subject = defaultdict(list)
+        for filename, doc in all_docs.items():
+            doc = MetadataDictParser.add_new_fields(doc)
+            subject_id = doc['subjectId']
+            if mapping_by_id.get(subject_id) and mapping_by_id[subject_id].get('subjectName'):
+                key = mapping_by_id[subject_id]['subjectName']
+                merged_docs_by_subject[key].append(doc)
+            else:
+                name = doc['subjectNameShort'] if doc.get('subjectNameShort') else doc.get('subjectName')
+                if mapping_by_name.get(name):
+                    key = mapping_by_name[name]
+                    merged_docs_by_subject[key].append(doc)
+
+        return merged_docs_by_subject
 
     @classmethod
     def save_metadata(cls, online_data):
@@ -34,3 +69,19 @@ class DataUtils:
         response = requests.get(url)
         if response.status_code == 200:
             return response.json()
+
+    @classmethod
+    def get_subject_name_from_subject_name_short(cls, short_name):
+        conf = Config.load(ConfigType.MAPPINGS)
+        for key, val in conf.items():
+            if val == short_name:
+                return key
+        return short_name
+
+    @classmethod
+    def get_subject_name_short_from_subject_name(cls, subject_name):
+        conf = Config.load(ConfigType.MAPPINGS)
+        if conf.get(subject_name):
+            return conf.get(subject_name)
+        else:
+            return subject_name

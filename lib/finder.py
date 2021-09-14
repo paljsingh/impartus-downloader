@@ -1,6 +1,8 @@
 import json
 import os
 import platform
+from collections import defaultdict
+
 import enzyme
 from typing import Dict, List
 import random
@@ -22,21 +24,19 @@ class Finder:
         self.logger = ThreadLogger(self.__class__.__name__).logger
         pass
 
-    def get_offline_content(self):
-        offline_content = dict()
+    def get_offline_videos(self):
+        offline_videos = dict()
         count = 0
         for dirpath, subdirs, files in os.walk(self.conf.get('target_dir').get(platform.system())):
             for rf_id, video_metadata in self.get_offline_video_metadata(dirpath, files):
                 if rf_id:
                     count += 1
-                    backpack_slides = self.get_offline_backpack_slides(dirpath, files)
                     chats = self.get_offline_chats(dirpath, files)
-                    offline_content[rf_id] = {
-                        'backpack_slides': backpack_slides,
+                    offline_videos[rf_id] = {
                         'chats': chats,
                         **video_metadata,
                     }
-        return offline_content
+        return offline_videos
 
     def get_offline_video_metadata(self, path: str, files: List) -> (str, Dict):
         """
@@ -78,13 +78,13 @@ class Finder:
                             video_metadata = json.load(fh)
                     else:
                         # parse from the file path.
-                        parsed_items = MetadataFileParser.parse_from_filepath(filepath, ConfigKeys.VIDEO_PATH.value)
-                        video_metadata = MetadataDictParser.sanitize(parsed_items)
+                        parsed_items = MetadataFileParser().parse_from_filepath(filepath, ConfigKeys.VIDEO_PATH.value)
+                        video_metadata = MetadataDictParser().sanitize(parsed_items)
                         if flipped:
                             video_metadata['fcid'] = rf_id
                         else:
                             video_metadata['ttid'] = rf_id
-                        video_metadata = MetadataDictParser.add_new_fields(video_metadata)
+                        video_metadata = MetadataDictParser().add_new_fields(video_metadata)
 
                     video_metadata['offline_filepath'] = filepath
                     yield rf_id, video_metadata
@@ -97,14 +97,6 @@ class Finder:
                     self.logger.warning('error parsing offline filepath: {}'.format(ex))
 
         return None, None
-
-    def get_offline_backpack_slides(self, path: str, files: List):
-        backpack_slides = []
-        for filename in files:
-            for ext in self.conf.get('allowed_ext'):
-                if filename.endswith(ext):
-                    backpack_slides.append(os.path.join(path, filename))
-        return backpack_slides
 
     def get_offline_chats(self, path: str, files: List):  # noqa
         for filename in files:
@@ -127,6 +119,42 @@ class Finder:
             self.logger.warning("You may want to delete and re-download this file.")
             self.logger.warning("Exception: {}".format(ex))
             return None, None
+
+    def get_offline_backpack_slides(self, mapping_by_subject_name):
+        backpack_slides = defaultdict(list)
+        for dirpath, subdirs, files in os.walk(self.conf.get('target_dir').get(platform.system())):
+            for filename in files:
+                for ext in self.conf.get('allowed_ext'):
+                    if filename.endswith(ext):
+                        filepath = os.path.join(dirpath, filename)
+                        parsed_fields = MetadataFileParser().parse_from_filepath(filepath, ConfigKeys.SLIDES_PATH.value)
+
+                        subject_id = -1
+                        subject_name = None
+                        if parsed_fields.get('subjectName'):
+                            subject_name = parsed_fields['subjectName']
+                            subject_id = mapping_by_subject_name[subject_name]['subjectId'] if mapping_by_subject_name.get(subject_name) else -1
+                        subject_name_short = None
+                        if parsed_fields.get('subjectNameShort'):
+                            subject_name_short = parsed_fields['subjectNameShort']
+                            subject_id = mapping_by_subject_name[subject_name_short]['subjectId'] if mapping_by_subject_name.get(subject_name_short) else -1
+
+                        prof_name = None
+                        if parsed_fields.get('professorName'):
+                            prof_name = parsed_fields['professorName']
+
+                        backpack_slide = {
+                            'filePath': filepath,
+                            'fileName': filename,
+                            'description': '',
+                            'subjectName': subject_name,
+                            'subjectNameShort': subject_name_short,
+                            'subjectId': subject_id,
+                            'professorName': prof_name,
+                        }
+                        key = subject_name_short if subject_name_short else subject_name
+                        backpack_slides[key].append(backpack_slide)
+        return backpack_slides
 
 
 if __name__ == '__main__':

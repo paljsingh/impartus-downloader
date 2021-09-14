@@ -60,7 +60,7 @@ class MenuItems:
                 'status': 'disabled',
                 'behavior': 'multiselect',
                 'child_items': {k: v['menu_name'] for k, v in
-                                {**Columns.data_columns, **Columns.widget_columns}.items()},
+                                {**Columns.data_columns, **Columns.video_widget_columns}.items()},
                 'child_callbacks': [partial(MenuCallbacks().on_click__menu__view_columns, key)
                                     for key in [*Columns.data_columns.keys(), *Columns.widget_columns.keys()]]
             },

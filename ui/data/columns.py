@@ -34,7 +34,7 @@ class Columns:
             'menu_tooltip': 'Faculty Name',
             'original_values_col': None,
             'resize_policy': QHeaderView.ResizeMode.ResizeToContents,
-            'inital_size': 150,
+            'initial_size': 150,
             'sortable': True,
             'title_case': True,
         },
@@ -46,7 +46,7 @@ class Columns:
             'menu_name': 'Topic',
             'menu_tooltip': 'Lecture Topic',
             'original_values_col': None,
-            'resize_policy': QHeaderView.ResizeMode.Stretch,    # only 1 column can be 'Stretch'
+            'resize_policy': QHeaderView.ResizeMode.Stretch,  # only 1 column can be 'Stretch'
             'initial_size': 200,
             'sortable': True,
             'title_case': True,
@@ -105,6 +105,53 @@ class Columns:
         },
     }
 
+    video_data_columns = {
+        **data_columns
+    }
+
+    slides_data_columns = {
+        'subjectNameShort': data_columns['subjectNameShort'],
+        'fileName': {
+            'alignment': Qt.AlignLeft | Qt.AlignVCenter,
+            'display_name': 'File Name',
+            'editable': False,
+            'hidden': False,
+            'menu_name': 'File Name',
+            'menu_tooltip': 'File Name',
+            'original_values_col': None,
+            'resize_policy': QHeaderView.ResizeMode.ResizeToContents,
+            'initial_size': 300,
+            'sortable': True,
+            'title_case': True,
+        },
+        'fileLength': {
+            'alignment': Qt.AlignLeft | Qt.AlignVCenter,
+            'display_name': 'File Size',
+            'editable': False,
+            'hidden': False,
+            'menu_name': 'File Size',
+            'menu_tooltip': 'File Size',
+            'original_values_col': None,
+            'resize_policy': QHeaderView.ResizeMode.ResizeToContents,
+            'initial_size': 150,
+            'sortable': True,
+            'title_case': True,
+        },
+        'fileDate': {
+            'alignment': Qt.AlignLeft | Qt.AlignVCenter,
+            'display_name': 'Created On',
+            'editable': False,
+            'hidden': False,
+            'menu_name': 'Created On',
+            'menu_tooltip': 'Created On',
+            'original_values_col': None,
+            'resize_policy': QHeaderView.ResizeMode.ResizeToContents,
+            'initial_size': 150,
+            'sortable': True,
+            'title_case': True,
+        },
+    }
+
     widget_columns = {
         'flipped': {
             'alignment': Qt.AlignRight | Qt.AlignVCenter,
@@ -158,7 +205,17 @@ class Columns:
             'initial_size': 225,
             'sortable': False,
             'title_case': False,
-        },
+        }
+    }
+
+    slides_widget_columns = {
+        'slides_actions': widget_columns['slides_actions']
+    }
+
+    video_widget_columns = {
+        'flipped': widget_columns['flipped'],
+        'progress_bar': widget_columns['progress_bar'],
+        'video_actions': widget_columns['video_actions'],
     }
 
     hidden_columns = {
@@ -211,8 +268,12 @@ class Columns:
                 return index + 1
 
     @classmethod
-    def get_columns_count(cls):
-        return 1 + len(Columns.data_columns) + len(Columns.widget_columns) + len(Columns.hidden_columns)
+    def get_video_columns_count(cls):
+        return 1 + len(Columns.video_data_columns) + len(Columns.video_widget_columns) + len(Columns.hidden_columns)
+
+    @classmethod
+    def get_slides_columns_count(cls):
+        return 1 + len(Columns.slides_data_columns) + len(Columns.slides_widget_columns) + len(Columns.hidden_columns)
 
     @classmethod
     def get_button_order(cls):
