@@ -116,7 +116,7 @@ class LoginWindow(QMainWindow):
             )
             QTimer.singleShot(1, self.content_window.work_online)
         else:
-            QtWidgets.QErrorMessage().showMessage(
+            QtWidgets.QErrorMessage(self).showMessage(
                 'Error authenticating to {}. See console logs for details.'.format(url)
             )
 
