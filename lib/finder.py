@@ -59,14 +59,11 @@ class Finder:
                 continue
             filepath = os.path.join(path, filename)
 
-            rf_id = None
             flipped = False
             try:
                 rf_id, flipped = self._get_rfid(filepath)
             except TypeError as ex:
-                self.logger.warning('error fetching lecture id from file: {}'.format(filepath))
-                self.logger.warning('assigning a random (-ve) id to this lecture')
-                rf_id = random.randint(1, 1e6) * -1
+                rf_id = random.randint(1, int(1e6)) * -1
                 pass
 
             if rf_id:
