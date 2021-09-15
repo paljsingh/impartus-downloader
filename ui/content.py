@@ -14,8 +14,8 @@ from ui.callbacks.menucallbacks import MenuCallbacks
 from ui.data.labels import Labels
 from ui.helpers.datautils import DataUtils
 from ui.uiitems.search import SearchBox
-from ui.uiitems.video_content import VideoContent
-from ui.uiitems.lecture_content import LectureContent
+from ui.uiitems.videos import Videos
+from ui.uiitems.documents import Documents
 
 
 class ContentWindow(QMainWindow):
@@ -39,10 +39,10 @@ class ContentWindow(QMainWindow):
         self.setGeometry(0, 0, self.maximumWidth(), self.maximumHeight())
 
         self.table_widget = self.content_form.findChild(QTableWidget, "table")
-        self.table_container = VideoContent(self.impartus, self.table_widget)  # noqa
+        self.table_container = Videos(self.impartus, self.table_widget)  # noqa
 
         self.tree_widget = self.content_form.findChild(QTreeWidget, "lectures_treewidget")
-        self.tree_container = LectureContent(self.impartus, self.tree_widget)  # noqa
+        self.tree_container = Documents(self.impartus, self.tree_widget)  # noqa
 
         self.setContentsMargins(5, 0, 5, 0)
         screen_size = QtWidgets.QApplication.primaryScreen().size()

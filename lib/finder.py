@@ -2,6 +2,7 @@ import json
 import os
 import platform
 from collections import defaultdict
+from datetime import datetime
 
 import enzyme
 from typing import Dict, List
@@ -11,6 +12,7 @@ from lib.config import Config, ConfigType
 from lib.metadataparser import MetadataFileParser, MetadataDictParser
 from lib.threadlogging import ThreadLogger
 from ui.data.configkeys import ConfigKeys
+from ui.data.labels import Labels
 
 
 class Finder:
@@ -120,7 +122,7 @@ class Finder:
             self.logger.warning("Exception: {}".format(ex))
             return None, None
 
-    def get_offline_backpack_slides(self, mapping_by_subject_name):
+    def get_offline_backpack_slides(self, mapping_by_subject_name=None):
         backpack_slides = defaultdict(list)
         for dirpath, subdirs, files in os.walk(self.conf.get('target_dir').get(platform.system())):
             for filename in files:
@@ -129,35 +131,33 @@ class Finder:
                         filepath = os.path.join(dirpath, filename)
                         parsed_fields = MetadataFileParser().parse_from_filepath(filepath, ConfigKeys.SLIDES_PATH.value)
 
-                        subject_id = -1
-                        subject_name = None
-                        if parsed_fields.get('subjectName'):
-                            subject_name = parsed_fields['subjectName']
-                            subject_id = mapping_by_subject_name[subject_name]['subjectId'] if mapping_by_subject_name.get(subject_name) else -1
-                        subject_name_short = None
-                        if parsed_fields.get('subjectNameShort'):
-                            subject_name_short = parsed_fields['subjectNameShort']
-                            subject_id = mapping_by_subject_name[subject_name_short]['subjectId'] if mapping_by_subject_name.get(subject_name_short) else -1
-
                         prof_name = None
                         if parsed_fields.get('professorName'):
                             prof_name = parsed_fields['professorName']
 
+                        subject_id, subject_name = self._get_subject_info(parsed_fields, mapping_by_subject_name)
                         backpack_slide = {
                             'filePath': filepath,
                             'fileName': filename,
+                            'fileLength': os.path.getsize(filepath) // 1024,
+                            'fileDate': datetime.fromtimestamp(os.path.getmtime(filepath)).strftime("%Y-%m-%d"),
                             'description': '',
                             'subjectName': subject_name,
-                            'subjectNameShort': subject_name_short,
+                            'subjectNameShort': subject_name,
                             'subjectId': subject_id,
                             'professorName': prof_name,
                         }
-                        key = subject_name_short if subject_name_short else subject_name
-                        backpack_slides[key].append(backpack_slide)
+                        backpack_slides[subject_name].append(backpack_slide)
         return backpack_slides
 
+    def _get_subject_info(self, metadata, subject_name_id_map=None):
+        subject_id = -1
+        subject_name = "No Subject"
+        for name in [Labels.SUBJECT_NAME.value, Labels.SUBJECT_NAME_SHORT.value]:
+            if metadata.get(name):
+                subject_name = metadata[name]
+                if subject_name_id_map and subject_name_id_map.get(name):
+                    subject_id = subject_name_id_map[name]['subjectId']
+                return subject_id, subject_name
+        return subject_id, subject_name
 
-if __name__ == '__main__':
-    conf = Config.load(ConfigType.IMPARTUS)
-    con = Finder().get_offline_content()
-    print(con)

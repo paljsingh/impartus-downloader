@@ -10,7 +10,7 @@ import qtawesome as qta
 from PySide2 import QtCore
 from PySide2.QtCore import QThread
 from PySide2.QtGui import QIcon
-from PySide2.QtWidgets import QTableWidget, QTableWidgetItem, QHeaderView, QFileDialog, QCheckBox
+from PySide2.QtWidgets import QTableWidget, QTableWidgetItem, QHeaderView, QFileDialog, QCheckBox, QWidget
 
 from lib.captions import Captions
 from lib.config import Config, ConfigType
@@ -24,18 +24,18 @@ from ui.helpers.widgetcreator import WidgetCreator
 from ui.uiitems.customwidgets.tablewidgetitem import CustomTableWidgetItem
 from ui.data.Icons import Icons
 from ui.data.actionitems import ActionItems
+from ui.data import columns
 from ui.data.columns import Columns
 from lib.variables import Variables
+from ui.uiitems.documents import Documents
 from ui.uiitems.progressbar import SortableRoundProgressbar
 from ui.uiitems.customwidgets.pushbutton import CustomPushButton
 from ui.delegates.rodelegate import ReadOnlyDelegate
-from ui.uiitems.slide_items import Slides
-from ui.uiitems.video_items import Videos
 from ui.helpers.worker import Worker
 from ui.delegates.writedelegate import WriteDelegate
 
 
-class VideoContent:
+class Videos:
     """
     Table class:
     Creates a table and provides methods to get / set table headers and its properties, as well as the table data..
@@ -73,8 +73,7 @@ class VideoContent:
         self.table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
 
         # enumerate from 1.
-        for index, (key, val) in enumerate(
-                [*Columns.video_data_columns.items(), *Columns.video_widget_columns.items(), *Columns.hidden_columns.items()], 1):
+        for index, (key, val) in enumerate(Columns.get_video_columns_dict().items(), 1):
             widget = QTableWidgetItem()
             widget.setText(val['display_name'])
 
@@ -125,24 +124,24 @@ class VideoContent:
         self.table.setCellWidget(index, 0, container_widget)
 
         # enumerate rest of the columns from 1
-        for col, (key, val) in enumerate(Columns.video_data_columns.items(), 1):
+        for col, (key, val) in enumerate(columns.video_data_columns.items(), 1):
             widget = QTableWidgetItem(str(data_item[key]))
             widget.setTextAlignment(val['alignment'])
             self.table.setItem(index, col, widget)
 
         # total columns so far...
-        col = len(Columns.video_data_columns) + 1
+        col = len(columns.video_data_columns) + 1
 
         # flipped icon column.
 
-        flipped_col = Columns.video_widget_columns['flipped']
+        flipped_col = columns.video_widget_columns['flipped']
         flipped_icon = qta.icon(flipped_col['icon']) if data_item.get('fcid') else QIcon()
         flipped_icon_widget = CustomTableWidgetItem()
         flipped_icon_widget.setIcon(flipped_icon)
-        flipped_icon_widget.setTextAlignment(Columns.video_widget_columns['flipped']['alignment'])
+        flipped_icon_widget.setTextAlignment(columns.video_widget_columns['flipped']['alignment'])
         int_value = 1 if data_item.get('fcid') else 0
         flipped_icon_widget.setValue(int_value)
-        flipped_icon_widget.setToolTip(Columns.video_widget_columns['flipped']['menu_tooltip'])
+        flipped_icon_widget.setToolTip(columns.video_widget_columns['flipped']['menu_tooltip'])
 
         self.table.setItem(index, col, flipped_icon_widget)
         col += 1
@@ -150,7 +149,7 @@ class VideoContent:
         # progress bar.
         progress_bar_widget = SortableRoundProgressbar()
         progress_bar_widget.setValue(0)
-        progress_bar_widget.setAlignment(Columns.video_widget_columns['progress_bar']['alignment'])
+        progress_bar_widget.setAlignment(columns.video_widget_columns['progress_bar']['alignment'])
         self.table.setItem(index, col, progress_bar_widget.table_widget_item)
         self.table.setCellWidget(index, col, progress_bar_widget)
         if data_item.get('offline_filepath'):
@@ -179,7 +178,7 @@ class VideoContent:
             'open_folder': partial(self.on_click_open_folder, rf_id),
             'attach_slides': partial(self.on_click_attach_slides, rf_id),
         }
-        slides_actions_widget, cell_value = Slides.add_slides_actions_buttons(data_item, self.impartus, callbacks)
+        slides_actions_widget, cell_value = Documents.add_slides_actions_buttons(data_item, self.impartus, callbacks)
         self.table.setCellWidget(index, col, slides_actions_widget)
 
         # numeric sort implemented via a Custom QTableWidgetItem
@@ -190,10 +189,10 @@ class VideoContent:
         col += 1
 
         # hidden columns
-        for col_index, (key, val) in enumerate(Columns.hidden_columns.items(), col):
+        for col_index, (key, val) in enumerate(columns.hidden_columns.items(), col):
             str_value = str(data_item[key]) if data_item.get(key) else ''
             widget = QTableWidgetItem(str_value)
-            widget.setTextAlignment(Columns.hidden_columns[key]['alignment'])
+            widget.setTextAlignment(columns.hidden_columns[key]['alignment'])
             self.table.setItem(index, col_index, widget)
 
         # for index in range(len(online_data)):
@@ -202,11 +201,11 @@ class VideoContent:
 
     def resizable_headers(self):
         # Todo ...
-        for i, (col, item) in enumerate([*Columns.video_data_columns.items(), *Columns.video_widget_columns.items()], 1):
+        for i, (col, item) in enumerate(Columns.get_displayable_video_columns_dict().items(), 1):
             if item.get('initial_size') and item['resize_policy'] != QHeaderView.ResizeMode.Stretch:
                 self.table.horizontalHeader().resizeSection(i, item.get('initial_size'))
 
-        for i in range(len(['id', *Columns.video_data_columns, *Columns.video_widget_columns])):
+        for i in range(len(['id', *columns.video_data_columns, *columns.video_widget_columns])):
             self.table.horizontalHeader().setSectionResizeMode(i, QHeaderView.Interactive)
 
     def on_click_checkbox(self, checkbox: QCheckBox):
@@ -217,7 +216,7 @@ class VideoContent:
 
     def show_hide_column(self, column):
         col_index = None
-        for i, col_name in enumerate([*Columns.video_data_columns.keys(), *Columns.video_widget_columns.keys()], 1):
+        for i, col_name in enumerate(Columns.get_displayable_video_columns(), 1):
             if col_name == column:
                 col_index = i
                 break
@@ -551,3 +550,63 @@ class VideoContent:
         captions_path = self.data.get(rf_id)['captions_path'] if self.data.get(rf_id).get('captions_path') else None
         if captions_path:
             return os.path.dirname(captions_path)
+
+    @staticmethod
+    def add_video_actions_buttons(metadata, impartus: Impartus, callbacks: Dict):
+        widget = QWidget()
+        widget.setContentsMargins(0, 0, 0, 0)
+        widget_layout = WidgetCreator.get_layout_widget(widget)
+        widget_layout.setAlignment(columns.video_widget_columns.get('video_actions')['alignment'])
+
+        # make the widget searchable based on button states.
+        download_video_state = None
+        play_video_state = None
+        download_chats_state = None
+
+        is_authenticated = impartus.is_authenticated()
+        for pushbutton in WidgetCreator.add_actions_buttons(ActionItems.video_actions):
+            widget_layout.addWidget(pushbutton)
+
+            # disable download button, if video exists locally.
+            if pushbutton.objectName() == ActionItems.video_actions['download_video']['text']:
+                pushbutton.clicked.connect(callbacks['download_video'])
+
+                if metadata.get('offline_filepath'):
+                    download_video_state = False
+                else:
+                    if is_authenticated:
+                        download_video_state = True
+                    else:
+                        download_video_state = False
+
+                pushbutton.setEnabled(download_video_state)
+            elif pushbutton.objectName() == ActionItems.video_actions['play_video']['text']:
+                pushbutton.clicked.connect(callbacks['play_video'])
+
+                if metadata.get('offline_filepath'):
+                    # enable play button, if video exists locally.
+                    play_video_state = True
+                else:
+                    play_video_state = False
+
+                pushbutton.setEnabled(play_video_state)
+            elif pushbutton.objectName() == ActionItems.video_actions['download_chats']['text']:
+                pushbutton.clicked.connect(callbacks['download_chats'])
+
+                # enable download chats button, if lecture chats file does not exist.
+                filepath = metadata.get('chats')
+                if filepath and os.path.exists(filepath):
+                    download_chats_state = False
+                else:
+                    if is_authenticated:
+                        download_chats_state = True
+                    else:
+                        download_chats_state = False
+
+                pushbutton.setEnabled(download_chats_state)
+
+        # a slightly hackish way to sort widgets -
+        # create an integer out of the (button1_state, button2_state, ...)
+        # pass it to a Custom TableWidgetItem with __lt__ overridden to provide numeric sort.
+        cell_value = '{}{}{}'.format(int(download_video_state), int(play_video_state), int(download_chats_state))
+        return widget, int(cell_value)

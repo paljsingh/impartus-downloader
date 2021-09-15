@@ -4,7 +4,7 @@ from functools import partial
 from lib.config import ConfigType, Config
 from ui.callbacks.menucallbacks import MenuCallbacks
 from ui.data.Icons import Icons
-from ui.data.columns import Columns
+from ui.data import columns
 
 
 class MenuItems:
@@ -60,9 +60,9 @@ class MenuItems:
                 'status': 'disabled',
                 'behavior': 'multiselect',
                 'child_items': {k: v['menu_name'] for k, v in
-                                {**Columns.data_columns, **Columns.video_widget_columns}.items()},
+                                {**columns.data_columns, **columns.video_widget_columns}.items()},
                 'child_callbacks': [partial(MenuCallbacks().on_click__menu__view_columns, key)
-                                    for key in [*Columns.data_columns.keys(), *Columns.widget_columns.keys()]]
+                                    for key in [*columns.data_columns.keys(), *columns.widget_columns.keys()]]
             },
             'sep': {
                 'type': 'separator',

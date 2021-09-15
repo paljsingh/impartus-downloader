@@ -3,10 +3,10 @@ import os
 import shutil
 from functools import partial
 import concurrent.futures
-
+from typing import Dict
 
 from PySide2 import QtCore
-from PySide2.QtWidgets import QTreeWidget, QTreeWidgetItem, QHeaderView, QFileDialog, QCheckBox
+from PySide2.QtWidgets import QTreeWidget, QTreeWidgetItem, QHeaderView, QFileDialog, QCheckBox, QWidget
 
 from lib.config import Config, ConfigType
 from lib.core.impartus import Impartus
@@ -15,15 +15,16 @@ from lib.utils import Utils
 from ui.callbacks.menucallbacks import MenuCallbacks
 from ui.callbacks.utils import CallbackUtils
 from ui.data.actionitems import ActionItems
+from ui.data import columns
 from ui.data.columns import Columns
 from ui.delegates.rodelegate import ReadOnlyDelegate
 from ui.delegates.writedelegate import WriteDelegate
+from ui.helpers.widgetcreator import WidgetCreator
+from ui.uiitems.customwidgets.combobox import CustomComboBox
 from ui.uiitems.customwidgets.customtreewidgetitem import CustomTreeWidgetItem
-from ui.uiitems.customwidgets.tablewidgetitem import CustomTableWidgetItem
-from ui.uiitems.slide_items import Slides
 
 
-class LectureContent:
+class Documents:
     """
     LectureContent class:
     Creates a treeview and provides methods to get / set treewidget headers and its properties,
@@ -52,7 +53,7 @@ class LectureContent:
 
     def _set_headers(self):
         self.treewidget.header().setAlternatingRowColors(True)
-        headers = [x['display_name'] for x in {**Columns.slides_data_columns, **Columns.slides_widget_columns}.values()]
+        headers = [x['display_name'] for x in Columns.get_document_columns_dict().values()]
         self.treewidget.setHeaderLabels(headers)
         self.treewidget.header().setSortIndicatorShown(True)
         return self
@@ -76,12 +77,12 @@ class LectureContent:
 
     def add_row_item(self, item, document):
         item_child = QTreeWidgetItem(item)
-        for col, key in enumerate([x for x in Columns.slides_data_columns.keys()][1:], 1):
+        for col, key in enumerate([x for x in Columns.get_document_columns()][1:], 1):
             item_child.setText(col, str(document.get(key)))
         item.addChild(item_child)
 
         # total columns so far...
-        col = len(Columns.slides_data_columns)
+        col = Columns.get_document_columns_count()
 
         # slides actions
         callbacks = {
@@ -89,7 +90,7 @@ class LectureContent:
             'open_folder': partial(self.on_click_open_folder, document['filePath']),
             'attach_slides': partial(self.on_click_attach_slides, document['filePath']),
         }
-        slides_actions_widget, cell_value = Slides.add_slides_actions_buttons(document, self.impartus, callbacks)
+        slides_actions_widget, cell_value = Documents.add_slides_actions_buttons(document, self.impartus, callbacks)
 
         # custom_item = QTreeWidgetItem()
         # custom_item.setData(cell_value)
@@ -101,11 +102,11 @@ class LectureContent:
 
     def resizable_headers(self):
         # Todo ...
-        for i, (col, item) in enumerate([*Columns.slides_data_columns.items(), *Columns.slides_widget_columns.items()], 1):
+        for i, (col, item) in enumerate(Columns.get_document_columns_dict().items(), 1):
             if item.get('initial_size') and item['resize_policy'] != QHeaderView.ResizeMode.Stretch:
                 self.treewidget.header().resizeSection(i, item.get('initial_size'))
 
-        for i in range(len(['id', *Columns.slides_data_columns, *Columns.slides_widget_columns])):
+        for i in range(Columns.get_document_columns_count()):
             self.treewidget.header().setSectionResizeMode(i, QHeaderView.Interactive)
 
     def on_click_checkbox(self, checkbox: QCheckBox):
@@ -116,7 +117,7 @@ class LectureContent:
 
     def show_hide_column(self, column):
         col_index = None
-        for i, col_name in enumerate([*Columns.slides_data_columns.keys(), *Columns.slides_widget_columns.keys()], 1):
+        for i, col_name in enumerate(Columns.get_document_columns(), 1):
             if col_name == column:
                 col_index = i
                 break
@@ -131,10 +132,8 @@ class LectureContent:
         self.treewidget.setSortingEnabled(False)
         self.treewidget.clear()
 
-        col_count = len(Columns.slides_data_columns.keys()) + len(Columns.slides_widget_columns) + 1
+        col_count = Columns.get_document_columns_count()
         self.treewidget.setColumnCount(col_count)
-
-        # self.prev_checkbox = None
 
         self._set_headers()
 
@@ -294,3 +293,86 @@ class LectureContent:
         captions_path = self.data.get(rf_id)['captions_path'] if self.data.get(rf_id).get('captions_path') else None
         if captions_path:
             return os.path.dirname(captions_path)
+
+    @staticmethod
+    def add_slides_actions_buttons(metadata, impartus: Impartus, callbacks: Dict):
+        widget = QWidget()
+        widget_layout = WidgetCreator.get_layout_widget(widget)
+        widget_layout.setAlignment(columns.widget_columns.get('slides_actions')['alignment'])
+
+        # make the widget searchable based on button states.
+        download_slides_state = None
+        open_folder_state = None
+        attach_slides_state = None
+
+        # show slides combo box.
+        combo_box = CustomComboBox()
+        if metadata.get('backpack_slides'):
+            combo_box.show()
+            combo_box.add_items(metadata['backpack_slides'])
+            combobox_count = combo_box.count() - 1
+        else:
+            combo_box.hide()
+            combobox_count = 0
+        widget_layout.addWidget(combo_box)
+
+        for pushbutton in WidgetCreator.add_actions_buttons(ActionItems.slides_actions):
+            widget_layout.addWidget(pushbutton)
+
+            # slides download is enabled if the slides file exists on server, but not locally.
+            if pushbutton.objectName() == ActionItems.slides_actions['download_slides']['text']:
+                pushbutton.clicked.connect(callbacks['download_slides'])
+
+                if impartus.is_authenticated():
+                    filepath = impartus.get_slides_path(metadata)
+                    if metadata.get('slide_url') and metadata.get('slide_url') != '' \
+                            and filepath and not os.path.exists(filepath):
+                        download_slides_state = True
+                    else:
+                        download_slides_state = False
+                else:
+                    download_slides_state = False
+
+                pushbutton.setEnabled(download_slides_state)
+
+            # open folder should be enabled, if folder exist
+            elif pushbutton.objectName() == ActionItems.slides_actions['open_folder']['text']:
+                pushbutton.clicked.connect(callbacks['open_folder'])
+
+                folder = None
+                if metadata.get('offline_filepath'):
+                    folder = os.path.dirname(metadata['offline_filepath'])
+                elif metadata.get('backpack_slides'):
+                    folder = os.path.dirname(metadata['backpack_slides'][0])
+
+                if folder and os.path.exists(folder):
+                    open_folder_state = True
+                    pushbutton.clicked.connect(partial(Utils.open_file, folder))
+                else:
+                    open_folder_state = False
+
+                pushbutton.setEnabled(open_folder_state)
+
+            elif pushbutton.objectName() == ActionItems.slides_actions['attach_slides']['text']:
+
+                # attach slides is enabled, if at least one of the files exist.
+                video_path = metadata.get('offline_filepath')
+                slides_path = metadata.get('slides_path')
+                captions_path = metadata.get('captions_path')
+                if (video_path and os.path.exists(video_path)) or \
+                        (slides_path and os.path.exists(slides_path)) or \
+                        (captions_path and os.path.exists(captions_path)):
+                    attach_slides_state = True
+                else:
+                    attach_slides_state = False
+
+                pushbutton.clicked.connect(callbacks['attach_slides'])
+                pushbutton.setEnabled(attach_slides_state)
+
+        # a slightly hackish way to sort widgets -
+        # create an integer out of the (slide count, button1_state, button2_state, ...)
+        # pass it to a Custom TableWidgetItem with __lt__ overridden to provide numeric sort.
+        cell_value = '{}{}{}{}'.format(
+            combobox_count, int(download_slides_state), int(open_folder_state), int(attach_slides_state))
+
+        return widget, int(cell_value)

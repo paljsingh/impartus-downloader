@@ -40,7 +40,7 @@ class WriteDelegate(QStyledItemDelegate):
         elif fcid_text and fcid_text != '0':
             rf_id = int(fcid_text)
 
-        column_name = Columns.get_display_columns()[index.column() - 1]
+        column_name = Columns.get_displayable_video_columns()[index.column() - 1]
         original_value = self.data_callback()[rf_id][column_name]
         new_value = editor.text()
 

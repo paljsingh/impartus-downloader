@@ -26,11 +26,10 @@ from ui.data.Icons import Icons
 from ui.data.actionitems import ActionItems
 from ui.data.columns import Columns
 from lib.variables import Variables
+from ui.uiitems.documents import Documents
 from ui.uiitems.progressbar import SortableRoundProgressbar
 from ui.uiitems.customwidgets.pushbutton import CustomPushButton
 from ui.delegates.rodelegate import ReadOnlyDelegate
-from ui.uiitems.slide_items import Slides
-from ui.uiitems.video_items import Videos
 from ui.helpers.worker import Worker
 from ui.delegates.writedelegate import WriteDelegate
 
@@ -171,7 +170,7 @@ class Table:
             'play_video': partial(self.on_click_play_video, rf_id),
             'download_chats': partial(self.on_click_download_chats, rf_id)
         }
-        video_actions_widget, cell_value = Videos.add_video_actions_buttons(data_item, self.impartus, callbacks)
+        video_actions_widget, cell_value = VideoContent.add_video_actions_buttons(data_item, self.impartus, callbacks)
         self.table.setCellWidget(index, col, video_actions_widget)
         self.table.cellWidget(index, col).setContentsMargins(0, 0, 0, 0)
 
@@ -187,7 +186,7 @@ class Table:
             'open_folder': partial(self.on_click_open_folder, rf_id),
             'attach_slides': partial(self.on_click_attach_slides, rf_id),
         }
-        slides_actions_widget, cell_value = Slides.add_slides_actions_buttons(data_item, self.impartus, callbacks)
+        slides_actions_widget, cell_value = Documents.add_slides_actions_buttons(data_item, self.impartus, callbacks)
         self.table.setCellWidget(index, col, slides_actions_widget)
 
         # numeric sort implemented via a Custom QTableWidgetItem
