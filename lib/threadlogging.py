@@ -67,7 +67,7 @@ class ThreadLogger:
         logger: logging.Logger
         for name, logger in self.__class__.loggers.items():
             # add threadlog handler only if the content window is available.
-            if Variables().log_window():
+            if Variables().log_window() and len(logger.handlers) <= 1:
                 self.add_handler(logger, ThreadLogHandler())
 
     def add_handler(self, logger, handler):  # noqa

@@ -34,17 +34,20 @@ class ContentWindow(QMainWindow):
         self.setWindowTitle(Labels.APPLICATION_TITLE.value)
         self.setGeometry(0, 0, self.maximumWidth(), self.maximumHeight())
 
-        self.table_widget = self.content_form.findChild(QTableWidget, "table")
-        self.table_container = Videos(self.impartus, self.table_widget)  # noqa
+        self.videos_widget = self.content_form.findChild(QTableWidget, "table")
+        self.videos = Videos(self.impartus, self.videos_widget)  # noqa
 
-        self.tree_widget = self.content_form.findChild(QTreeWidget, "lectures_treewidget")
-        self.tree_container = Documents(self.impartus, self.tree_widget)  # noqa
+        self.documents_widget = self.content_form.findChild(QTreeWidget, "lectures_treewidget")
+        self.documents = Documents(self.impartus, self.documents_widget)  # noqa
 
         self.setContentsMargins(5, 0, 5, 0)
         screen_size = QtWidgets.QApplication.primaryScreen().size()
         self.setMaximumSize(screen_size)
 
-        self.search_box = SearchBox(self.content_form, self.table_widget)   # noqa
+        # type hints
+        self.documents_widget: QTreeWidget
+        self.videos_widget: QTableWidget
+        self.search_box = SearchBox(self.content_form, self.videos_widget, self.documents_widget)
         self.log_window = self.content_form.findChild(QPlainTextEdit, "log_window")
 
         self.data = list()
@@ -66,10 +69,10 @@ class ContentWindow(QMainWindow):
 
     def work_offline(self):
         offline_video_data = Finder().get_offline_videos()
-        self.table_container.fill_table(offline_video_data)
+        self.fill_table(offline_video_data)
 
         offline_backpack_slides = Finder().get_offline_backpack_slides()
-        self.tree_container.fill_table(offline_backpack_slides)
+        self.documents.fill_table(offline_backpack_slides)
 
         MenuCallbacks().set_menu_statuses()
         ButtonCallbacks().set_pushbutton_statuses()
@@ -96,14 +99,18 @@ class ContentWindow(QMainWindow):
         MenuCallbacks().set_menu_statuses()
         ButtonCallbacks().set_pushbutton_statuses()
 
+    @staticmethod
     def needs_lecture_rename(self):
         return True
 
+    @staticmethod
     def needs_video_download(self):
         return True
 
+    @staticmethod
     def needs_chat_download(self):
         return True
 
+    @staticmethod
     def needs_backpack_slides_download(self):
         return True

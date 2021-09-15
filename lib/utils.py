@@ -85,7 +85,7 @@ class Utils:
     @classmethod
     def get_filepath(cls, video_metadata, config_key: str):
         conf = cls.conf
-        download_dir = conf.get(ConfigKeys.TARGET_DIR.value)
+        download_dir = conf.get(ConfigKeys.TARGET_DIR.value).get(platform.system())
         if conf.get(ConfigKeys.USE_SAFE_PATHS.value):
             sanitized_components = MetadataDictParser.sanitize(MetadataDictParser.parse_metadata(video_metadata))
             file_path = conf.get(config_key).format(

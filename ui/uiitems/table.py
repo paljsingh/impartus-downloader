@@ -1,22 +1,16 @@
 import os
-import shutil
 from functools import partial
-from typing import Dict
-import concurrent.futures
-from threading import Event
 
 import qtawesome as qta
 
 from PySide2 import QtCore
-from PySide2.QtCore import QThread
 from PySide2.QtGui import QIcon
-from PySide2.QtWidgets import QTableWidget, QTableWidgetItem, QHeaderView, QFileDialog, QCheckBox
+from PySide2.QtWidgets import QTableWidget, QTableWidgetItem, QHeaderView, QCheckBox, QWidget
 
-from lib.captions import Captions
 from lib.config import Config, ConfigType
 from lib.core.impartus import Impartus
+from lib.data import columns
 from lib.threadlogging import ThreadLogger
-from lib.utils import Utils
 from ui.callbacks.utils import CallbackUtils
 from ui.callbacks.menucallbacks import MenuCallbacks
 from ui.helpers.datautils import DataUtils
@@ -25,14 +19,9 @@ from ui.uiitems.customwidgets.tablewidgetitem import CustomTableWidgetItem
 from lib.data.Icons import Icons
 from lib.data.actionitems import ActionItems
 from lib.data.columns import Columns
-from lib.variables import Variables
-from ui.uiitems.documents import Documents
 from ui.uiitems.progressbar import SortableRoundProgressbar
-from ui.uiitems.customwidgets.pushbutton import CustomPushButton
 from ui.delegates.rodelegate import ReadOnlyDelegate
-from ui.helpers.worker import Worker
 from ui.delegates.writedelegate import WriteDelegate
-from ui.uiitems.videos import Videos
 
 
 class Table:
@@ -48,11 +37,11 @@ class Table:
     and then pass on that info to the handlers defined in this class.
     """
 
-    def __init__(self, impartus: Impartus, table: QTableWidget):
+    def __init__(self, videos, impartus: Impartus, table: QTableWidget):
         self.signal_connected = False
-        self.workers = dict()
         self.conf = Config.load(ConfigType.IMPARTUS)
         self.impartus = impartus
+        self.videos = videos
 
         self.readonly_delegate = ReadOnlyDelegate()
         self.write_delegate = WriteDelegate(self.get_data)
@@ -73,8 +62,7 @@ class Table:
         self.table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
 
         # enumerate from 1.
-        for index, (key, val) in enumerate(
-                [*Columns.data_columns.items(), *Columns.widget_columns.items(), *Columns.hidden_columns.items()], 1):
+        for index, (key, val) in enumerate(Columns.get_video_columns_dict(), 1):
             widget = QTableWidgetItem()
             widget.setText(val['display_name'])
 
@@ -110,22 +98,20 @@ class Table:
                     break
                 if online_item.get('ttid'):
                     rf_id = online_item['ttid']
-                    is_flipped = False
                 else:
                     rf_id = online_item['fcid']
-                    is_flipped = True
 
                 if offline_data.get(rf_id):
                     online_item = DataUtils.merge_items(online_item, offline_data[rf_id])
                     del offline_data[rf_id]
                 self.data[rf_id] = online_item
-                self.add_row_item(index, rf_id, online_item, is_flipped)
+                self.add_row_item(index, online_item)
                 index += 1
         for i, (rf_id, offline_item) in enumerate(offline_data.items(), index):
             self.data[rf_id] = offline_item
-            self.add_row_item(i, rf_id, offline_item)
+            self.add_row_item(i, offline_item)
 
-    def add_row_item(self, index, rf_id, data_item, is_flipped=False):
+    def add_row_item(self, index, data_item):
         self.table.setRowCount(index + 1)
 
         # for each row, add a checkbox first.
@@ -133,24 +119,24 @@ class Table:
         self.table.setCellWidget(index, 0, container_widget)
 
         # enumerate rest of the columns from 1
-        for col, (key, val) in enumerate(Columns.data_columns.items(), 1):
+        for col, (key, val) in enumerate(columns.video_data_columns.items(), 1):
             widget = QTableWidgetItem(str(data_item[key]))
             widget.setTextAlignment(val['alignment'])
             self.table.setItem(index, col, widget)
 
         # total columns so far...
-        col = len(Columns.data_columns) + 1
+        col = len(columns.video_data_columns) + 1
 
         # flipped icon column.
 
-        flipped_col = Columns.widget_columns['flipped']
+        flipped_col = columns.video_widget_columns['flipped']
         flipped_icon = qta.icon(flipped_col['icon']) if data_item.get('fcid') else QIcon()
         flipped_icon_widget = CustomTableWidgetItem()
         flipped_icon_widget.setIcon(flipped_icon)
-        flipped_icon_widget.setTextAlignment(Columns.widget_columns['flipped']['alignment'])
+        flipped_icon_widget.setTextAlignment(columns.video_widget_columns['flipped']['alignment'])
         int_value = 1 if data_item.get('fcid') else 0
         flipped_icon_widget.setValue(int_value)
-        flipped_icon_widget.setToolTip(Columns.widget_columns['flipped']['menu_tooltip'])
+        flipped_icon_widget.setToolTip(columns.video_widget_columns['flipped']['menu_tooltip'])
 
         self.table.setItem(index, col, flipped_icon_widget)
         col += 1
@@ -158,20 +144,14 @@ class Table:
         # progress bar.
         progress_bar_widget = SortableRoundProgressbar()
         progress_bar_widget.setValue(0)
-        progress_bar_widget.setAlignment(Columns.widget_columns['progress_bar']['alignment'])
+        progress_bar_widget.setAlignment(columns.video_widget_columns['progress_bar']['alignment'])
         self.table.setItem(index, col, progress_bar_widget.table_widget_item)
         self.table.setCellWidget(index, col, progress_bar_widget)
         if data_item.get('offline_filepath'):
             progress_bar_widget.setValue(100)
         col += 1
 
-        # video actions
-        callbacks = {
-            'download_video': partial(self.on_click_download_video, rf_id, is_flipped),
-            'play_video': partial(self.on_click_play_video, rf_id),
-            'download_chats': partial(self.on_click_download_chats, rf_id)
-        }
-        video_actions_widget, cell_value = Videos.add_video_actions_buttons(data_item, self.impartus, callbacks)
+        video_actions_widget, cell_value = self.add_video_actions_buttons(data_item)
         self.table.setCellWidget(index, col, video_actions_widget)
         self.table.cellWidget(index, col).setContentsMargins(0, 0, 0, 0)
 
@@ -181,27 +161,11 @@ class Table:
 
         col += 1
 
-        # slides actions
-        callbacks = {
-            'download_slides': partial(self.on_click_download_slides, rf_id),
-            'open_folder': partial(self.on_click_open_folder, rf_id),
-            'attach_slides': partial(self.on_click_attach_slides, rf_id),
-        }
-        slides_actions_widget, cell_value = Documents.add_slides_actions_buttons(data_item, self.impartus, callbacks)
-        self.table.setCellWidget(index, col, slides_actions_widget)
-
-        # numeric sort implemented via a Custom QTableWidgetItem
-        custom_item = CustomTableWidgetItem()
-        custom_item.setValue(cell_value)
-        self.table.setItem(index, col, custom_item)
-
-        col += 1
-
         # hidden columns
-        for col_index, (key, val) in enumerate(Columns.hidden_columns.items(), col):
+        for col_index, (key, val) in enumerate(columns.hidden_columns.items(), col):
             str_value = str(data_item[key]) if data_item.get(key) else ''
             widget = QTableWidgetItem(str_value)
-            widget.setTextAlignment(Columns.hidden_columns[key]['alignment'])
+            widget.setTextAlignment(columns.hidden_columns[key]['alignment'])
             self.table.setItem(index, col_index, widget)
 
         # for index in range(len(online_data)):
@@ -210,11 +174,11 @@ class Table:
 
     def resizable_headers(self):
         # Todo ...
-        for i, (col, item) in enumerate([*Columns.data_columns.items(), *Columns.widget_columns.items()], 1):
+        for i, (col, item) in enumerate(Columns.get_displayable_video_columns_dict().items(), 1):
             if item.get('initial_size') and item['resize_policy'] != QHeaderView.ResizeMode.Stretch:
                 self.table.horizontalHeader().resizeSection(i, item.get('initial_size'))
 
-        for i in range(len(['id', *Columns.data_columns, *Columns.widget_columns])):
+        for i in range(len(['id', *columns.video_data_columns, *columns.video_widget_columns])):
             self.table.horizontalHeader().setSectionResizeMode(i, QHeaderView.Interactive)
 
     def on_click_checkbox(self, checkbox: QCheckBox):
@@ -225,7 +189,7 @@ class Table:
 
     def show_hide_column(self, column):
         col_index = None
-        for i, col_name in enumerate([*Columns.data_columns.keys(), *Columns.widget_columns.keys()], 1):
+        for i, col_name in enumerate(Columns.get_displayable_video_columns_dict().items(), 1):
             if col_name == column:
                 col_index = i
                 break
@@ -240,7 +204,7 @@ class Table:
         self.table.setSortingEnabled(False)
         self.table.clear()
 
-        col_count = Columns.get_columns_count()
+        col_count = Columns.get_video_columns_count()
         self.table.setColumnCount(col_count)
 
         self.prev_checkbox = None
@@ -259,252 +223,6 @@ class Table:
         col_index = Columns.get_column_index_by_key(action_item)
         field_index = ActionItems.get_action_item_index(action_item, field)
         self.table.cellWidget(row, col_index).layout().itemAt(field_index).widget().setEnabled(status)
-
-    """
-    VIDEOS
-    """
-
-    def pause_resume_button_click(self, download_button: CustomPushButton, pause_event, resume_event):   # noqa
-        if pause_event.is_set():
-            download_button.setIcon(Icons.VIDEO__PAUSE_DOWNLOAD.value)
-            download_button.setToolTip('Pause Download')
-            resume_event.set()
-            pause_event.clear()
-        else:
-            download_button.setIcon(Icons.VIDEO__RESUME_DOWNLOAD.value)
-            download_button.setToolTip('Resume Download')
-            pause_event.set()
-            resume_event.clear()
-
-    def progress_callback(self, download_button: CustomPushButton,  # noqa
-                          progressbar_widget: SortableRoundProgressbar, value: int):
-        progressbar_widget.setValue(value)
-        if value == 100:
-            # update download button to show 'video under processing'
-            download_button.setIcon(Icons.VIDEO__VIDEO_PROCESSING.value, animate=True)
-            download_button.setToolTip('Processing Video...')
-
-    def _download_video(self, video_metadata, video_filepath, progressbar_widget: SortableRoundProgressbar,
-                        pushbuttons: Dict, pause_ev, resume_ev):
-
-        return self.impartus.process_video(
-            video_metadata,
-            video_filepath,
-            pause_ev,
-            resume_ev,
-            partial(self.progress_callback, pushbuttons['download_video'], progressbar_widget),
-            video_quality=Variables().flipped_lecture_quality()
-        )
-
-    def on_click_download_video(self, rf_id: int, is_flipped=False):
-        """
-        callback function for Download button.
-        Creates a thread to download the request video.
-        """
-        row = self.get_row_from_rfid(rf_id, is_flipped)
-        video_metadata = self.data[rf_id]
-        video_filepath = self.impartus.get_mkv_path(video_metadata)
-
-        # as pause/resume uses the same download button,
-        # the event will show up here.
-        # pass the earlier saved fields to pause_resume_button_callback.
-        if self.workers.get(rf_id):
-            pushbutton = self.workers.get(rf_id)['pushbuttons']['download_video']
-            pause_ev = self.workers.get(rf_id)['pause_event']
-            resume_ev = self.workers.get(rf_id)['resume_event']
-            self.pause_resume_button_click(pushbutton, pause_ev, resume_ev)
-            return
-
-        # A fresh download reaches here..
-        col = Columns.get_column_index_by_key('video_actions')
-        dl_field = ActionItems.get_action_item_index('video_actions', 'download_video')
-        dl_button = self.table.cellWidget(row, col).layout().itemAt(dl_field).widget()
-
-        pl_field = ActionItems.get_action_item_index('video_actions', 'play_video')
-        pl_button = self.table.cellWidget(row, col).layout().itemAt(pl_field).widget()
-
-        cc_field = ActionItems.get_action_item_index('video_actions', 'download_chats')
-        cc_button = self.table.cellWidget(row, col).layout().itemAt(cc_field).widget()
-
-        col = Columns.get_column_index_by_key('slides_actions')
-        of_field = ActionItems.get_action_item_index('slides_actions', 'open_folder')
-        of_button = self.table.cellWidget(row, col).layout().itemAt(of_field).widget()
-
-        as_field = ActionItems.get_action_item_index('slides_actions', 'attach_slides')
-        as_button = self.table.cellWidget(row, col).layout().itemAt(as_field).widget()
-
-        pb_col = Columns.get_column_index_by_key('progress_bar')
-        progresbar_widget = self.table.cellWidget(row, pb_col)
-
-        pushbuttons = {
-            'download_video': dl_button,
-            'play_video': pl_button,
-            'download_chats': cc_button,
-            'open_folder': of_button,
-            'attach_slides': as_button,
-        }
-        pause_event = Event()
-        resume_event = Event()
-
-        thread = Worker()
-        thread.set_task(partial(self._download_video, video_metadata, video_filepath, progresbar_widget, pushbuttons,
-                                pause_event, resume_event))
-        thread.finished.connect(partial(self.thread_finished, pushbuttons, rf_id))
-
-        # we don't want to enable user to start another thread while this one is going on.
-        pushbuttons['download_video'].setIcon(Icons.VIDEO__PAUSE_DOWNLOAD.value)
-        pushbuttons['download_video'].setToolTip('Pause Download')
-
-        self.workers[rf_id] = {
-            'pause_event': pause_event,
-            'resume_event': resume_event,
-            'pushbuttons': pushbuttons,
-            'thread':   thread,
-        }
-        thread.start(priority=QThread.Priority.IdlePriority)
-        self.data[rf_id]['offline_filepath'] = video_filepath
-
-    def thread_finished(self, pushbuttons, rf_id):     # noqa
-
-        if self.workers.get(rf_id):
-            # successful run.
-            if self.workers[rf_id]['thread'].status:
-                pushbuttons['download_video'].setIcon(Icons.VIDEO__DOWNLOAD_VIDEO.value)
-                pushbuttons['download_video'].setToolTip('Download Video')
-                pushbuttons['download_video'].setEnabled(False)
-                pushbuttons['open_folder'].setEnabled(True)
-                pushbuttons['play_video'].setEnabled(True)
-                pushbuttons['attach_slides'].setEnabled(True)
-            else:
-                try:
-                    pushbuttons['download_video'].setEnabled(True)
-                except RuntimeError as ex:
-                    self.logger.error("Error in downloading video: {}".format(ex))
-                    pass
-            del self.workers[rf_id]
-
-    def on_click_play_video(self, rf_id: int):
-        video_file = self.data[rf_id]['offline_filepath']
-        if video_file:
-            Utils.open_file(video_file)
-
-    def on_click_download_chats(self, rf_id: int):
-        row = self.get_row_from_rfid(rf_id)
-        col = Columns.get_column_index_by_key('video_actions')
-        dc_field = ActionItems.get_action_item_index('video_actions', 'download_chats')
-        dc_button = self.table.cellWidget(row, col).layout().itemAt(dc_field).widget()
-
-        col = Columns.get_column_index_by_key('slides_actions')
-        of_field = ActionItems.get_action_item_index('slides_actions', 'open_folder')
-        of_button = self.table.cellWidget(row, col).layout().itemAt(of_field).widget()
-
-        as_field = ActionItems.get_action_item_index('slides_actions', 'attach_slides')
-        as_button = self.table.cellWidget(row, col).layout().itemAt(as_field).widget()
-
-        dc_button.setEnabled(False)
-        chat_msgs = self.impartus.get_chats(self.data[rf_id])
-        captions_path = Utils.get_captions_path(self.data[rf_id])
-        status = Captions.save_as_captions(rf_id, self.data.get(rf_id), chat_msgs, captions_path)
-
-        # also update local copy of data
-        self.data[rf_id]['captions_path'] = captions_path
-
-        # set chat button false
-        if not status:
-            dc_button.setEnabled(True)
-        else:
-            dc_button.setEnabled(False)
-            of_button.setEnabled(True)
-            as_button.setEnabled(True)
-
-    """
-    Slides.
-    """
-
-    def _download_slides(self, rf_id: int, slide_url: str, filepath: str):
-        """
-        Download a slide doc in a thread. Update the UI upon completion.
-        """
-        # create a new Impartus session reusing existing token.
-        imp = Impartus(self.impartus.token)
-        if imp.download_slides(rf_id, slide_url, filepath):
-            return True
-        else:
-            self.logger.error('Error', 'Error downloading slides.')
-            return False
-
-    def on_click_download_slides(self, rf_id: int):  # noqa
-        """
-        callback function for Download button.
-        Creates a thread to download the request video.
-        """
-        metadata = self.data.get(rf_id)
-        slide_url = metadata.get('slide_url')
-        filepath = self.impartus.get_slides_path(metadata)
-
-        row = self.get_row_from_rfid(rf_id)
-        col = Columns.get_column_index_by_key('slides_actions')
-        ds_field = ActionItems.get_action_item_index('slides_actions', 'download_slides')
-        ds_button = self.table.cellWidget(row, col).layout().itemAt(ds_field).widget()
-
-        of_field = ActionItems.get_action_item_index('slides_actions', 'open_folder')
-        of_button = self.table.cellWidget(row, col).layout().itemAt(of_field).widget()
-
-        ss_field = ActionItems.get_action_item_index('slides_actions', 'show_slides')
-        ss_combo = self.table.cellWidget(row, col).layout().itemAt(ss_field).widget()
-
-        as_field = ActionItems.get_action_item_index('slides_actions', 'attach_slides')
-        as_button = self.table.cellWidget(row, col).layout().itemAt(as_field).widget()
-
-        widgets = {
-            'download_slides': ds_button,
-            'open_folder': of_button,
-            'show_slides': ss_combo,
-            'attach_slides': as_button,
-        }
-        ds_button.setEnabled(False)
-        with concurrent.futures.ThreadPoolExecutor(3) as executor:
-            future = executor.submit(self._download_slides, rf_id, slide_url, filepath)
-            return_value = future.result()
-
-            if return_value:
-                # add new slides file to the existing list.
-                if not self.data[rf_id].get('backpack_slides'):
-                    self.data[rf_id]['backpack_slides'] = list()
-                self.data.get(rf_id)['backpack_slides'].append(filepath)
-
-                widgets['show_slides'].add_items([filepath])
-                widgets['open_folder'].setEnabled(True)
-                widgets['attach_slides'].setEnabled(True)
-            else:
-                widgets['download_slides'].setEnabled(True)
-
-    def on_click_open_folder(self, rf_id: int):     # noqa
-        folder_path = self.get_folder_from_rfid(rf_id)
-        Utils.open_file(folder_path)
-
-    def on_click_attach_slides(self, rf_id: int):       # noqa
-        folder_path = self.get_folder_from_rfid(rf_id)
-        conf = Config.load(ConfigType.IMPARTUS)
-        filters = ['{} files (*.{})'.format(str(x).title(), x) for x in conf.get('allowed_ext')]
-        filters_str = ';;'.join(filters)
-        filepaths = QFileDialog().getOpenFileNames(
-            None,
-            caption="Select files to attach...",
-            dir=folder_path,
-            filter=filters_str
-        )
-        if not filepaths:
-            return
-
-        row = self.get_row_from_rfid(rf_id)
-        col = Columns.get_column_index_by_key('slides_actions')
-        ss_field = ActionItems.get_action_item_index('slides_actions', 'show_slides')
-        ss_combobox = self.table.cellWidget(row, col).layout().itemAt(ss_field).widget()
-
-        for filepath in filepaths[0]:
-            dest_path = shutil.copy(filepath, folder_path)
-            ss_combobox.add_items([dest_path])
 
     """
     MISC
@@ -536,26 +254,72 @@ class Table:
 
         return None, False
 
-    def get_row_from_rfid(self, rf_id: int, flipped=False):
-        if flipped:
-            fcid_col_index = Columns.get_column_index_by_key('fcid')
-            for i in range(self.table.rowCount()):
-                if int(self.table.item(i, fcid_col_index).text()) == rf_id:
-                    return i
-        else:
-            ttid_col_index = Columns.get_column_index_by_key('ttid')
-            for i in range(self.table.rowCount()):
-                if int(self.table.item(i, ttid_col_index).text()) == rf_id:
-                    return i
+    def add_video_actions_buttons(self, metadata):
+        widget = QWidget()
+        widget.setContentsMargins(0, 0, 0, 0)
+        widget_layout = WidgetCreator.get_layout_widget(widget)
+        widget_layout.setAlignment(columns.video_widget_columns.get('video_actions')['alignment'])
 
-    def get_folder_from_rfid(self, rf_id: int):
-        video_path = self.data.get(rf_id)['offline_filepath'] if self.data.get(rf_id).get('offline_filepath') else None
-        if video_path:
-            return os.path.dirname(video_path)
-        slides_path = self.data.get(rf_id)['backpack_slides'][0]\
-            if self.data.get(rf_id).get('backpack_slides') else None
-        if slides_path:
-            return os.path.dirname(slides_path)
-        captions_path = self.data.get(rf_id)['captions_path'] if self.data.get(rf_id).get('captions_path') else None
-        if captions_path:
-            return os.path.dirname(captions_path)
+        # make the widget searchable based on button states.
+        download_video_state = None
+        play_video_state = None
+        download_chats_state = None
+
+        is_authenticated = self.impartus.is_authenticated()
+
+        is_flipped = False if metadata.get('ttid') else True
+        rf_id = metadata.get('fcid') if is_flipped else metadata.get('ttid')
+
+        # video actions
+        callbacks = {
+            'download_video': partial(self.videos.on_click_download_video, rf_id, is_flipped),
+            'play_video': partial(self.videos.on_click_play_video, rf_id),
+            'download_chats': partial(self.videos.on_click_download_chats, rf_id)
+        }
+
+        for pushbutton in WidgetCreator.add_actions_buttons(ActionItems.video_actions):
+            widget_layout.addWidget(pushbutton)
+
+            # disable download button, if video exists locally.
+            if pushbutton.objectName() == ActionItems.video_actions['download_video']['text']:
+                pushbutton.clicked.connect(callbacks['download_video'])
+
+                if metadata.get('offline_filepath'):
+                    download_video_state = False
+                else:
+                    if is_authenticated:
+                        download_video_state = True
+                    else:
+                        download_video_state = False
+
+                pushbutton.setEnabled(download_video_state)
+            elif pushbutton.objectName() == ActionItems.video_actions['play_video']['text']:
+                pushbutton.clicked.connect(callbacks['play_video'])
+
+                if metadata.get('offline_filepath'):
+                    # enable play button, if video exists locally.
+                    play_video_state = True
+                else:
+                    play_video_state = False
+
+                pushbutton.setEnabled(play_video_state)
+            elif pushbutton.objectName() == ActionItems.video_actions['download_chats']['text']:
+                pushbutton.clicked.connect(callbacks['download_chats'])
+
+                # enable download chats button, if lecture chats file does not exist.
+                filepath = metadata.get('chats')
+                if filepath and os.path.exists(filepath):
+                    download_chats_state = False
+                else:
+                    if is_authenticated:
+                        download_chats_state = True
+                    else:
+                        download_chats_state = False
+
+                pushbutton.setEnabled(download_chats_state)
+
+        # a slightly hackish way to sort widgets -
+        # create an integer out of the (button1_state, button2_state, ...)
+        # pass it to a Custom TableWidgetItem with __lt__ overridden to provide numeric sort.
+        cell_value = '{}{}{}'.format(int(download_video_state), int(play_video_state), int(download_chats_state))
+        return widget, int(cell_value)

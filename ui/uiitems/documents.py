@@ -18,8 +18,6 @@ from lib.data.actionitems import ActionItems
 from lib.data import columns
 from lib.data.columns import Columns
 from lib.data.labels import Labels
-from ui.delegates.rodelegate import ReadOnlyDelegate
-from ui.delegates.writedelegate import WriteDelegate
 from ui.helpers.widgetcreator import WidgetCreator
 from ui.uiitems.customwidgets.customtreewidgetitem import CustomTreeWidgetItem
 
@@ -31,25 +29,17 @@ class Documents:
     also the treewidget data.
     """
 
-    def __init__(self, impartus: Impartus, treewidget: QTreeWidget):
-        self.signal_connected = False
-        self.workers = dict()
-        self.conf = Config.load(ConfigType.IMPARTUS)
+    def __init__(self, impartus, treewidget):
         self.impartus = impartus
-
-        self.readonly_delegate = ReadOnlyDelegate()
-        self.write_delegate = WriteDelegate(self.get_data)
-        self.logger = ThreadLogger(self.__class__.__name__).logger
 
         self.treewidget = treewidget
         self.treewidget.setAlternatingRowColors(True)
         self.treewidget.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOn)
 
-        self.data = dict()
-        self.prev_checkbox = None
-
-    def get_data(self):
-        return self.data
+        self.conf = Config.load(ConfigType.IMPARTUS)
+        self.workers = dict()
+        self.logger = ThreadLogger(self.__class__.__name__).logger
+        self.data = None
 
     def _set_headers(self):
         self.treewidget.header().setAlternatingRowColors(True)

@@ -1,5 +1,5 @@
 from PySide2 import QtCore
-from PySide2.QtWidgets import QLabel, QLineEdit, QMainWindow, QTableWidget
+from PySide2.QtWidgets import QLabel, QLineEdit, QMainWindow, QTableWidget, QTreeWidget
 
 from lib.data.searchdirections import SearchDirection
 
@@ -12,7 +12,7 @@ class SearchBox:
     search_box: QLineEdit
     results_label: QLabel
 
-    def __init__(self, content_window: QMainWindow, table: QTableWidget):
+    def __init__(self, content_window: QMainWindow, table: QTableWidget, tree_widget: QTreeWidget):
         self.content_window = content_window
         self.last_index = -1    # first search should yield position 0 (for 0 based indexed results)
         self.search_results = None
@@ -24,6 +24,7 @@ class SearchBox:
         self.results_label = self.content_window.findChild(QLabel, "results_label")     # noqa
 
         self.table = table
+        self.tree_widget = tree_widget
         pass
 
     def search_next(self, direction: int = SearchDirection.FORWARD.value):
