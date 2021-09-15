@@ -26,7 +26,6 @@ class Variables(object):
     _menu_slides_show_slides_item = None
 
     _log_window = None
-    _instance = None
 
     def __new__(cls, *args, **kw):
         if not hasattr(cls, '_instance'):

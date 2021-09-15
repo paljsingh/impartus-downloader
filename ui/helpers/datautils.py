@@ -83,3 +83,21 @@ class DataUtils:
             return conf.get(subject_name)
         else:
             return subject_name
+
+    @staticmethod
+    def get_subject_mappings(subjects):
+        mapping_by_id = dict()
+        mapping_by_name = dict()
+        for subject_metadata in subjects:
+            mapping_by_id[subject_metadata['subjectId']] = subject_metadata
+            mapping_by_name[subject_metadata['subjectName']] = subject_metadata
+        return mapping_by_id, mapping_by_name
+
+    @staticmethod
+    def subject_id_to_subject_name(slides_metadata, mappings_by_id):
+        new_metadata_dict = dict()
+        for subject_id, val in slides_metadata.items():
+            subject_name = mappings_by_id[subject_id].get('subjectName')
+            new_key = DataUtils.get_subject_name_short_from_subject_name(subject_name)
+            new_metadata_dict[new_key] = val
+        return new_metadata_dict

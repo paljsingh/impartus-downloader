@@ -5,8 +5,6 @@ from PySide2.QtWidgets import QMainWindow
 
 class CallbackUtils:
 
-    _instance = None
-
     def __new__(cls, *args, **kw):
         if not hasattr(cls, '_instance'):
             orig = super(CallbackUtils, cls)

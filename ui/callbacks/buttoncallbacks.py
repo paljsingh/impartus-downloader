@@ -3,8 +3,6 @@ from ui.callbacks.utils import CallbackUtils
 
 class ButtonCallbacks:
 
-    _instance = None
-
     def __new__(cls, *args, **kw):
         if not hasattr(cls, '_instance'):
             orig = super(ButtonCallbacks, cls)

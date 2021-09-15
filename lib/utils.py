@@ -11,7 +11,6 @@ from datetime import datetime
 from lib.config import Config, ConfigType
 from lib.metadataparser import MetadataDictParser
 from lib.data.configkeys import ConfigKeys
-from ui.helpers.datautils import DataUtils
 
 
 class Utils:
@@ -85,7 +84,7 @@ class Utils:
 
     @classmethod
     def get_filepath(cls, video_metadata, config_key: str):
-        conf = cls.__class__.conf
+        conf = cls.conf
         download_dir = conf.get(ConfigKeys.TARGET_DIR.value)
         if conf.get(ConfigKeys.USE_SAFE_PATHS.value):
             sanitized_components = MetadataDictParser.sanitize(MetadataDictParser.parse_metadata(video_metadata))
@@ -110,29 +109,11 @@ class Utils:
 
     @classmethod
     def slides_exist_on_disk(cls, path):
-        conf = cls.__class__.conf
+        conf = cls.conf
         path_without_ext = path.rsplit('.', 1)[0]
         for ext in conf.get(ConfigKeys.ALLOWED_EXT.value):
             path_with_ext = '{}.{}'.format(path_without_ext, ext)
             if os.path.exists(path_with_ext):
                 return True, path_with_ext
         return False, path
-
-    @staticmethod
-    def get_subject_mappings(subjects):
-        mapping_by_id = dict()
-        mapping_by_name = dict()
-        for subject_metadata in subjects:
-            mapping_by_id[subject_metadata['subjectId']] = subject_metadata
-            mapping_by_name[subject_metadata['subjectName']] = subject_metadata
-        return mapping_by_id, mapping_by_name
-
-    @staticmethod
-    def subject_id_to_subject_name(slides_metadata, mappings_by_id):
-        new_metadata_dict = dict()
-        for subject_id, val in slides_metadata.items():
-            subject_name = mappings_by_id[subject_id].get('subjectName')
-            new_key = DataUtils.get_subject_name_short_from_subject_name(subject_name)
-            new_metadata_dict[new_key] = val
-        return new_metadata_dict
 

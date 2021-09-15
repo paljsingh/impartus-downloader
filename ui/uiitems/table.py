@@ -403,7 +403,7 @@ class Table:
 
         dc_button.setEnabled(False)
         chat_msgs = self.impartus.get_chats(self.data[rf_id])
-        captions_path = self.impartus.get_captions_path(self.data[rf_id])
+        captions_path = Utils.get_captions_path(self.data[rf_id])
         status = Captions.save_as_captions(rf_id, self.data.get(rf_id), chat_msgs, captions_path)
 
         # also update local copy of data

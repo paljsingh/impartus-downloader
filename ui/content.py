@@ -76,7 +76,7 @@ class ContentWindow(QMainWindow):
 
     def work_online(self):
         subjects = self.impartus.get_subjects()
-        mapping_by_id, mapping_by_name = self.get_subject_mappings(subjects)
+        mapping_by_id, mapping_by_name = DataUtils.get_subject_mappings(subjects)
 
         # videos tab
         regular_videos, flipped_videos = self.impartus.get_lecture_videos(subjects)
@@ -87,7 +87,7 @@ class ContentWindow(QMainWindow):
 
         # slides tab
         online_backpack_docs = self.impartus.get_slides(subjects)
-        online_backpack_docs = self.subject_id_to_subject_name(online_backpack_docs, mapping_by_id)
+        online_backpack_docs = DataUtils.subject_id_to_subject_name(online_backpack_docs, mapping_by_id)
         offline_backpack_docs = Finder().get_offline_backpack_slides(mapping_by_name)
 
         merged_slides_data = DataUtils.merge_slides_items(offline_backpack_docs, online_backpack_docs, mapping_by_id)
@@ -95,3 +95,15 @@ class ContentWindow(QMainWindow):
 
         MenuCallbacks().set_menu_statuses()
         ButtonCallbacks().set_pushbutton_statuses()
+
+    def needs_lecture_rename(self):
+        return True
+
+    def needs_video_download(self):
+        return True
+
+    def needs_chat_download(self):
+        return True
+
+    def needs_backpack_slides_download(self):
+        return True
