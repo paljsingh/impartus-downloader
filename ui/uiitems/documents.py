@@ -17,6 +17,7 @@ from ui.callbacks.utils import CallbackUtils
 from ui.data.actionitems import ActionItems
 from ui.data import columns
 from ui.data.columns import Columns
+from ui.data.labels import Labels
 from ui.delegates.rodelegate import ReadOnlyDelegate
 from ui.delegates.writedelegate import WriteDelegate
 from ui.helpers.widgetcreator import WidgetCreator
@@ -102,7 +103,7 @@ class Documents:
 
     def resizable_headers(self):
         # Todo ...
-        for i, (col, item) in enumerate(Columns.get_document_columns_dict().items(), 1):
+        for i, (col, item) in enumerate(Columns.get_document_columns_dict().items()):
             if item.get('initial_size') and item['resize_policy'] != QHeaderView.ResizeMode.Stretch:
                 self.treewidget.header().resizeSection(i, item.get('initial_size'))
 
@@ -143,7 +144,7 @@ class Documents:
 
         # show most recent lectures first.
         self.treewidget.sortByColumn(
-            Columns.get_column_index_by_key('startDate'), QtCore.Qt.SortOrder.DescendingOrder)
+            Columns.get_column_index_by_key(Labels.SUBJECT_NAME_SHORT.value), QtCore.Qt.SortOrder.DescendingOrder)
 
     def set_button_state(self, row: int, action_item: str, field: str, status: bool):
         col_index = Columns.get_column_index_by_key(action_item)
@@ -212,12 +213,12 @@ class Documents:
             else:
                 widgets['download_slides'].setEnabled(True)
 
-    def on_click_open_folder(self, rf_id: int):     # noqa
-        folder_path = self.get_folder_from_rfid(rf_id)
+    def on_click_open_folder(self, folder_path: str):
+        # folder_path = self.get_folder_from_rfid(rf_id)
         Utils.open_file(folder_path)
 
-    def on_click_attach_slides(self, rf_id: int):       # noqa
-        folder_path = self.get_folder_from_rfid(rf_id)
+    def on_click_attach_slides(self, folder_path: str):
+        # folder_path = self.get_folder_from_rfid(rf_id)
         conf = Config.load(ConfigType.IMPARTUS)
         filters = ['{} files (*.{})'.format(str(x).title(), x) for x in conf.get('allowed_ext')]
         filters_str = ';;'.join(filters)
@@ -230,69 +231,69 @@ class Documents:
         if not filepaths:
             return
 
-        row = self.get_row_from_rfid(rf_id)
-        col = Columns.get_column_index_by_key('slides_actions')
-        ss_field = ActionItems.get_action_item_index('slides_actions', 'show_slides')
-        ss_combobox = self.treewidget.cellWidget(row, col).layout().itemAt(ss_field).widget()
+        # row = self.get_row_from_rfid(rf_id)
+        # col = Columns.get_column_index_by_key('slides_actions')
+        # ss_field = ActionItems.get_action_item_index('slides_actions', 'show_slides')
+        # ss_combobox = self.treewidget.cellWidget(row, col).layout().itemAt(ss_field).widget()
 
         for filepath in filepaths[0]:
             dest_path = shutil.copy(filepath, folder_path)
-            ss_combobox.add_items([dest_path])
+            # ss_combobox.add_items([dest_path])
 
     #
     # """
     # MISC
     # """
-    def get_selected_row(self):
-        for i in range(self.treewidget.rowCount()):
-            if self.treewidget.cellWidget(i, 0).layout().itemAt(0).widget().isChecked():
-                return i
+    # def get_selected_row(self):
+    #     for i in range(self.treewidget.rowCount()):
+    #         if self.treewidget.cellWidget(i, 0).layout().itemAt(0).widget().isChecked():
+    #             return i
+    #
+    # def get_selected_row_rfid(self):
+    #     """
+    #     Return ttid or fcid, whichever applicable, also return a flag 'flipped'=True if it is a flipped lecture.
+    #     """
+    #     row_index = self.get_selected_row()
+    #     if row_index is None:
+    #         return None, False
+    #
+    #     ttid_col = Columns.get_column_index_by_key('ttid')
+    #     if ttid_col:
+    #         ttid = self.treewidget.item(row_index, ttid_col).text()
+    #         if ttid:
+    #             return int(ttid), False
+    #
+    #     fcid_col = Columns.get_column_index_by_key('fcid')
+    #     if fcid_col:
+    #         fcid = self.treewidget.item(row_index, fcid_col).text()
+    #         if fcid:
+    #             return int(fcid), True
+    #
+    #     return None, False
 
-    def get_selected_row_rfid(self):
-        """
-        Return ttid or fcid, whichever applicable, also return a flag 'flipped'=True if it is a flipped lecture.
-        """
-        row_index = self.get_selected_row()
-        if row_index is None:
-            return None, False
+    # def get_row_from_rfid(self, rf_id: int, flipped=False):
+    #     if flipped:
+    #         fcid_col_index = Columns.get_column_index_by_key('fcid')
+    #         for i in range(self.treewidget.rowCount()):
+    #             if int(self.treewidget.item(i, fcid_col_index).text()) == rf_id:
+    #                 return i
+    #     else:
+    #         ttid_col_index = Columns.get_column_index_by_key('ttid')
+    #         for i in range(self.treewidget.rowCount()):
+    #             if int(self.treewidget.item(i, ttid_col_index).text()) == rf_id:
+    #                 return i
 
-        ttid_col = Columns.get_column_index_by_key('ttid')
-        if ttid_col:
-            ttid = self.treewidget.item(row_index, ttid_col).text()
-            if ttid:
-                return int(ttid), False
-
-        fcid_col = Columns.get_column_index_by_key('fcid')
-        if fcid_col:
-            fcid = self.treewidget.item(row_index, fcid_col).text()
-            if fcid:
-                return int(fcid), True
-
-        return None, False
-
-    def get_row_from_rfid(self, rf_id: int, flipped=False):
-        if flipped:
-            fcid_col_index = Columns.get_column_index_by_key('fcid')
-            for i in range(self.treewidget.rowCount()):
-                if int(self.treewidget.item(i, fcid_col_index).text()) == rf_id:
-                    return i
-        else:
-            ttid_col_index = Columns.get_column_index_by_key('ttid')
-            for i in range(self.treewidget.rowCount()):
-                if int(self.treewidget.item(i, ttid_col_index).text()) == rf_id:
-                    return i
-
-    def get_folder_from_rfid(self, rf_id: int):
-        video_path = self.data.get(rf_id)['offline_filepath'] if self.data.get(rf_id).get('offline_filepath') else None
-        if video_path:
-            return os.path.dirname(video_path)
-        slides_path = self.data.get(rf_id)['backpack_slides'][0]\
-            if self.data.get(rf_id).get('backpack_slides') else None
-        if slides_path:
-            return os.path.dirname(slides_path)
-        captions_path = self.data.get(rf_id)['captions_path'] if self.data.get(rf_id).get('captions_path') else None
-        if captions_path:
-            return os.path.dirname(captions_path)
+    # def get_folder_from_rfid(self, rf_id: int):
+    #     video_path = self.data.get(rf_id)['offline_filepath'] if self.data.get(rf_id).get('offline_filepath') else None
+    #     if video_path:
+    #         return os.path.dirname(video_path)
+    #     slides_path = self.data.get(rf_id)['backpack_slides'][0]\
+    #         if self.data.get(rf_id).get('backpack_slides') else None
+    #     if slides_path:
+    #         return os.path.dirname(slides_path)
+    #     captions_path = self.data.get(rf_id)['captions_path'] if self.data.get(rf_id).get('captions_path') else None
+    #     if captions_path:
+    #         return os.path.dirname(captions_path)
 
     @staticmethod
     def add_slides_actions_buttons(metadata, impartus: Impartus, callbacks: Dict):
@@ -306,15 +307,15 @@ class Documents:
         attach_slides_state = None
 
         # show slides combo box.
-        combo_box = CustomComboBox()
-        if metadata.get('backpack_slides'):
-            combo_box.show()
-            combo_box.add_items(metadata['backpack_slides'])
-            combobox_count = combo_box.count() - 1
-        else:
-            combo_box.hide()
-            combobox_count = 0
-        widget_layout.addWidget(combo_box)
+        # combo_box = CustomComboBox()
+        # if metadata.get('backpack_slides'):
+        #     combo_box.show()
+        #     combo_box.add_items(metadata['backpack_slides'])
+        #     combobox_count = combo_box.count() - 1
+        # else:
+        #     combo_box.hide()
+        #     combobox_count = 0
+        # widget_layout.addWidget(combo_box)
 
         for pushbutton in WidgetCreator.add_actions_buttons(ActionItems.slides_actions):
             widget_layout.addWidget(pushbutton)
@@ -372,7 +373,7 @@ class Documents:
         # a slightly hackish way to sort widgets -
         # create an integer out of the (slide count, button1_state, button2_state, ...)
         # pass it to a Custom TableWidgetItem with __lt__ overridden to provide numeric sort.
-        cell_value = '{}{}{}{}'.format(
-            combobox_count, int(download_slides_state), int(open_folder_state), int(attach_slides_state))
+        cell_value = '{}{}{}'.format(
+            int(download_slides_state), int(open_folder_state), int(attach_slides_state))
 
         return widget, int(cell_value)

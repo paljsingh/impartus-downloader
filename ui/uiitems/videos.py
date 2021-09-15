@@ -1,8 +1,6 @@
 import os
-import shutil
 from functools import partial
 from typing import Dict
-import concurrent.futures
 from threading import Event
 
 import qtawesome as qta
@@ -27,7 +25,6 @@ from ui.data.actionitems import ActionItems
 from ui.data import columns
 from ui.data.columns import Columns
 from lib.variables import Variables
-from ui.uiitems.documents import Documents
 from ui.uiitems.progressbar import SortableRoundProgressbar
 from ui.uiitems.customwidgets.pushbutton import CustomPushButton
 from ui.delegates.rodelegate import ReadOnlyDelegate
@@ -105,6 +102,7 @@ class Videos:
             for rf_id, video_item in online_data.items():
                 if offline_data.get(rf_id):
                     online_item = DataUtils.merge_items(video_item, offline_data[rf_id])
+                    self.data[rf_id] = online_item
                     del offline_data[rf_id]
 
                 is_flipped = True if video_item.get('fcid') else False
@@ -166,22 +164,6 @@ class Videos:
         self.table.setCellWidget(index, col, video_actions_widget)
         self.table.cellWidget(index, col).setContentsMargins(0, 0, 0, 0)
 
-        custom_item = CustomTableWidgetItem()
-        custom_item.setValue(cell_value)
-        self.table.setItem(index, col, custom_item)
-
-        col += 1
-
-        # slides actions
-        callbacks = {
-            'download_slides': partial(self.on_click_download_slides, rf_id),
-            'open_folder': partial(self.on_click_open_folder, rf_id),
-            'attach_slides': partial(self.on_click_attach_slides, rf_id),
-        }
-        slides_actions_widget, cell_value = Documents.add_slides_actions_buttons(data_item, self.impartus, callbacks)
-        self.table.setCellWidget(index, col, slides_actions_widget)
-
-        # numeric sort implemented via a Custom QTableWidgetItem
         custom_item = CustomTableWidgetItem()
         custom_item.setValue(cell_value)
         self.table.setItem(index, col, custom_item)
@@ -317,12 +299,12 @@ class Videos:
         cc_field = ActionItems.get_action_item_index('video_actions', 'download_chats')
         cc_button = self.table.cellWidget(row, col).layout().itemAt(cc_field).widget()
 
-        col = Columns.get_column_index_by_key('slides_actions')
-        of_field = ActionItems.get_action_item_index('slides_actions', 'open_folder')
-        of_button = self.table.cellWidget(row, col).layout().itemAt(of_field).widget()
-
-        as_field = ActionItems.get_action_item_index('slides_actions', 'attach_slides')
-        as_button = self.table.cellWidget(row, col).layout().itemAt(as_field).widget()
+        # col = Columns.get_column_index_by_key('slides_actions')
+        # of_field = ActionItems.get_action_item_index('slides_actions', 'open_folder')
+        # of_button = self.table.cellWidget(row, col).layout().itemAt(of_field).widget()
+        #
+        # as_field = ActionItems.get_action_item_index('slides_actions', 'attach_slides')
+        # as_button = self.table.cellWidget(row, col).layout().itemAt(as_field).widget()
 
         pb_col = Columns.get_column_index_by_key('progress_bar')
         progresbar_widget = self.table.cellWidget(row, pb_col)
@@ -331,8 +313,8 @@ class Videos:
             'download_video': dl_button,
             'play_video': pl_button,
             'download_chats': cc_button,
-            'open_folder': of_button,
-            'attach_slides': as_button,
+            # 'open_folder': of_button,
+            # 'attach_slides': as_button,
         }
         pause_event = Event()
         resume_event = Event()
@@ -365,7 +347,7 @@ class Videos:
                 pushbuttons['download_video'].setEnabled(False)
                 pushbuttons['open_folder'].setEnabled(True)
                 pushbuttons['play_video'].setEnabled(True)
-                pushbuttons['attach_slides'].setEnabled(True)
+                # pushbuttons['attach_slides'].setEnabled(True)
             else:
                 try:
                     pushbuttons['download_video'].setEnabled(True)
@@ -385,12 +367,12 @@ class Videos:
         dc_field = ActionItems.get_action_item_index('video_actions', 'download_chats')
         dc_button = self.table.cellWidget(row, col).layout().itemAt(dc_field).widget()
 
-        col = Columns.get_column_index_by_key('slides_actions')
-        of_field = ActionItems.get_action_item_index('slides_actions', 'open_folder')
-        of_button = self.table.cellWidget(row, col).layout().itemAt(of_field).widget()
-
-        as_field = ActionItems.get_action_item_index('slides_actions', 'attach_slides')
-        as_button = self.table.cellWidget(row, col).layout().itemAt(as_field).widget()
+        # col = Columns.get_column_index_by_key('slides_actions')
+        # of_field = ActionItems.get_action_item_index('slides_actions', 'open_folder')
+        # of_button = self.table.cellWidget(row, col).layout().itemAt(of_field).widget()
+        #
+        # as_field = ActionItems.get_action_item_index('slides_actions', 'attach_slides')
+        # as_button = self.table.cellWidget(row, col).layout().itemAt(as_field).widget()
 
         dc_button.setEnabled(False)
         chat_msgs = self.impartus.get_chats(self.data[rf_id])
@@ -405,8 +387,8 @@ class Videos:
             dc_button.setEnabled(True)
         else:
             dc_button.setEnabled(False)
-            of_button.setEnabled(True)
-            as_button.setEnabled(True)
+            # of_button.setEnabled(True)
+            # as_button.setEnabled(True)
 
     """
     Slides.
@@ -424,78 +406,78 @@ class Videos:
             self.logger.error('Error', 'Error downloading slides.')
             return False
 
-    def on_click_download_slides(self, rf_id: int):  # noqa
-        """
-        callback function for Download button.
-        Creates a thread to download the request video.
-        """
-        metadata = self.data.get(rf_id)
-        slide_url = metadata.get('slide_url')
-        filepath = self.impartus.get_slides_path(metadata)
-
-        row = self.get_row_from_rfid(rf_id)
-        col = Columns.get_column_index_by_key('slides_actions')
-        ds_field = ActionItems.get_action_item_index('slides_actions', 'download_slides')
-        ds_button = self.table.cellWidget(row, col).layout().itemAt(ds_field).widget()
-
-        of_field = ActionItems.get_action_item_index('slides_actions', 'open_folder')
-        of_button = self.table.cellWidget(row, col).layout().itemAt(of_field).widget()
-
-        ss_field = ActionItems.get_action_item_index('slides_actions', 'show_slides')
-        ss_combo = self.table.cellWidget(row, col).layout().itemAt(ss_field).widget()
-
-        as_field = ActionItems.get_action_item_index('slides_actions', 'attach_slides')
-        as_button = self.table.cellWidget(row, col).layout().itemAt(as_field).widget()
-
-        widgets = {
-            'download_slides': ds_button,
-            'open_folder': of_button,
-            'show_slides': ss_combo,
-            'attach_slides': as_button,
-        }
-        ds_button.setEnabled(False)
-        with concurrent.futures.ThreadPoolExecutor(3) as executor:
-            future = executor.submit(self._download_slides, rf_id, slide_url, filepath)
-            return_value = future.result()
-
-            if return_value:
-                # add new slides file to the existing list.
-                if not self.data[rf_id].get('backpack_slides'):
-                    self.data[rf_id]['backpack_slides'] = list()
-                self.data.get(rf_id)['backpack_slides'].append(filepath)
-
-                widgets['show_slides'].add_items([filepath])
-                widgets['open_folder'].setEnabled(True)
-                widgets['attach_slides'].setEnabled(True)
-            else:
-                widgets['download_slides'].setEnabled(True)
-
-    def on_click_open_folder(self, rf_id: int):     # noqa
-        folder_path = self.get_folder_from_rfid(rf_id)
-        Utils.open_file(folder_path)
-
-    def on_click_attach_slides(self, rf_id: int):       # noqa
-        folder_path = self.get_folder_from_rfid(rf_id)
-        conf = Config.load(ConfigType.IMPARTUS)
-        filters = ['{} files (*.{})'.format(str(x).title(), x) for x in conf.get('allowed_ext')]
-        filters_str = ';;'.join(filters)
-        filepaths = QFileDialog().getOpenFileNames(
-            None,
-            caption="Select files to attach...",
-            dir=folder_path,
-            filter=filters_str
-        )
-        if not filepaths:
-            return
-
-        row = self.get_row_from_rfid(rf_id)
-        col = Columns.get_column_index_by_key('slides_actions')
-        ss_field = ActionItems.get_action_item_index('slides_actions', 'show_slides')
-        ss_combobox = self.table.cellWidget(row, col).layout().itemAt(ss_field).widget()
-
-        for filepath in filepaths[0]:
-            dest_path = shutil.copy(filepath, folder_path)
-            ss_combobox.add_items([dest_path])
+    # def on_click_download_slides(self, rf_id: int):  # noqa
+    #     """
+    #     callback function for Download button.
+    #     Creates a thread to download the request video.
+    #     """
+    #     metadata = self.data.get(rf_id)
+    #     slide_url = metadata.get('slide_url')
+    #     filepath = self.impartus.get_slides_path(metadata)
+    #
+    #     row = self.get_row_from_rfid(rf_id)
+    #     col = Columns.get_column_index_by_key('slides_actions')
+    #     ds_field = ActionItems.get_action_item_index('slides_actions', 'download_slides')
+    #     ds_button = self.table.cellWidget(row, col).layout().itemAt(ds_field).widget()
+    #
+    #     of_field = ActionItems.get_action_item_index('slides_actions', 'open_folder')
+    #     of_button = self.table.cellWidget(row, col).layout().itemAt(of_field).widget()
+    #
+    #     ss_field = ActionItems.get_action_item_index('slides_actions', 'show_slides')
+    #     ss_combo = self.table.cellWidget(row, col).layout().itemAt(ss_field).widget()
+    #
+    #     as_field = ActionItems.get_action_item_index('slides_actions', 'attach_slides')
+    #     as_button = self.table.cellWidget(row, col).layout().itemAt(as_field).widget()
+    #
+    #     widgets = {
+    #         'download_slides': ds_button,
+    #         'open_folder': of_button,
+    #         'show_slides': ss_combo,
+    #         'attach_slides': as_button,
+    #     }
+    #     ds_button.setEnabled(False)
+    #     with concurrent.futures.ThreadPoolExecutor(3) as executor:
+    #         future = executor.submit(self._download_slides, rf_id, slide_url, filepath)
+    #         return_value = future.result()
+    #
+    #         if return_value:
+    #             # add new slides file to the existing list.
+    #             if not self.data[rf_id].get('backpack_slides'):
+    #                 self.data[rf_id]['backpack_slides'] = list()
+    #             self.data.get(rf_id)['backpack_slides'].append(filepath)
+    #
+    #             widgets['show_slides'].add_items([filepath])
+    #             widgets['open_folder'].setEnabled(True)
+    #             widgets['attach_slides'].setEnabled(True)
+    #         else:
+    #             widgets['download_slides'].setEnabled(True)
+    #
+    # def on_click_open_folder(self, rf_id: int):     # noqa
+    #     folder_path = self.get_folder_from_rfid(rf_id)
+    #     Utils.open_file(folder_path)
+    #
+    # def on_click_attach_slides(self, rf_id: int):       # noqa
+    #     folder_path = self.get_folder_from_rfid(rf_id)
+    #     conf = Config.load(ConfigType.IMPARTUS)
+    #     filters = ['{} files (*.{})'.format(str(x).title(), x) for x in conf.get('allowed_ext')]
+    #     filters_str = ';;'.join(filters)
+    #     filepaths = QFileDialog().getOpenFileNames(
+    #         None,
+    #         caption="Select files to attach...",
+    #         dir=folder_path,
+    #         filter=filters_str
+    #     )
+    #     if not filepaths:
+    #         return
+    #
+    #     row = self.get_row_from_rfid(rf_id)
+    #     col = Columns.get_column_index_by_key('slides_actions')
+    #     ss_field = ActionItems.get_action_item_index('slides_actions', 'show_slides')
+    #     ss_combobox = self.table.cellWidget(row, col).layout().itemAt(ss_field).widget()
+    #
+    #     for filepath in filepaths[0]:
+    #         dest_path = shutil.copy(filepath, folder_path)
+    #         ss_combobox.add_items([dest_path])
 
     """
     MISC

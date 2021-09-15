@@ -45,9 +45,7 @@ class DataUtils:
                 merged_docs_by_subject[key].append(doc)
             else:
                 name = doc['subjectNameShort'] if doc.get('subjectNameShort') else doc.get('subjectName')
-                if mapping_by_name.get(name):
-                    key = mapping_by_name[name]
-                    merged_docs_by_subject[key].append(doc)
+                merged_docs_by_subject[name].append(doc)
 
         return merged_docs_by_subject
 
