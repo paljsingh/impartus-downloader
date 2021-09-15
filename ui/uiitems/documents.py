@@ -14,14 +14,13 @@ from lib.threadlogging import ThreadLogger
 from lib.utils import Utils
 from ui.callbacks.menucallbacks import MenuCallbacks
 from ui.callbacks.utils import CallbackUtils
-from ui.data.actionitems import ActionItems
-from ui.data import columns
-from ui.data.columns import Columns
-from ui.data.labels import Labels
+from lib.data.actionitems import ActionItems
+from lib.data import columns
+from lib.data.columns import Columns
+from lib.data.labels import Labels
 from ui.delegates.rodelegate import ReadOnlyDelegate
 from ui.delegates.writedelegate import WriteDelegate
 from ui.helpers.widgetcreator import WidgetCreator
-from ui.uiitems.customwidgets.combobox import CustomComboBox
 from ui.uiitems.customwidgets.customtreewidgetitem import CustomTreeWidgetItem
 
 
@@ -167,51 +166,51 @@ class Documents:
             self.logger.error('Error', 'Error downloading slides.')
             return False
 
-    def on_click_download_slides(self, rf_id: int):  # noqa
+    def on_click_download_slides(self, metadata):  # noqa
         """
         callback function for Download button.
         Creates a thread to download the request video.
         """
-        metadata = self.data.get(rf_id)
+        # metadata = self.data.get(rf_id)
         slide_url = metadata.get('slide_url')
-        filepath = self.impartus.get_slides_path(metadata)
+        filepath = Utils.get_slides_path(metadata)
 
-        row = self.get_row_from_rfid(rf_id)
+        # row = self.get_row_from_rfid(rf_id)
         col = Columns.get_column_index_by_key('slides_actions')
         ds_field = ActionItems.get_action_item_index('slides_actions', 'download_slides')
-        ds_button = self.treewidget.cellWidget(row, col).layout().itemAt(ds_field).widget()
+        # ds_button = self.treewidget.cellWidget(row, col).layout().itemAt(ds_field).widget()
 
         of_field = ActionItems.get_action_item_index('slides_actions', 'open_folder')
-        of_button = self.treewidget.cellWidget(row, col).layout().itemAt(of_field).widget()
+        # of_button = self.treewidget.cellWidget(row, col).layout().itemAt(of_field).widget()
 
         ss_field = ActionItems.get_action_item_index('slides_actions', 'show_slides')
-        ss_combo = self.treewidget.cellWidget(row, col).layout().itemAt(ss_field).widget()
+        # ss_combo = self.treewidget.cellWidget(row, col).layout().itemAt(ss_field).widget()
 
         as_field = ActionItems.get_action_item_index('slides_actions', 'attach_slides')
-        as_button = self.treewidget.cellWidget(row, col).layout().itemAt(as_field).widget()
+        # as_button = self.treewidget.cellWidget(row, col).layout().itemAt(as_field).widget()
 
-        widgets = {
-            'download_slides': ds_button,
-            'open_folder': of_button,
-            'show_slides': ss_combo,
-            'attach_slides': as_button,
-        }
-        ds_button.setEnabled(False)
+        # widgets = {
+        #     'download_slides': ds_button,
+        #     'open_folder': of_button,
+        #     'show_slides': ss_combo,
+        #     'attach_slides': as_button,
+        # }
+        # ds_button.setEnabled(False)
         with concurrent.futures.ThreadPoolExecutor(3) as executor:
-            future = executor.submit(self._download_slides, rf_id, slide_url, filepath)
+            future = executor.submit(self._download_slides, slide_url, filepath)
             return_value = future.result()
 
-            if return_value:
-                # add new slides file to the existing list.
-                if not self.data[rf_id].get('backpack_slides'):
-                    self.data[rf_id]['backpack_slides'] = list()
-                self.data.get(rf_id)['backpack_slides'].append(filepath)
-
-                widgets['show_slides'].add_items([filepath])
-                widgets['open_folder'].setEnabled(True)
-                widgets['attach_slides'].setEnabled(True)
-            else:
-                widgets['download_slides'].setEnabled(True)
+            # if return_value:
+            #     # add new slides file to the existing list.
+            #     if not self.data[rf_id].get('backpack_slides'):
+            #         self.data[rf_id]['backpack_slides'] = list()
+            #     self.data.get(rf_id)['backpack_slides'].append(filepath)
+            #
+            #     widgets['show_slides'].add_items([filepath])
+            #     widgets['open_folder'].setEnabled(True)
+            #     widgets['attach_slides'].setEnabled(True)
+            # else:
+            #     widgets['download_slides'].setEnabled(True)
 
     def on_click_open_folder(self, folder_path: str):
         # folder_path = self.get_folder_from_rfid(rf_id)
@@ -325,7 +324,7 @@ class Documents:
                 pushbutton.clicked.connect(callbacks['download_slides'])
 
                 if impartus.is_authenticated():
-                    filepath = impartus.get_slides_path(metadata)
+                    filepath = Utils.get_slides_path(metadata)
                     if metadata.get('slide_url') and metadata.get('slide_url') != '' \
                             and filepath and not os.path.exists(filepath):
                         download_slides_state = True

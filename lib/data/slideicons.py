@@ -1,4 +1,4 @@
-from ui.data.Icons import Icons
+from lib.data.Icons import Icons
 
 
 class SlideIcons:

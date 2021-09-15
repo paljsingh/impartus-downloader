@@ -5,7 +5,7 @@ from typing import Dict, List
 
 from lib.config import Config, ConfigType
 from lib.threadlogging import ThreadLogger
-from ui.data import columns
+from lib.data import columns
 
 
 class MetadataDictParser:

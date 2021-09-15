@@ -1,8 +1,6 @@
 import os
 import re
 import time
-from collections import defaultdict
-from typing import List
 
 import requests
 import platform
@@ -11,13 +9,11 @@ from lib.config import Config, ConfigType
 from lib.core.backpackslides import BackpackSlides
 from lib.core.flippedvideo import FlippedVideo
 from lib.core.regularvideo import RegularVideo
-from lib.metadataparser import MetadataDictParser
 from lib.threadlogging import ThreadLogger
 from lib.utils import Utils
 from lib.media.encoder import Encoder
 from lib.media.m3u8parser import M3u8Parser
 from lib.media.decrypter import Decrypter
-from ui.data.configkeys import ConfigKeys
 from lib.variables import Variables
 
 from urllib3.util.retry import Retry
@@ -91,33 +87,16 @@ class Impartus:
 
         m3u8_urls = self._download_m3u8(master_url)
         if flipped_lecture_quality == 'highest':
-            url = self.get_url_for_highest_quality_video(m3u8_urls)
+            url = Utils.get_url_for_highest_quality_video(self.conf, m3u8_urls)
         elif flipped_lecture_quality == 'lowest':
-            url = self.get_url_for_lowest_quality_video(m3u8_urls)
+            url = Utils.get_url_for_lowest_quality_video(self.conf, m3u8_urls)
         else:  # given a specific resolution.
-            url = self.get_url_for_resolution(m3u8_urls, flipped_lecture_quality)
+            url = Utils.get_url_for_resolution(m3u8_urls, flipped_lecture_quality)
 
         if url:
             response = self.session.get(url, timeout=self.timeouts)
             if response.status_code == 200:
                 return response.text.splitlines()
-
-    def get_url_for_highest_quality_video(self, m3u8_urls):
-        for resolution in self.conf.get('flipped_lecture_quality_order'):
-            for url in m3u8_urls:
-                if resolution in url:
-                    return url
-
-    def get_url_for_lowest_quality_video(self, m3u8_urls):
-        for resolution in reversed(self.conf.get('flipped_lecture_quality_order')):
-            for url in m3u8_urls:
-                if resolution in url:
-                    return url
-
-    def get_url_for_resolution(self, m3u8_urls, resolution):  # noqa
-        for url in m3u8_urls:
-            if resolution in url:
-                return url
 
     def process_video(self, video_metadata, mkv_filepath, pause_ev, resume_ev, progress_callback_func,
                       video_quality='highest'):
@@ -211,33 +190,6 @@ class Impartus:
                     os.rmdir(download_dir)
             return flag
 
-    def _get_filepath(self, video_metadata, config_key: str):
-        if self.conf.get('use_safe_paths'):
-            sanitized_components = MetadataDictParser.sanitize(MetadataDictParser.parse_metadata(video_metadata))
-            file_path = self.conf.get(config_key).format(
-                **{**video_metadata, **sanitized_components}, target_dir=self.download_dir
-            )
-        else:
-            file_path = self.conf.get(config_key).format(**video_metadata, target_dir=self.download_dir)
-        return file_path
-
-    def get_mkv_path(self, video_metadata):
-        return self._get_filepath(video_metadata, ConfigKeys.VIDEO_PATH.value)
-
-    def get_slides_path(self, video_metadata):
-        return self._get_filepath(video_metadata, ConfigKeys.SLIDES_PATH.value)
-
-    def get_captions_path(self, video_metadata):
-        return self._get_filepath(video_metadata, ConfigKeys.CAPTIONS_PATH.value)
-
-    def slides_exist_on_disk(self, path):
-        path_without_ext = path.rsplit('.', 1)[0]
-        for ext in self.conf.get('allowed_ext'):
-            path_with_ext = '{}.{}'.format(path_without_ext, ext)
-            if os.path.exists(path_with_ext):
-                return True, path_with_ext
-        return False, path
-
     def get_slides(self, subjects):
         slides = dict()
         for subject in subjects:
@@ -272,23 +224,6 @@ class Impartus:
         else:
             self.logger.info("[{}]: No lecture chats found for {}".format(video_metadata['ttid'], chat_url))
             return []
-
-    # def map_slides_to_videos(self, videos_metadata: List, slides_metadata: List):
-    #     """
-    #     map all videos to corresponding backpack slides.
-    #     return a mapping dict.
-    #     """
-    #     mapping = dict()
-    #     # slides upload threshold... expect slides be uploaded within N days of video upload.
-    #     threshold_duration = self.conf.get('slides_upload_window')
-    #     for video_item in videos_metadata:
-    #         video_upload_date = str.split(video_item['startTime'], ' ')[0]
-    #         for slide_item in slides_metadata:
-    #             slide_upload_date = slide_item['fileDate']
-    #             diff_days = Utils.date_difference(slide_upload_date, video_upload_date)
-    #             if 0 <= diff_days <= threshold_duration:
-    #                 mapping[video_item['ttid']] = slide_item['filePath']
-    #     return mapping
 
     def _get_session_with_retry(self):
         session = requests.Session()

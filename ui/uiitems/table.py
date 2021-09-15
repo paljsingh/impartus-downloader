@@ -14,7 +14,7 @@ from PySide2.QtWidgets import QTableWidget, QTableWidgetItem, QHeaderView, QFile
 
 from lib.captions import Captions
 from lib.config import Config, ConfigType
-from lib.impartus import Impartus
+from lib.core.impartus import Impartus
 from lib.threadlogging import ThreadLogger
 from lib.utils import Utils
 from ui.callbacks.utils import CallbackUtils
@@ -22,9 +22,9 @@ from ui.callbacks.menucallbacks import MenuCallbacks
 from ui.helpers.datautils import DataUtils
 from ui.helpers.widgetcreator import WidgetCreator
 from ui.uiitems.customwidgets.tablewidgetitem import CustomTableWidgetItem
-from ui.data.Icons import Icons
-from ui.data.actionitems import ActionItems
-from ui.data.columns import Columns
+from lib.data.Icons import Icons
+from lib.data.actionitems import ActionItems
+from lib.data.columns import Columns
 from lib.variables import Variables
 from ui.uiitems.documents import Documents
 from ui.uiitems.progressbar import SortableRoundProgressbar
@@ -32,6 +32,7 @@ from ui.uiitems.customwidgets.pushbutton import CustomPushButton
 from ui.delegates.rodelegate import ReadOnlyDelegate
 from ui.helpers.worker import Worker
 from ui.delegates.writedelegate import WriteDelegate
+from ui.uiitems.videos import Videos
 
 
 class Table:
@@ -170,7 +171,7 @@ class Table:
             'play_video': partial(self.on_click_play_video, rf_id),
             'download_chats': partial(self.on_click_download_chats, rf_id)
         }
-        video_actions_widget, cell_value = VideoContent.add_video_actions_buttons(data_item, self.impartus, callbacks)
+        video_actions_widget, cell_value = Videos.add_video_actions_buttons(data_item, self.impartus, callbacks)
         self.table.setCellWidget(index, col, video_actions_widget)
         self.table.cellWidget(index, col).setContentsMargins(0, 0, 0, 0)
 

@@ -3,8 +3,8 @@ from PySide2.QtWidgets import QAction, QMainWindow, QActionGroup
 
 from lib.config import ConfigType, Config
 from lib.core.impartus import Impartus
-from ui.data.columns import Columns
-from ui.data.menuitems import MenuItems
+from lib.data.columns import Columns
+from lib.data.menuitems import MenuItems
 import qtawesome as qta
 
 

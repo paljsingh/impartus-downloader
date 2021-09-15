@@ -3,8 +3,8 @@ from functools import partial
 
 from lib.config import ConfigType, Config
 from ui.callbacks.menucallbacks import MenuCallbacks
-from ui.data.Icons import Icons
-from ui.data import columns
+from lib.data.Icons import Icons
+from lib.data import columns
 
 
 class MenuItems:

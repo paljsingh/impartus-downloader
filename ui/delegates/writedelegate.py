@@ -6,7 +6,7 @@ from PySide2.QtWidgets import QStyledItemDelegate
 from typing import Callable
 
 from lib.config import ConfigType, Config
-from ui.data.columns import Columns
+from lib.data.columns import Columns
 
 
 class WriteDelegate(QStyledItemDelegate):

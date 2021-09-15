@@ -8,7 +8,7 @@ import qtawesome as qta
 from PySide2 import QtCore
 from PySide2.QtCore import QThread
 from PySide2.QtGui import QIcon
-from PySide2.QtWidgets import QTableWidget, QTableWidgetItem, QHeaderView, QFileDialog, QCheckBox, QWidget
+from PySide2.QtWidgets import QTableWidget, QTableWidgetItem, QHeaderView, QCheckBox, QWidget
 
 from lib.captions import Captions
 from lib.config import Config, ConfigType
@@ -20,10 +20,10 @@ from ui.callbacks.menucallbacks import MenuCallbacks
 from ui.helpers.datautils import DataUtils
 from ui.helpers.widgetcreator import WidgetCreator
 from ui.uiitems.customwidgets.tablewidgetitem import CustomTableWidgetItem
-from ui.data.Icons import Icons
-from ui.data.actionitems import ActionItems
-from ui.data import columns
-from ui.data.columns import Columns
+from lib.data.Icons import Icons
+from lib.data.actionitems import ActionItems
+from lib.data import columns
+from lib.data.columns import Columns
 from lib.variables import Variables
 from ui.uiitems.progressbar import SortableRoundProgressbar
 from ui.uiitems.customwidgets.pushbutton import CustomPushButton
@@ -276,7 +276,7 @@ class Videos:
         """
         row = self.get_row_from_rfid(rf_id, is_flipped)
         video_metadata = self.data[rf_id]
-        video_filepath = self.impartus.get_mkv_path(video_metadata)
+        video_filepath = Utils.get_mkv_path(video_metadata)
 
         # as pause/resume uses the same download button,
         # the event will show up here.
@@ -376,7 +376,7 @@ class Videos:
 
         dc_button.setEnabled(False)
         chat_msgs = self.impartus.get_chats(self.data[rf_id])
-        captions_path = self.impartus.get_captions_path(self.data[rf_id])
+        captions_path = Utils.get_captions_path(self.data[rf_id])
         status = Captions.save_as_captions(rf_id, self.data.get(rf_id), chat_msgs, captions_path)
 
         # also update local copy of data

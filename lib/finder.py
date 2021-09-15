@@ -11,8 +11,8 @@ import random
 from lib.config import Config, ConfigType
 from lib.metadataparser import MetadataFileParser, MetadataDictParser
 from lib.threadlogging import ThreadLogger
-from ui.data.configkeys import ConfigKeys
-from ui.data.labels import Labels
+from lib.data.configkeys import ConfigKeys
+from lib.data.labels import Labels
 
 
 class Finder:
@@ -64,7 +64,7 @@ class Finder:
             flipped = False
             try:
                 rf_id, flipped = self._get_rfid(filepath)
-            except TypeError as ex:
+            except TypeError:
                 rf_id = random.randint(1, int(1e6)) * -1
                 pass
 
@@ -150,7 +150,7 @@ class Finder:
                         backpack_slides[subject_name].append(backpack_slide)
         return backpack_slides
 
-    def _get_subject_info(self, metadata, subject_name_id_map=None):
+    def _get_subject_info(self, metadata, subject_name_id_map=None):    # noqa
         subject_id = -1
         subject_name = "No Subject"
         for name in [Labels.SUBJECT_NAME.value, Labels.SUBJECT_NAME_SHORT.value]:
@@ -160,4 +160,3 @@ class Finder:
                     subject_id = subject_name_id_map[name]['subjectId']
                 return subject_id, subject_name
         return subject_id, subject_name
-

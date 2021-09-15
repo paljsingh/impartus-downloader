@@ -23,7 +23,7 @@ class DataUtils:
         return merged_items
 
     @classmethod
-    def merge_slides_items(cls, offline_items, online_items, mapping_by_id, mapping_by_name):
+    def merge_slides_items(cls, offline_items, online_items, mapping_by_id):
         all_docs = dict()
         if online_items:
             for subject, documents in online_items.items():

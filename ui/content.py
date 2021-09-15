@@ -1,17 +1,13 @@
-from collections import defaultdict
-
 from PySide2 import QtCore, QtWidgets
 from PySide2.QtCore import QFile
 from PySide2.QtUiTools import QUiLoader
 from PySide2.QtWidgets import QMainWindow, QTableWidget, QPlainTextEdit, QTreeWidget
 
 from lib.finder import Finder
-from lib.core.backpackslides import BackpackSlides
 from lib.core.impartus import Impartus
-from lib.metadataparser import MetadataDictParser
 from ui.callbacks.buttoncallbacks import ButtonCallbacks
 from ui.callbacks.menucallbacks import MenuCallbacks
-from ui.data.labels import Labels
+from lib.data.labels import Labels
 from ui.helpers.datautils import DataUtils
 from ui.uiitems.search import SearchBox
 from ui.uiitems.videos import Videos
@@ -78,14 +74,6 @@ class ContentWindow(QMainWindow):
         MenuCallbacks().set_menu_statuses()
         ButtonCallbacks().set_pushbutton_statuses()
 
-    def get_subject_mappings(self, subjects):
-        mapping_by_id = dict()
-        mapping_by_name = dict()
-        for subject_metadata in subjects:
-            mapping_by_id[subject_metadata['subjectId']] = subject_metadata
-            mapping_by_name[subject_metadata['subjectName']] = subject_metadata
-        return mapping_by_id, mapping_by_name
-
     def work_online(self):
         subjects = self.impartus.get_subjects()
         mapping_by_id, mapping_by_name = self.get_subject_mappings(subjects)
@@ -98,32 +86,12 @@ class ContentWindow(QMainWindow):
         self.table_container.fill_table(offline_video_data, merged_video_data)
 
         # slides tab
-        online_backpack_slides = self.impartus.get_slides(subjects)
-        online_backpack_slides = self.subject_id_to_subject_name(online_backpack_slides, mapping_by_id)
-        offline_backpack_slides = Finder().get_offline_backpack_slides(mapping_by_name)
+        online_backpack_docs = self.impartus.get_slides(subjects)
+        online_backpack_docs = self.subject_id_to_subject_name(online_backpack_docs, mapping_by_id)
+        offline_backpack_docs = Finder().get_offline_backpack_slides(mapping_by_name)
 
-        merged_slides_data = DataUtils.merge_slides_items(offline_backpack_slides, online_backpack_slides, mapping_by_id, mapping_by_name)
+        merged_slides_data = DataUtils.merge_slides_items(offline_backpack_docs, online_backpack_docs, mapping_by_id)
         self.tree_container.fill_table(merged_slides_data)
 
         MenuCallbacks().set_menu_statuses()
         ButtonCallbacks().set_pushbutton_statuses()
-
-    def subject_id_to_subject_name(self, slides_metadata, mappings_by_id):
-        new_metadata_dict = dict()
-        for id, val in slides_metadata.items():
-            subject_name = mappings_by_id[id].get('subjectName')
-            new_key = DataUtils.get_subject_name_short_from_subject_name(subject_name)
-            new_metadata_dict[new_key] = val
-        return new_metadata_dict
-
-    def needs_lecture_rename(self):     # noqa
-        return False
-
-    def needs_video_download(self):     # noqa
-        return False
-
-    def needs_chat_download(self):      # noqa
-        return False
-
-    def needs_backpack_slides_download(self):   # noqa
-        return False

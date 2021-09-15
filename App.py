@@ -6,7 +6,7 @@ from lib.threadlogging import ThreadLogger
 from lib.variables import Variables
 from ui.callbacks.utils import CallbackUtils
 from ui.content import ContentWindow
-from ui.data.iconfiles import IconFiles
+from lib.data.iconfiles import IconFiles
 from ui.login import LoginWindow
 from ui.menubar import Menubar
 

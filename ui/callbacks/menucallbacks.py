@@ -7,7 +7,7 @@ from PySide2.QtWidgets import QLabel, QTreeWidget, QTreeWidgetItem, QMessageBox
 from lib import version
 from lib.utils import Utils
 from ui.callbacks.utils import CallbackUtils
-from ui.data.docs import Docs
+from lib.data.docs import Docs
 from lib.variables import Variables
 from ui.dialog import Dialog
 from ui.helpers.datautils import DataUtils

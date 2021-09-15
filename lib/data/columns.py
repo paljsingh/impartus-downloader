@@ -1,8 +1,8 @@
 from PySide2.QtCore import Qt
 from PySide2.QtWidgets import QHeaderView
 
-from ui.data.Icons import Icons
-from ui.data.labels import Labels
+from lib.data.Icons import Icons
+from lib.data.labels import Labels
 
 
 """

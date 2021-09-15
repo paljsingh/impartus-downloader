@@ -7,8 +7,8 @@ from typing import List
 import qtawesome as qta
 
 from lib.utils import Utils
-from ui.data.Icons import Icons
-from ui.data.slideicons import SlideIcons
+from lib.data.Icons import Icons
+from lib.data.slideicons import SlideIcons
 
 
 class CustomComboBox(QComboBox):

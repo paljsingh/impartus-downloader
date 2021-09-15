@@ -1,6 +1,6 @@
 from PySide2.QtWidgets import QPushButton, QComboBox
 
-from ui.data.Icons import Icons
+from lib.data.Icons import Icons
 
 
 class ActionItems:

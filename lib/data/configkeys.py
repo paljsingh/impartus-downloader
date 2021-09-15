@@ -17,6 +17,8 @@ class ConfigKeys(enum.Enum):
     CAPTIONS_PATH = 'captions_path'
     COLORSCHEME_DEFAULT = 'default'
     RESIZE_POLICY = 'resize_policy'
+    USE_SAFE_PATHS = 'use_safe_paths'
+    FLIPPED_LECTURE_QUALITY_ORDER = 'flipped_lecture_quality_order'
 
     def __str__(self):
         return str(self.value)

@@ -1,7 +1,7 @@
 from PySide2 import QtCore
 from PySide2.QtWidgets import QLabel, QLineEdit, QMainWindow, QTableWidget
 
-from ui.data.searchdirections import SearchDirection
+from lib.data.searchdirections import SearchDirection
 
 
 class SearchBox:
