@@ -540,12 +540,12 @@ class Table:
         if flipped:
             fcid_col_index = Columns.get_column_index_by_key('fcid')
             for i in range(self.table.rowCount()):
-                if int(self.table.item(i, fcid_col_index).text()) == rf_id:
+                if self.table.item(i, fcid_col_index).text() == str(rf_id):
                     return i
         else:
             ttid_col_index = Columns.get_column_index_by_key('ttid')
             for i in range(self.table.rowCount()):
-                if int(self.table.item(i, ttid_col_index).text()) == rf_id:
+                if self.table.item(i, ttid_col_index).text() == str(rf_id):
                     return i
 
     def get_folder_from_rfid(self, rf_id: int):
