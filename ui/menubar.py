@@ -66,8 +66,8 @@ class Menubar:
                             pass
 
                         # however, if the column is default hidden, set the menu item to unchecked.
-                        if Columns.get_displayable_video_columns_dict().get(level2_child_key) \
-                                and Columns.get_displayable_video_columns_dict().get(level2_child_key).get('hidden'):
+                        if Columns.get_video_columns_dict().get(level2_child_key) \
+                                and Columns.get_video_columns_dict().get(level2_child_key).get('hidden'):
                             submenu_item.setChecked(False)
 
                         submenu_item.triggered.connect(callback)    # noqa

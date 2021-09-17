@@ -13,7 +13,7 @@ class ConfigKeys(enum.Enum):
     CONFIG_DIR = 'config_dir'
     ALLOWED_EXT = 'allowed_ext'
     VIDEO_PATH = 'video_path'
-    SLIDES_PATH = 'slides_path'
+    SLIDES_PATH = 'documents_path'
     CAPTIONS_PATH = 'captions_path'
     COLORSCHEME_DEFAULT = 'default'
     RESIZE_POLICY = 'resize_policy'

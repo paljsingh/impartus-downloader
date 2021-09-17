@@ -34,20 +34,22 @@ class ContentWindow(QMainWindow):
         self.setWindowTitle(Labels.APPLICATION_TITLE.value)
         self.setGeometry(0, 0, self.maximumWidth(), self.maximumHeight())
 
-        self.videos_widget = self.content_form.findChild(QTableWidget, "table")
-        self.videos = Videos(self.impartus, self.videos_widget)  # noqa
+        self.table_widget = self.content_form.findChild(QTableWidget, "table")
+        self.table_widget: QTableWidget
+        self.videos_tab = Videos(self.table_widget, self.impartus)
 
-        self.documents_widget = self.content_form.findChild(QTreeWidget, "lectures_treewidget")
-        self.documents = Documents(self.impartus, self.documents_widget)  # noqa
+        self.tree_widget = self.content_form.findChild(QTreeWidget, "lectures_treewidget")
+        self.tree_widget: QTreeWidget
+        self.documents_tab = Documents(self.tree_widget, self.impartus)
 
         self.setContentsMargins(5, 0, 5, 0)
         screen_size = QtWidgets.QApplication.primaryScreen().size()
         self.setMaximumSize(screen_size)
 
         # type hints
-        self.documents_widget: QTreeWidget
-        self.videos_widget: QTableWidget
-        self.search_box = SearchBox(self.content_form, self.videos_widget, self.documents_widget)
+        self.table_widget: QTableWidget
+        self.tree_widget: QTreeWidget
+        self.search_box = SearchBox(self.content_form, self.table_widget, self.tree_widget)
         self.log_window = self.content_form.findChild(QPlainTextEdit, "log_window")
 
         self.data = list()
@@ -68,49 +70,62 @@ class ContentWindow(QMainWindow):
             self.search_box.search_next()
 
     def work_offline(self):
-        offline_video_data = Finder().get_offline_videos()
-        self.fill_table(offline_video_data)
+        self.reset_content()
 
-        offline_backpack_slides = Finder().get_offline_backpack_slides()
-        self.documents.fill_table(offline_backpack_slides)
+        for rf_id, video_metadata, is_flipped, chats_path in Finder().get_offline_videos():
+            self.videos_tab.table.add_row_item(rf_id, video_metadata, chats_path, is_flipped, video_downloaded=True)
+
+        # when scanning offline documents, we get 1 document at a time, and identify it's subject (metadata)
+        for subject, document in Finder().get_offline_backpack_slides():
+            self.documents_tab.tree.add_row_items(subject, [document], documents_downloaded=True)
 
         MenuCallbacks().set_menu_statuses()
         ButtonCallbacks().set_pushbutton_statuses()
 
+    def reset_content(self):
+        self.videos_tab.reset_content()
+        self.documents_tab.reset_content()
+
     def work_online(self):
+        self.reset_content()
+
         subjects = self.impartus.get_subjects()
         mapping_by_id, mapping_by_name = DataUtils.get_subject_mappings(subjects)
 
         # videos tab
-        regular_videos, flipped_videos = self.impartus.get_lecture_videos(subjects)
-        offline_video_data = Finder().get_offline_videos()
-        merged_video_data = DataUtils.merge_items(offline_video_data, {**regular_videos, **flipped_videos})
-        DataUtils.save_metadata(merged_video_data)
-        self.table_container.fill_table(offline_video_data, merged_video_data)
+        for video_id, video_metadata, is_flipped in self.impartus.get_lecture_videos(subjects):
+            # for online videos, we won't know if lecture chats exist or not, until the api is called,
+            # so consider chats_path=True and enable the chat download button.
+            self.videos_tab.table.add_row_item(video_id, video_metadata, is_flipped=is_flipped, chats_path=True)
 
-        # slides tab
-        online_backpack_docs = self.impartus.get_slides(subjects)
-        online_backpack_docs = DataUtils.subject_id_to_subject_name(online_backpack_docs, mapping_by_id)
-        offline_backpack_docs = Finder().get_offline_backpack_slides(mapping_by_name)
+        for (video_id, video_metadata, is_flipped, chats_path) in Finder().get_offline_videos():
+            self.videos_tab.table.add_row_item(video_id, video_metadata, chats_path, is_flipped, video_downloaded=True)
 
-        merged_slides_data = DataUtils.merge_slides_items(offline_backpack_docs, online_backpack_docs, mapping_by_id)
-        self.tree_container.fill_table(merged_slides_data)
+        self.videos_tab.table.post_fill_tasks()
+
+        # when fetching online documents, the api returns all the available documents (metadata) for a given subject.
+        for subject_metadata, documents in self.impartus.get_slides(subjects):
+            self.documents_tab.tree.add_row_items(subject_metadata, documents)
+
+        # when scanning offline documents, we get 1 document at a time, and identify it's subject (metadata).
+        for subject_metadata, document in Finder().get_offline_backpack_slides(mapping_by_name):
+            self.documents_tab.tree.add_row_items(subject_metadata, [document])
 
         MenuCallbacks().set_menu_statuses()
         ButtonCallbacks().set_pushbutton_statuses()
 
     @staticmethod
-    def needs_lecture_rename(self):
+    def needs_lecture_rename():
         return True
 
     @staticmethod
-    def needs_video_download(self):
+    def needs_video_download():
         return True
 
     @staticmethod
-    def needs_chat_download(self):
+    def needs_chat_download():
         return True
 
     @staticmethod
-    def needs_backpack_slides_download(self):
+    def needs_backpack_slides_download():
         return True

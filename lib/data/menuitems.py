@@ -114,6 +114,12 @@ class MenuItems:
                 'status_tip': 'Download Lecture Chats',
                 'callback': MenuCallbacks().on_click__menu__video_download_lecture_videos,
             },
+            'Open Folder': {
+                'icon': Icons.MENU__OPEN_FOLDER.value,
+                'shortcut': 'Ctrl+O',
+                'status_tip': 'Open Video Folder',
+                'callback': MenuCallbacks().on_click__menu__video_open_folder,
+            },
         },
         'Slides': {
             'Download Backpack Slides': {
@@ -124,13 +130,13 @@ class MenuItems:
             },
             'Open Folder': {
                 'icon': Icons.MENU__OPEN_FOLDER.value,
-                'shortcut': 'Ctrl+O',
+                'shortcut': 'Shift+Ctrl+O',
                 'status_tip': 'Open Lecture Content Folder',
                 'callback': MenuCallbacks().on_click__menu__slides_open_folder,
             },
             'Attach Lecture Slides': {
                 'icon': Icons.MENU__ATTACH_SLIDES.value,
-                'shortcut': 'Shift+Ctrl+O',
+                'shortcut': 'Shift+Ctrl+A',
                 'status_tip': 'Attach Downloaded Slides to a Lecture',
                 'callback': MenuCallbacks().on_click__menu__slides_attach_lecture_slides,
             },

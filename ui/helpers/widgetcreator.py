@@ -4,6 +4,7 @@ from typing import Dict, Callable
 from PySide2 import QtCore
 from PySide2.QtWidgets import QHBoxLayout, QWidget, QPushButton, QCheckBox
 
+from ui.uiitems.customwidgets.checkbox import CustomCheckBox
 from ui.uiitems.customwidgets.pushbutton import CustomPushButton
 
 
@@ -34,10 +35,11 @@ class WidgetCreator:
                 yield pushbutton
 
     @classmethod
-    def add_checkbox_widget(cls, callback: Callable):
+    def add_checkbox_widget(cls, data, callback: Callable):
         container_widget = QWidget()
-        checkbox = QCheckBox()
-        checkbox.clicked.connect(partial(callback, checkbox))       # noqa
+        checkbox = CustomCheckBox()
+        checkbox.setValue(data)
+        checkbox.clicked.connect(partial(callback, checkbox))
         container_widget_layout = QHBoxLayout(container_widget)
         container_widget_layout.addWidget(checkbox)
         container_widget_layout.setAlignment(QtCore.Qt.AlignCenter)

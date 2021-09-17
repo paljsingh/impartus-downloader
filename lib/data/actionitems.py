@@ -21,7 +21,12 @@ class ActionItems:
         },
         'download_chats': {
             'tooltip': 'Download Lecture Chats',
-            'text': Icons.SLIDES__DOWNLOAD_CAPTIONS.value,
+            'text': Icons.VIDEO__DOWNLOAD_CAPTIONS.value,
+            'type': QPushButton,
+        },
+        'open_folder': {
+            'tooltip': 'Open Video Folder',
+            'text': Icons.VIDEO__OPEN_FOLDER.value,
             'type': QPushButton,
         },
     }

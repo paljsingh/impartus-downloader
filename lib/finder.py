@@ -27,18 +27,19 @@ class Finder:
         pass
 
     def get_offline_videos(self):
-        offline_videos = dict()
         count = 0
         for dirpath, subdirs, files in os.walk(self.conf.get('target_dir').get(platform.system())):
             for rf_id, video_metadata in self.get_offline_video_metadata(dirpath, files):
                 if rf_id:
                     count += 1
                     chats = self.get_offline_chats(dirpath, files)
-                    offline_videos[rf_id] = {
-                        'chats': chats,
-                        **video_metadata,
-                    }
-        return offline_videos
+                    is_flipped = False
+                    yield rf_id, video_metadata, is_flipped, chats
+                    # offline_videos[rf_id] = {
+                    #     'chats': chats,
+                    #     **video_metadata,
+                    # }
+        # return offline_videos
 
     def get_offline_video_metadata(self, path: str, files: List) -> (str, Dict):
         """
@@ -123,7 +124,7 @@ class Finder:
             return None, None
 
     def get_offline_backpack_slides(self, mapping_by_subject_name=None):
-        backpack_slides = defaultdict(list)
+        # backpack_slides = defaultdict(list)
         for dirpath, subdirs, files in os.walk(self.conf.get('target_dir').get(platform.system())):
             for filename in files:
                 for ext in self.conf.get('allowed_ext'):
@@ -135,20 +136,16 @@ class Finder:
                         if parsed_fields.get('professorName'):
                             prof_name = parsed_fields['professorName']
 
-                        subject_id, subject_name = self._get_subject_info(parsed_fields, mapping_by_subject_name)
+                        subject_metadata = self._get_subject_info(parsed_fields, mapping_by_subject_name)
                         backpack_slide = {
                             'filePath': filepath,
                             'fileName': filename,
                             'fileLength': os.path.getsize(filepath) // 1024,
                             'fileDate': datetime.fromtimestamp(os.path.getmtime(filepath)).strftime("%Y-%m-%d"),
                             'description': '',
-                            'subjectName': subject_name,
-                            'subjectNameShort': subject_name,
-                            'subjectId': subject_id,
                             'professorName': prof_name,
                         }
-                        backpack_slides[subject_name].append(backpack_slide)
-        return backpack_slides
+                        yield subject_metadata, backpack_slide
 
     def _get_subject_info(self, metadata, subject_name_id_map=None):    # noqa
         subject_id = -1
@@ -158,5 +155,5 @@ class Finder:
                 subject_name = metadata[name]
                 if subject_name_id_map and subject_name_id_map.get(name):
                     subject_id = subject_name_id_map[name]['subjectId']
-                return subject_id, subject_name
-        return subject_id, subject_name
+                return {'subjectId': subject_id, 'subjectName': subject_name}
+        return {'subjectId': subject_id, 'subjectName': subject_name}

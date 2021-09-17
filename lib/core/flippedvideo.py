@@ -38,6 +38,5 @@ class FlippedVideo(Video):
                         flipped_lecture['endTime'] = end_time.strftime("%Y-%m-%d %H:%M:%S")
 
                         video_id = flipped_lecture['fcid']
-                        online_lectures[video_id] = MetadataDictParser.add_new_fields(flipped_lecture)
-
-        return online_lectures
+                        is_flipped = True
+                        yield video_id, MetadataDictParser.add_new_fields(flipped_lecture), is_flipped

@@ -21,6 +21,5 @@ class RegularVideo(Video):
                 videos_by_subject = response.json()
                 for video_metadata in videos_by_subject:
                     video_id = video_metadata['ttid']
-                    online_lectures[video_id] = MetadataDictParser.add_new_fields(video_metadata)
-
-        return online_lectures
+                    is_flipped = False
+                    yield video_id, MetadataDictParser.add_new_fields(video_metadata), is_flipped

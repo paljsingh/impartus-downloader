@@ -9,10 +9,10 @@ class Icons(enum.Enum):
 
     VIDEO__DOWNLOAD_VIDEO = 'fa5s.download'
     VIDEO__PLAY_VIDEO = 'fa5.play-circle'
+    VIDEO__DOWNLOAD_CAPTIONS = 'fa5.closed-captioning'
     VIDEO__OPEN_FOLDER = 'fa5.folder-open'
 
     SLIDES__DOWNLOAD_SLIDES = 'fa5s.file-download'
-    SLIDES__DOWNLOAD_CAPTIONS = 'fa5.closed-captioning'
     SLIDES__SHOW_SLIDES = 'fa5.file-pdf'
     SLIDES__ATTACH_SLIDES = 'fa5s.link'
 

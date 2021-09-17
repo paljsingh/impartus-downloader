@@ -191,7 +191,6 @@ class Impartus:
             return flag
 
     def get_slides(self, subjects):
-        slides = dict()
         for subject in subjects:
             root_url = Variables().login_url()
             subject_id = subject.get('subjectId')
@@ -202,8 +201,7 @@ class Impartus:
             if response.status_code == 200:
                 backpack_slides = response.json()
                 if backpack_slides:
-                    slides[subject_id] = backpack_slides
-        return slides
+                    yield subject, backpack_slides
 
     def get_subjects(self):
         root_url = Variables().login_url()
@@ -286,10 +284,8 @@ class Impartus:
         return True if self.session else False
 
     def get_lecture_videos(self, subjects):
-        regular_videos = RegularVideo(subjects, self.session, self.timeouts).get_lectures()
-        flipped_videos = FlippedVideo(subjects, self.session, self.timeouts).get_lectures()
-
-        return regular_videos, flipped_videos
+        yield from RegularVideo(subjects, self.session, self.timeouts).get_lectures()
+        yield from FlippedVideo(subjects, self.session, self.timeouts).get_lectures()
 
     def download_slides(self, rf_id, file_url, filepath):
         return BackpackSlides(self.token, self.timeouts, self.logger, self.conf)\

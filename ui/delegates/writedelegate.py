@@ -18,7 +18,7 @@ class WriteDelegate(QStyledItemDelegate):
 
     def createEditor(self, parent: QWidget, option: QStyleOptionViewItem, index: QModelIndex) -> QWidget:
         # if column index belongs to one of the editable columns...
-        if index.column() in [i for i, v in enumerate(Columns.data_columns.values(), 1) if v['editable']]:
+        if index.column() in [i for i, v in enumerate(Columns.get_video_columns_dict().values(), 1) if v['editable']]:
             editor = super().createEditor(parent, option, index)
             editor.editingFinished.connect(partial(self.on_editing_finish, editor, index, index.data()))
             return editor
@@ -30,18 +30,10 @@ class WriteDelegate(QStyledItemDelegate):
         'original value': 'old value'  =>  'original value': 'new value'
         """
         table = editor.parent().parent()
-        ttid_col_index = Columns.get_column_index_by_key('ttid')
-        fcid_col_index = Columns.get_column_index_by_key('fcid')
-        ttid_text = table.item(index.row(), ttid_col_index).text()
-        fcid_text = table.item(index.row(), fcid_col_index).text()
-        rf_id = 0
-        if ttid_text and ttid_text != '0':
-            rf_id = int(ttid_text)
-        elif fcid_text and fcid_text != '0':
-            rf_id = int(fcid_text)
+        video_id = table.cellWidget(index.row(), 0).layout().itemAt(0).widget().getValue()['video_id']
 
-        column_name = Columns.get_displayable_video_columns()[index.column() - 1]
-        original_value = self.data_callback()[rf_id][column_name]
+        column_name = Columns.get_video_columns()[index.column() - 1]
+        original_value = self.data_callback()[video_id]['metadata'][column_name]
         new_value = editor.text()
 
         # update mapping config.

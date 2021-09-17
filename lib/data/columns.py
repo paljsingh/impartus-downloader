@@ -33,8 +33,8 @@ data_columns = {
         'menu_name': 'Faculty',
         'menu_tooltip': 'Faculty Name',
         'original_values_col': None,
-        'resize_policy': QHeaderView.ResizeMode.ResizeToContents,
-        'initial_size': 150,
+        'resize_policy': QHeaderView.ResizeMode.Fixed,
+        'initial_size': 200,
         'sortable': True,
         'title_case': True,
     },
@@ -47,7 +47,7 @@ data_columns = {
         'menu_tooltip': 'Lecture Topic',
         'original_values_col': None,
         'resize_policy': QHeaderView.ResizeMode.Stretch,  # only 1 column can be 'Stretch'
-        'initial_size': 200,
+        'initial_size': 300,
         'sortable': True,
         'title_case': True,
     },
@@ -99,7 +99,7 @@ data_columns = {
         'menu_tooltip': 'Lecture Date',
         'original_values_col': None,
         'resize_policy': QHeaderView.ResizeMode.ResizeToContents,
-        'initial_size': 50,
+        'initial_size': 75,
         'sortable': True,
         'title_case': False,
     },
@@ -154,7 +154,7 @@ widget_columns = {
         'menu_tooltip': 'Flipped Lecture ?',
         'original_values_col': None,
         'resize_policy': QHeaderView.ResizeMode.ResizeToContents,
-        'initial_size': 30,
+        'initial_size': 50,
         'sortable': True,
         'title_case': False,
         'icon': Icons.MENU__FLIPPED_VIDEO_QUALITY.value,
@@ -167,7 +167,7 @@ widget_columns = {
         'menu_name': 'Downloaded?',
         'menu_tooltip': 'Download Status',
         'original_values_col': None,
-        'resize_policy': QHeaderView.ResizeMode.Fixed,
+        'resize_policy': QHeaderView.ResizeMode.ResizeToContents,
         'initial_size': 100,
         'sortable': False,
         'title_case': False,
@@ -180,8 +180,8 @@ widget_columns = {
         'menu_name': 'Video',
         'menu_tooltip': 'Video Actions',
         'original_values_col': None,
-        'resize_policy': QHeaderView.ResizeMode.Fixed,
-        'initial_size': 125,
+        'resize_policy': QHeaderView.ResizeMode.ResizeToContents,
+        'initial_size': 150,
         'sortable': False,
         'title_case': False,
     },
@@ -193,40 +193,11 @@ widget_columns = {
         'menu_name': 'Slides',
         'menu_tooltip': 'Slides Actions',
         'original_values_col': None,
-        'resize_policy': QHeaderView.ResizeMode.Fixed,
+        'resize_policy': QHeaderView.ResizeMode.ResizeToContents,
         'initial_size': 225,
         'sortable': False,
         'title_case': False,
     }
-}
-
-hidden_columns = {
-    Labels.VIDEO__REGULAR_ID.value: {
-        'alignment': Qt.AlignRight,
-        'display_name': 'ttid',
-        'editable': False,
-        'hidden': True,
-        'initial_size': 50,
-        'menu_name': 'ttid',
-        'menu_tooltip': 'ttid',
-        'original_values_col': None,
-        'resize_policy': QHeaderView.ResizeMode.Fixed,
-        'sortable': True,
-        'title_case': False,
-    },
-    Labels.VIDEO__FLIPPED_ID.value: {
-        'alignment': Qt.AlignRight,
-        'display_name': 'fcid',
-        'editable': False,
-        'hidden': True,
-        'initial_size': 50,
-        'menu_name': 'fcid',
-        'menu_tooltip': 'fcid',
-        'original_values_col': None,
-        'resize_policy': QHeaderView.ResizeMode.Fixed,
-        'sortable': True,
-        'title_case': False,
-    },
 }
 
 video_data_columns = {
@@ -254,20 +225,12 @@ document_widget_columns = {
 class Columns:
 
     @staticmethod
-    def get_displayable_video_columns():
+    def get_video_columns():
         return [*video_data_columns, *video_widget_columns]
 
     @staticmethod
-    def get_displayable_video_columns_dict():
-        return {**video_data_columns, **video_widget_columns}
-
-    @staticmethod
-    def get_video_columns():
-        return [*video_data_columns, *video_widget_columns, *hidden_columns]
-
-    @staticmethod
     def get_video_columns_dict():
-        return {**video_data_columns, **video_widget_columns, **hidden_columns}
+        return {**video_data_columns, **video_widget_columns}
 
     @staticmethod
     def get_document_columns():
@@ -281,12 +244,11 @@ class Columns:
     def get_column_index_by_key(key_name):
         return [*video_data_columns.keys(),
                 *video_widget_columns.keys(),
-                *hidden_columns.keys()
                 ].index(key_name) + 1
 
     @staticmethod
     def get_video_columns_count():
-        return 1 + len(video_data_columns) + len(video_widget_columns) + len(hidden_columns)
+        return 1 + len(video_data_columns) + len(video_widget_columns)
 
     @classmethod
     def get_document_columns_count(cls):
