@@ -1,6 +1,7 @@
 from PySide2.QtWidgets import QPushButton, QComboBox
 
 from lib.data.Icons import Icons
+from lib.data.labels import Labels
 
 
 class ActionItems:
@@ -30,23 +31,24 @@ class ActionItems:
             'type': QPushButton,
         },
     }
+
     slides_actions = {
-        'show_slides': {
-            'tooltip': 'Show Backpack Slides',
-            'text': Icons.SLIDES__DOWNLOAD_SLIDES.value,
-            'type': QComboBox,
-        },
-        'download_slides': {
-            'tooltip': 'Download Backpack Slides',
+        Labels.DOCUMENT__DOWNLOAD_DOCUMENT.value: {
+            'tooltip': 'Download Backpack Document',
             'text': Icons.SLIDES__DOWNLOAD_SLIDES.value,
             'type': QPushButton,
         },
-        'open_folder': {
+        Labels.DOCUMENT__OPEN_DOCUMENT.value: {
+            'tooltip': 'Show Backpack Document',
+            'text': Icons.SLIDES__SHOW_SLIDES.value,
+            'type': QPushButton,
+        },
+        Labels.DOCUMENT__OPEN_FOLDER.value: {
             'tooltip': 'Open Folder',
             'text': Icons.VIDEO__OPEN_FOLDER.value,
             'type': QPushButton,
         },
-        'attach_slides': {
+        Labels.DOCUMENT__ATTACH_DOCUMENT.value: {
             'tooltip': 'Attach Slides',
             'text': Icons.SLIDES__ATTACH_SLIDES.value,
             'type': QPushButton,

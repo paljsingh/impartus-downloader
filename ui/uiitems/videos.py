@@ -100,7 +100,7 @@ class Videos:
 
         # A fresh download reaches here..
         progressbar, pushbuttons = self.table.get_widgets(video_id)
-        dl_button, pl_button, cc_button, = pushbuttons
+        dl_button, pl_button, cc_button, of_button, = pushbuttons
 
         pause_event = Event()
         resume_event = Event()
@@ -127,7 +127,7 @@ class Videos:
 
         if self.workers.get(video_id):
             # successful run.
-            dl_button, pl_button, cc_button, = pushbuttons
+            dl_button, pl_button, cc_button, of_button, = pushbuttons
             if self.workers[video_id]['thread'].status:
                 dl_button.setIcon(Icons.VIDEO__DOWNLOAD_VIDEO.value)
                 dl_button.setToolTip('Download Video')

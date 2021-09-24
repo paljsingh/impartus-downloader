@@ -233,8 +233,16 @@ class Columns:
         return {**video_data_columns, **video_widget_columns}
 
     @staticmethod
+    def get_video_columns_count():
+        return 1 + len(video_data_columns) + len(video_widget_columns)
+
+    @staticmethod
     def get_document_columns():
         return [*document_data_columns, *document_widget_columns]
+
+    @classmethod
+    def get_document_columns_count(cls):
+        return len(document_data_columns) + len(document_widget_columns)
 
     @staticmethod
     def get_document_columns_dict():
@@ -247,9 +255,7 @@ class Columns:
                 ].index(key_name) + 1
 
     @staticmethod
-    def get_video_columns_count():
-        return 1 + len(video_data_columns) + len(video_widget_columns)
-
-    @classmethod
-    def get_document_columns_count(cls):
-        return len(document_data_columns) + len(document_widget_columns)
+    def get_document_column_index_by_key(key_name):
+        return [*document_data_columns.keys(),
+                *document_widget_columns.keys(),
+                ].index(key_name)

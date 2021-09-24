@@ -120,6 +120,7 @@ class Table:
             download_video_button = self.video_ids[video_id]['download_video_button']
             play_video_button = self.video_ids[video_id]['play_video_button']
             download_chat_button = self.video_ids[video_id]['download_chat_button']
+            open_folder_button = self.video_ids[video_id]['open_folder_button']
             progressbar_widget = self.video_ids[video_id]['progressbar']
 
             download_video_button: QPushButton
@@ -210,6 +211,7 @@ class Table:
             'download_video_button': video_actions_widget.layout().itemAt(0).widget(),
             'play_video_button': video_actions_widget.layout().itemAt(1).widget(),
             'download_chat_button': video_actions_widget.layout().itemAt(2).widget(),
+            'open_folder_button': video_actions_widget.layout().itemAt(3).widget(),
         }
 
         # for index in range(len(online_data)):
@@ -341,5 +343,6 @@ class Table:
         dl_button = self.video_ids[video_id]['download_video_button']
         pl_button = self.video_ids[video_id]['play_video_button']
         cc_button = self.video_ids[video_id]['download_chat_button']
+        of_button = self.video_ids[video_id]['open_folder_button']
         progresbar_widget = self.video_ids[video_id]['progressbar']
-        return progresbar_widget, (dl_button, pl_button, cc_button)
+        return progresbar_widget, (dl_button, pl_button, cc_button, of_button)

@@ -44,3 +44,8 @@ class Labels(enum.Enum):
 
     SUBJECT_NAME = 'subjectName'
     SUBJECT_NAME_SHORT = 'subjectNameShort'
+
+    DOCUMENT__OPEN_FOLDER = 'open_folder'
+    DOCUMENT__OPEN_DOCUMENT = 'open_document'
+    DOCUMENT__ATTACH_DOCUMENT = 'attach_document'
+    DOCUMENT__DOWNLOAD_DOCUMENT = 'download_document'

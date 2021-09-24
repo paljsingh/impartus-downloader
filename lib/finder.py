@@ -124,13 +124,12 @@ class Finder:
             return None, None
 
     def get_offline_backpack_slides(self, mapping_by_subject_name=None):
-        # backpack_slides = defaultdict(list)
         for dirpath, subdirs, files in os.walk(self.conf.get('target_dir').get(platform.system())):
             for filename in files:
                 for ext in self.conf.get('allowed_ext'):
                     if filename.endswith(ext):
                         filepath = os.path.join(dirpath, filename)
-                        parsed_fields = MetadataFileParser().parse_from_filepath(filepath, ConfigKeys.SLIDES_PATH.value)
+                        parsed_fields = MetadataFileParser().parse_from_filepath(filepath, ConfigKeys.DOCUMENTS_PATH.value)
 
                         prof_name = None
                         if parsed_fields.get('professorName'):
@@ -138,12 +137,13 @@ class Finder:
 
                         subject_metadata = self._get_subject_info(parsed_fields, mapping_by_subject_name)
                         backpack_slide = {
-                            'filePath': filepath,
+                            'offline_filepath': filepath,
                             'fileName': filename,
                             'fileLength': os.path.getsize(filepath) // 1024,
                             'fileDate': datetime.fromtimestamp(os.path.getmtime(filepath)).strftime("%Y-%m-%d"),
                             'description': '',
                             'professorName': prof_name,
+                            'ext': str.split(filepath, '.')[-1],
                         }
                         yield subject_metadata, backpack_slide
 

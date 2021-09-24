@@ -287,6 +287,6 @@ class Impartus:
         yield from RegularVideo(subjects, self.session, self.timeouts).get_lectures()
         yield from FlippedVideo(subjects, self.session, self.timeouts).get_lectures()
 
-    def download_slides(self, rf_id, file_url, filepath):
+    def download_slides(self, file_url, filepath):
         return BackpackSlides(self.token, self.timeouts, self.logger, self.conf)\
-            .download_slides(rf_id, file_url, filepath)
+            .download_slides(file_url, filepath)

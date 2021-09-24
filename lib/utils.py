@@ -83,16 +83,16 @@ class Utils:
                 return url
 
     @classmethod
-    def get_filepath(cls, video_metadata, config_key: str):
+    def get_filepath(cls, metadata, config_key: str):
         conf = cls.conf
         download_dir = conf.get(ConfigKeys.TARGET_DIR.value).get(platform.system())
         if conf.get(ConfigKeys.USE_SAFE_PATHS.value):
-            sanitized_components = MetadataDictParser.sanitize(MetadataDictParser.parse_metadata(video_metadata))
+            sanitized_components = MetadataDictParser.sanitize(MetadataDictParser.parse_metadata(metadata))
             file_path = conf.get(config_key).format(
-                **{**video_metadata, **sanitized_components}, target_dir=download_dir
+                **{**metadata, **sanitized_components}, target_dir=download_dir
             )
         else:
-            file_path = conf.get(config_key).format(**video_metadata, target_dir=download_dir)
+            file_path = conf.get(config_key).format(**metadata, target_dir=download_dir)
         return file_path
 
     @staticmethod
@@ -100,8 +100,8 @@ class Utils:
         return Utils.get_filepath(video_metadata, ConfigKeys.VIDEO_PATH.value)
 
     @staticmethod
-    def get_slides_path(video_metadata):
-        return Utils.get_filepath(video_metadata, ConfigKeys.SLIDES_PATH.value)
+    def get_documents_path(metadata):
+        return Utils.get_filepath(metadata, ConfigKeys.DOCUMENTS_PATH.value)
 
     @staticmethod
     def get_captions_path(video_metadata):

@@ -1,16 +1,17 @@
-import concurrent
 import shutil
-import concurrent.futures
 from functools import partial
 
+from PySide2.QtCore import QThread
 from PySide2.QtWidgets import QFileDialog, QTreeWidget
 
 from lib.config import Config, ConfigType
 from lib.core.impartus import Impartus
+from lib.data.labels import Labels
 from lib.threadlogging import ThreadLogger
 from lib.utils import Utils
 from lib.data.actionitems import ActionItems
 from lib.data.columns import Columns
+from ui.helpers.worker import Worker
 from ui.uiitems.tree import Tree
 
 
@@ -29,81 +30,106 @@ class Documents:
         self.data = None
 
         # video actions
-        callbacks = {
-            'download_slides': partial(self.on_click_download_slides),
-            'attach_slides': partial(self.on_click_attach_slides),
-            'open_folder': partial(self.on_click_open_folder)
+        self.callbacks = {
+            Labels.DOCUMENT__DOWNLOAD_DOCUMENT.value: partial(self.on_click_download_document),
+            Labels.DOCUMENT__OPEN_DOCUMENT.value: partial(self.on_click_open_document),
+            Labels.DOCUMENT__OPEN_FOLDER.value: partial(self.on_click_open_folder),
+            Labels.DOCUMENT__ATTACH_DOCUMENT.value: partial(self.on_click_attach_slides),
         }
-        self.tree = Tree(treewidget, self.impartus, callbacks)
+
+        # construct treeview
+        self.tree = Tree(treewidget, self.impartus, self.callbacks)
 
     def reset_content(self):
         self.data = None
         self.tree.reset_content()
 
-    def _download_slides(self, rf_id: int, slide_url: str, filepath: str):
+    def _download_document(self, file_url: str, filepath: str):
         """
         Download a slide doc in a thread. Update the UI upon completion.
         """
         # create a new Impartus session reusing existing token.
         imp = Impartus(self.impartus.token)
-        if imp.download_slides(rf_id, slide_url, filepath):
-            return True
-        else:
-            self.logger.error('Error', 'Error downloading slides.')
-            return False
+        return imp.download_slides(file_url, filepath)
 
-    def on_click_download_slides(self, metadata):  # noqa
+    def on_click_download_document(self, index, subject, metadata ):  # noqa
         """
         callback function for Download button.
         Creates a thread to download the request video.
         """
-        # metadata = self.data.get(rf_id)
-        slide_url = metadata.get('slide_url')
-        filepath = Utils.get_slides_path(metadata)
 
-        # row = self.get_row_from_rfid(rf_id)
-        col = Columns.get_column_index_by_key('slides_actions')
-        ds_field = ActionItems.get_action_item_index('slides_actions', 'download_slides')
-        # ds_button = self.treewidget.cellWidget(row, col).layout().itemAt(ds_field).widget()
+        document_index = metadata.get('seqNo') - 1
+        slide_url = metadata.get('fileUrl')
+        filepath = Utils.get_documents_path(metadata)
 
-        of_field = ActionItems.get_action_item_index('slides_actions', 'open_folder')
-        # of_button = self.treewidget.cellWidget(row, col).layout().itemAt(of_field).widget()
+        doc_col = Columns.get_document_column_index_by_key(Labels.DOCUMENT__ACTIONS.value)
+        tree_widget_item = self.tree.treewidget.topLevelItem(index).child(document_index)
 
-        ss_field = ActionItems.get_action_item_index('slides_actions', 'show_slides')
-        # ss_combo = self.treewidget.cellWidget(row, col).layout().itemAt(ss_field).widget()
+        dd_col = ActionItems.get_action_item_index(
+            Labels.DOCUMENT__ACTIONS.value, Labels.DOCUMENT__DOWNLOAD_DOCUMENT.value)
+        dd_button = self.tree.treewidget.itemWidget(tree_widget_item, doc_col).layout().itemAt(dd_col).widget()
 
-        as_field = ActionItems.get_action_item_index('slides_actions', 'attach_slides')
-        # as_button = self.treewidget.cellWidget(row, col).layout().itemAt(as_field).widget()
+        od_col = ActionItems.get_action_item_index(
+            Labels.DOCUMENT__ACTIONS.value, Labels.DOCUMENT__OPEN_DOCUMENT.value)
+        od_button = self.tree.treewidget.itemWidget(tree_widget_item, doc_col).layout().itemAt(od_col).widget()
 
-        # widgets = {
-        #     'download_slides': ds_button,
-        #     'open_folder': of_button,
-        #     'show_slides': ss_combo,
-        #     'attach_slides': as_button,
-        # }
-        # ds_button.setEnabled(False)
-        with concurrent.futures.ThreadPoolExecutor(3) as executor:
-            future = executor.submit(self._download_slides, slide_url, filepath)
-            return_value = future.result()
+        of_col = ActionItems.get_action_item_index(
+            Labels.DOCUMENT__ACTIONS.value, Labels.DOCUMENT__OPEN_FOLDER.value)
+        of_button = self.tree.treewidget.itemWidget(tree_widget_item, doc_col).layout().itemAt(of_col).widget()
 
-            # if return_value:
-            #     # add new slides file to the existing list.
-            #     if not self.data[rf_id].get('backpack_slides'):
-            #         self.data[rf_id]['backpack_slides'] = list()
-            #     self.data.get(rf_id)['backpack_slides'].append(filepath)
-            #
-            #     widgets['show_slides'].add_items([filepath])
-            #     widgets['open_folder'].setEnabled(True)
-            #     widgets['attach_slides'].setEnabled(True)
-            # else:
-            #     widgets['download_slides'].setEnabled(True)
+        ad_col = ActionItems.get_action_item_index(
+            Labels.DOCUMENT__ACTIONS.value, Labels.DOCUMENT__ATTACH_DOCUMENT.value)
+        ad_button = self.tree.treewidget.itemWidget(tree_widget_item, doc_col).layout().itemAt(ad_col).widget()
+
+        pushbuttons = {
+            'download_doc': dd_button,
+            'open_doc': od_button,
+            'open_folder': of_button,
+            'attach_doc': ad_button,
+        }
+        dd_button.setEnabled(False)
+
+        thread = Worker()
+        thread.set_task(partial(self._download_document, slide_url, filepath))
+        thread.finished.connect(partial(self.thread_finished, pushbuttons, filepath))
+
+        self.workers[filepath] = {
+            'pushbuttons': pushbuttons,
+            'thread':   thread,
+        }
+
+        thread.start(priority=QThread.Priority.IdlePriority)
+
+
+    def thread_finished(self, pushbuttons, filepath):     # noqa
+        if self.workers.get(filepath):
+            # successful run.
+            return_status = self.workers[filepath]['thread'].status
+            if return_status:
+                pushbuttons['open_doc'].setEnabled(True)
+                pushbuttons['open_folder'].setEnabled(True)
+                pushbuttons['attach_doc'].setEnabled(True)
+                pushbuttons['download_doc'].setEnabled(False)
+            else:
+                try:
+                    pushbuttons['open_doc'].setEnabled(False)
+                    pushbuttons['open_folder'].setEnabled(False)
+                    pushbuttons['attach_doc'].setEnabled(False)
+                    pushbuttons['download_doc'].setEnabled(True)
+                except RuntimeError as ex:
+                    self.logger.error("Error in downloading document: {}".format(ex))
+                    pass
+            del self.workers[filepath]
+
+
+
+    def on_click_open_document(self, file_path: str):
+        Utils.open_file(file_path)
 
     def on_click_open_folder(self, folder_path: str):
-        # folder_path = self.get_folder_from_rfid(rf_id)
         Utils.open_file(folder_path)
 
     def on_click_attach_slides(self, folder_path: str):
-        # folder_path = self.get_folder_from_rfid(rf_id)
         conf = Config.load(ConfigType.IMPARTUS)
         filters = ['{} files (*.{})'.format(str(x).title(), x) for x in conf.get('allowed_ext')]
         filters_str = ';;'.join(filters)
@@ -115,11 +141,6 @@ class Documents:
         )
         if not filepaths:
             return
-
-        # row = self.get_row_from_rfid(rf_id)
-        # col = Columns.get_column_index_by_key('slides_actions')
-        # ss_field = ActionItems.get_action_item_index('slides_actions', 'show_slides')
-        # ss_combobox = self.treewidget.cellWidget(row, col).layout().itemAt(ss_field).widget()
 
         for filepath in filepaths[0]:
             dest_path = shutil.copy(filepath, folder_path)

@@ -1,13 +1,14 @@
 from PySide2 import QtCore, QtWidgets
-from PySide2.QtCore import QFile
+from PySide2.QtCore import QFile, QObject
 from PySide2.QtUiTools import QUiLoader
-from PySide2.QtWidgets import QMainWindow, QTableWidget, QPlainTextEdit, QTreeWidget
+from PySide2.QtWidgets import QMainWindow, QTableWidget, QPlainTextEdit, QTreeWidget, QTabWidget
 
 from lib.finder import Finder
 from lib.core.impartus import Impartus
 from ui.callbacks.buttoncallbacks import ButtonCallbacks
 from ui.callbacks.menucallbacks import MenuCallbacks
 from lib.data.labels import Labels
+from ui.callbacks.utils import CallbackUtils
 from ui.helpers.datautils import DataUtils
 from ui.uiitems.search import SearchBox
 from ui.uiitems.videos import Videos
@@ -42,6 +43,12 @@ class ContentWindow(QMainWindow):
         self.tree_widget: QTreeWidget
         self.documents_tab = Documents(self.tree_widget, self.impartus)
 
+        # events for tab switch
+        self.tab_widget = self.content_form.findChild(QTabWidget, "tab_widget")
+        self.tab_widget: QTabWidget
+        self.tab_widget.setDocumentMode(True)
+        self.tab_widget.currentChanged.connect(self.on_click_tab_change)
+
         self.setContentsMargins(5, 0, 5, 0)
         screen_size = QtWidgets.QApplication.primaryScreen().size()
         self.setMaximumSize(screen_size)
@@ -58,6 +65,15 @@ class ContentWindow(QMainWindow):
 
     def setup(self):
         pass
+
+    def on_click_tab_change(self, index: int):
+        tabs = {0: 'Video', 1: 'Slides'}
+        for i, tab_name in tabs.items():
+            menu_item = CallbackUtils().content_window.menuBar().findChild(QObject, tab_name)
+            if i == index:
+                MenuCallbacks().enable_menu_items(menu_item)
+            else:
+                MenuCallbacks().disable_menu_items(menu_item)
 
     def keyPressEvent(self, e):
         # TODO: this can be moved to search class.
@@ -77,7 +93,7 @@ class ContentWindow(QMainWindow):
 
         # when scanning offline documents, we get 1 document at a time, and identify it's subject (metadata)
         for subject, document in Finder().get_offline_backpack_slides():
-            self.documents_tab.tree.add_row_items(subject, [document], documents_downloaded=True)
+            self.documents_tab.tree.add_row_items(subject, [document], document_downloaded=True)
 
         MenuCallbacks().set_menu_statuses()
         ButtonCallbacks().set_pushbutton_statuses()
@@ -105,11 +121,11 @@ class ContentWindow(QMainWindow):
 
         # when fetching online documents, the api returns all the available documents (metadata) for a given subject.
         for subject_metadata, documents in self.impartus.get_slides(subjects):
-            self.documents_tab.tree.add_row_items(subject_metadata, documents)
+            self.documents_tab.tree.add_row_items(subject_metadata, documents, document_downloaded=False)
 
         # when scanning offline documents, we get 1 document at a time, and identify it's subject (metadata).
         for subject_metadata, document in Finder().get_offline_backpack_slides(mapping_by_name):
-            self.documents_tab.tree.add_row_items(subject_metadata, [document])
+            self.documents_tab.tree.add_row_items(subject_metadata, [document], document_downloaded=True)
 
         MenuCallbacks().set_menu_statuses()
         ButtonCallbacks().set_pushbutton_statuses()
