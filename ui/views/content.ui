@@ -212,7 +212,7 @@
        </widget>
        <widget class="QWidget" name="tab_lectures">
         <attribute name="title">
-         <string>Slides</string>
+         <string>Backpack</string>
         </attribute>
         <widget class="QTreeWidget" name="lectures_treewidget">
          <property name="geometry">

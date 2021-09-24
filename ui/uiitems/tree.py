@@ -3,6 +3,7 @@ from functools import partial
 from typing import Dict
 from PySide2 import QtCore
 from PySide2.QtWidgets import QHeaderView, QWidget, QTreeWidget, QTreeWidgetItem
+import re
 
 from lib.config import Config, ConfigType
 from lib.core.impartus import Impartus
@@ -101,6 +102,7 @@ class Tree:
 
             if not document.get('ext'):
                 document['ext'] = str.split(document['filePath'], '.')[-1]
+            document['fileName'] = re.sub('.{}$'.format(document['ext']), '', document['fileName'])
 
             document['subjectNameShort'] = subject_name
             document['seqNo'] = seq_no
