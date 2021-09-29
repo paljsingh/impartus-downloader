@@ -35,11 +35,10 @@ class WidgetCreator:
                 yield pushbutton
 
     @classmethod
-    def add_checkbox_widget(cls, data, callback: Callable):
+    def add_checkbox_widget(cls, data):
         container_widget = QWidget()
         checkbox = CustomCheckBox()
         checkbox.setValue(data)
-        checkbox.clicked.connect(partial(callback, checkbox))
         container_widget_layout = QHBoxLayout(container_widget)
         container_widget_layout.addWidget(checkbox)
         container_widget_layout.setAlignment(QtCore.Qt.AlignCenter)

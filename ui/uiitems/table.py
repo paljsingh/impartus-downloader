@@ -164,7 +164,7 @@ class Table:
             'is_flipped': is_flipped,
             'video_id': video_id,
         }
-        checkbox_container = WidgetCreator.add_checkbox_widget(data, self.on_click_checkbox)
+        checkbox_container = WidgetCreator.add_checkbox_widget(data)
         self.table_widget.setCellWidget(self.index, 0, checkbox_container)
 
         # enumerate rest of the columns from 1
@@ -236,12 +236,6 @@ class Table:
     def on_row_select(self, row_index):
         checkbox = self.table_widget.cellWidget(row_index.row(), 0).layout().itemAt(0).widget()
         self.table_widget.scrollToItem(self.table_widget.item(row_index.row(), 0))
-        if self.selected_checkbox and self.selected_checkbox != checkbox:
-            self.selected_checkbox.setChecked(False)
-        self.selected_checkbox = checkbox
-        MenuCallbacks().set_menu_statuses()
-
-    def on_click_checkbox(self, checkbox: QCheckBox):
         if self.selected_checkbox and self.selected_checkbox != checkbox:
             self.selected_checkbox.setChecked(False)
         self.selected_checkbox = checkbox
