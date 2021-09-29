@@ -5,7 +5,8 @@ import qtawesome as qta
 
 from PySide2 import QtCore, QtWidgets
 from PySide2.QtGui import QIcon
-from PySide2.QtWidgets import QTableWidget, QTableWidgetItem, QHeaderView, QCheckBox, QWidget, QPushButton
+from PySide2.QtWidgets import QTableWidget, QTableWidgetItem, QHeaderView, QCheckBox, QWidget, QPushButton, \
+    QAbstractItemView
 
 from lib.config import Config, ConfigType
 from lib.core.impartus import Impartus
@@ -59,6 +60,9 @@ class Table:
         self.video_ids = dict()
         self.index = 0
         self.table_widget = self._setup_table(self.table_widget)
+        self.table_widget.setSortingEnabled(False)
+        selection_model = self.table_widget.selectionModel()
+        selection_model.currentChanged.connect(self.on_row_select)
 
     def _setup_table(self, table_widget):
         table_widget.setSortingEnabled(False)
@@ -66,14 +70,14 @@ class Table:
         table_widget.setRowCount(0)
         borders = 10
         tab_width = 10
-        # scrollbar = 10
         table_widget.parentWidget().setMaximumWidth(QtWidgets.QApplication.primaryScreen().size().width() - 2 * borders)
         table_widget.setMaximumWidth(QtWidgets.QApplication.primaryScreen().size().width() - 2 * borders - tab_width)
-        # table_widget.setMaximumWidth(table_widget.parentWidget().width() - 30)
 
         col_count = Columns.get_video_columns_count()
         table_widget.setColumnCount(col_count)
         table_widget = self._set_headers(table_widget)
+        table_widget.setSelectionBehavior(QAbstractItemView.SelectRows)
+
         return table_widget
 
     def post_fill_tasks(self):
@@ -83,11 +87,12 @@ class Table:
             Columns.get_column_index_by_key('startDate'), QtCore.Qt.SortOrder.DescendingOrder)
 
     def _set_headers(self, table_widget):
-        # header item for checkboxes column (TODO: check if it is possible to add a 'select all' checkbox here.)
+        # header item for checkboxes column
         widget = QTableWidgetItem()
         widget.setText('')
         table_widget.setHorizontalHeaderItem(0, widget)
         table_widget.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
+        table_widget.setColumnHidden(0, True)
 
         for i, (col, item) in enumerate(Columns.get_video_columns_dict().items(), 1):
             if item.get('initial_size') and item['resize_policy'] != QHeaderView.ResizeMode.Stretch:
@@ -129,6 +134,7 @@ class Table:
             if video_downloaded:
                 download_video_button.setEnabled(False)
                 play_video_button.setEnabled(True)
+                open_folder_button.setEnabled(True)
                 progressbar_widget.setValue(100)
             else:
                 download_video_button.setEnabled(True)
@@ -140,6 +146,7 @@ class Table:
                 download_chat_button.setEnabled(True)
             else:
                 download_chat_button.setEnabled(False)
+                open_folder_button.setEnabled(True)
 
     def add_row_item(self, video_id, video_metadata, chats_path=None, is_flipped=False, video_downloaded=False):
         chat_downloaded = True if chats_path else False
@@ -170,7 +177,6 @@ class Table:
         col = len(columns.video_data_columns) + 1
 
         # flipped icon column.
-
         flipped_col = columns.video_widget_columns['flipped']
         flipped_icon = qta.icon(flipped_col['icon']) if is_flipped else QIcon()
         flipped_icon_widget = CustomTableWidgetItem()
@@ -226,6 +232,14 @@ class Table:
         for i in range(len(['id', *columns.video_data_columns, *columns.video_widget_columns])):
             table_widget.horizontalHeader().setSectionResizeMode(i, QHeaderView.Interactive)
         return table_widget
+
+    def on_row_select(self, row_index):
+        checkbox = self.table_widget.cellWidget(row_index.row(), 0).layout().itemAt(0).widget()
+        self.table_widget.scrollToItem(self.table_widget.item(row_index.row(), 0))
+        if self.selected_checkbox and self.selected_checkbox != checkbox:
+            self.selected_checkbox.setChecked(False)
+        self.selected_checkbox = checkbox
+        MenuCallbacks().set_menu_statuses()
 
     def on_click_checkbox(self, checkbox: QCheckBox):
         if self.selected_checkbox and self.selected_checkbox != checkbox:
