@@ -152,9 +152,10 @@ class Videos:
             Utils.open_file(video_metadata.get('offline_filepath'))
 
     def on_click_download_chats(self, video_id: int, is_flipped=False):
-        video_metadata = self.table.video_ids.get(video_id).get('metadata')
-        if video_metadata and video_metadata.get('download_chat_button'):
-            dc_button = video_metadata['download_chat_button']
+        video_data = self.table.video_ids.get(video_id)
+        if video_data and video_data.get('download_chat_button'):
+            dc_button = video_data['download_chat_button']
+            video_metadata = video_data.get('metadata')
             chat_msgs = self.impartus.get_chats(video_metadata)
             captions_path = Utils.get_captions_path(video_metadata)
             status = Captions.save_as_captions(video_id, video_metadata, chat_msgs, captions_path)
