@@ -61,8 +61,7 @@ class Table:
         self.index = 0
         self.table_widget = self._setup_table(self.table_widget)
         self.table_widget.setSortingEnabled(False)
-        selection_model = self.table_widget.selectionModel()
-        selection_model.currentChanged.connect(self.on_row_select)
+        self.table_widget.selectionModel().currentChanged.connect(self.on_row_select)
 
     def _setup_table(self, table_widget):
         table_widget.setSortingEnabled(False)

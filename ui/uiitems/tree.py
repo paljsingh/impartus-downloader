@@ -2,6 +2,7 @@ import os
 from functools import partial
 from typing import Dict
 from PySide2 import QtCore
+from PySide2.QtCore import QModelIndex
 from PySide2.QtWidgets import QHeaderView, QWidget, QTreeWidget, QTreeWidgetItem
 import re
 
@@ -12,6 +13,7 @@ from lib.data.labels import Labels
 from lib.threadlogging import ThreadLogger
 from lib.utils import Utils
 from lib.variables import Variables
+from ui.callbacks.menucallbacks import MenuCallbacks
 from ui.callbacks.utils import CallbackUtils
 from ui.helpers.widgetcreator import WidgetCreator
 from ui.uiitems.customwidgets.customtreewidgetitem import CustomTreeWidgetItem
@@ -41,9 +43,12 @@ class Tree:
         self.logger = ThreadLogger(self.__class__.__name__).logger
 
         self.treewidget = self.setup_tree(treewidget)
+        self.treewidget.selectionModel().currentChanged.connect(self.on_row_select)
+
         self.documents = dict()
         self.items = dict()
         self.top_level_index = 0
+        self.selected = None
 
     def reset_content(self):
         self.documents = dict()
@@ -61,6 +66,7 @@ class Tree:
         treewidget.setColumnCount(col_count)
 
         treewidget = self._set_headers(treewidget)
+
         return treewidget
 
     def _set_headers(self, treewidget):
@@ -109,14 +115,14 @@ class Tree:
             if not document.get('offline_filepath'):
                 document['offline_filepath'] = Utils.get_documents_path(document)
 
-            self.add_row_item(index, item, document, subject_name, document_downloaded)
+            child_widget = self.add_row_item(index, item, document, subject_name, document_downloaded)
             seq_no += 1
 
             key = document.get('offline_filepath')
             self.documents[key] = {
-                'subject_name': subject_name,
+                'subject': subject_name,
                 'metadata': document,
-                'root_widget': item,
+                'widget': child_widget,
             }
 
     def add_row_item(self, index, item, document, subject_name, downloaded=False):
@@ -136,6 +142,7 @@ class Tree:
         item.addChild(item_child)
 
         CallbackUtils().processEvents()
+        return item_child
 
     def resizable_headers(self):
         # Todo ...
@@ -171,7 +178,7 @@ class Tree:
         cell_value = ''
         for pushbutton in WidgetCreator.add_actions_buttons(ActionItems.slides_actions):
             widget_layout.addWidget(pushbutton)
-            btn_type, btn_state = self.set_pushbutton_statuses(pushbutton, metadata, self.callbacks, index, subject)
+            btn_type, btn_state = self.set_pushbutton_statuses(pushbutton, metadata, self.callbacks, widget, subject)
 
             # a slightly hackish way to sort widgets -
             # create an integer out of the (slide count, button1_state, button2_state, ...)
@@ -180,16 +187,16 @@ class Tree:
 
         return widget, int(cell_value)
 
-    def set_pushbutton_statuses(self, pushbutton, metadata, callbacks, index=None, subject=None):
+    def set_pushbutton_statuses(self, pushbutton, metadata, callbacks, widget, subject=None):
         filepath = metadata.get('offline_filepath')
         assert(filepath is not None)
         # slides download is enabled if the slides file exists on server, but not locally.
         if pushbutton.objectName() == ActionItems.slides_actions[Labels.DOCUMENT__DOWNLOAD_DOCUMENT.value]['text']:
-            assert(index is not None)
+            assert(widget is not None)
             assert(subject is not None)
             btn_type = Labels.DOCUMENT__DOWNLOAD_DOCUMENT.value
             pushbutton.clicked.connect(partial(callbacks[Labels.DOCUMENT__DOWNLOAD_DOCUMENT.value],
-                                               index, subject, metadata))
+                                               subject, metadata, widget))
 
             if self.impartus.is_authenticated():
                 file_url = metadata.get('fileUrl')
@@ -237,3 +244,16 @@ class Tree:
 
         pushbutton.setEnabled(btn_state)
         return btn_type, btn_state
+
+    def on_row_select(self, selected: QModelIndex, deselected: QModelIndex):
+        self.treewidget: QTreeWidget
+        top_level_item = self.treewidget.topLevelItem(selected.parent().row())
+        widget_item = top_level_item.child(selected.row()) if top_level_item else None
+        if not widget_item:
+            self.selected = {}
+            return
+
+        key_col = Columns.get_document_column_index_by_key(Labels.DOCUMENT__OFFLINE_FILEPATH.value)
+        document_key = widget_item.text(key_col)
+        self.selected = self.documents.get(document_key)
+        MenuCallbacks().set_menu_statuses()

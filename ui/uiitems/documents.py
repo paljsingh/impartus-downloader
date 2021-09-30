@@ -11,6 +11,7 @@ from lib.threadlogging import ThreadLogger
 from lib.utils import Utils
 from lib.data.actionitems import ActionItems
 from lib.data.columns import Columns
+from ui.callbacks.menucallbacks import MenuCallbacks
 from ui.helpers.worker import Worker
 from ui.uiitems.tree import Tree
 
@@ -32,9 +33,9 @@ class Documents:
         # video actions
         self.callbacks = {
             Labels.DOCUMENT__DOWNLOAD_DOCUMENT.value: partial(self.on_click_download_document),
-            Labels.DOCUMENT__OPEN_DOCUMENT.value: partial(self.on_click_open_document),
+            Labels.DOCUMENT__OPEN_DOCUMENT.value: partial(self.on_click_view_document),
             Labels.DOCUMENT__OPEN_FOLDER.value: partial(self.on_click_open_folder),
-            Labels.DOCUMENT__ATTACH_DOCUMENT.value: partial(self.on_click_attach_slides),
+            Labels.DOCUMENT__ATTACH_DOCUMENT.value: partial(self.on_click_attach_document),
         }
 
         # construct treeview
@@ -52,18 +53,18 @@ class Documents:
         imp = Impartus(self.impartus.token)
         return imp.download_slides(file_url, filepath)
 
-    def on_click_download_document(self, index, subject, metadata ):  # noqa
+    def on_click_download_document(self, subject, metadata, tree_widget_item):  # noqa
         """
         callback function for Download button.
         Creates a thread to download the request video.
         """
 
-        document_index = metadata.get('seqNo') - 1
+        # document_index = metadata.get('seqNo') - 1
         slide_url = metadata.get('fileUrl')
         filepath = Utils.get_documents_path(metadata)
 
         doc_col = Columns.get_document_column_index_by_key(Labels.DOCUMENT__ACTIONS.value)
-        tree_widget_item = self.tree.treewidget.topLevelItem(index).child(document_index)
+        # tree_widget_item = self.tree.treewidget.topLevelItem(index).child(document_index)
 
         dd_col = ActionItems.get_action_item_index(
             Labels.DOCUMENT__ACTIONS.value, Labels.DOCUMENT__DOWNLOAD_DOCUMENT.value)
@@ -120,16 +121,15 @@ class Documents:
                     self.logger.error("Error in downloading document: {}".format(ex))
                     pass
             del self.workers[filepath]
+            MenuCallbacks.set_menu_statuses()
 
-
-
-    def on_click_open_document(self, file_path: str):
+    def on_click_view_document(self, file_path: str):
         Utils.open_file(file_path)
 
     def on_click_open_folder(self, folder_path: str):
         Utils.open_file(folder_path)
 
-    def on_click_attach_slides(self, folder_path: str):
+    def on_click_attach_document(self, folder_path: str):
         conf = Config.load(ConfigType.IMPARTUS)
         filters = ['{} files (*.{})'.format(str(x).title(), x) for x in conf.get('allowed_ext')]
         filters_str = ';;'.join(filters)

@@ -35,6 +35,7 @@ class Labels(enum.Enum):
     VIDEO__REGULAR_ID = 'ttid'
     VIDEO__FLIPPED_ID = 'fcid'
 
+    DOCUMENT__OFFLINE_FILEPATH = 'offline_filepath'
     DOCUMENT__SUBJECT_NAME = 'subjectNameShort'
     DOCUMENT__SEQ = 'seqNo'
     DOCUMENT__FILENAME = 'fileName'

@@ -112,7 +112,7 @@ class MenuItems:
                 'icon': Icons.MENU__DOWNLOAD_CAPTIONS.value,
                 'shortcut': 'Shift+Ctrl+J',
                 'status_tip': 'Download Lecture Chats',
-                'callback': MenuCallbacks().on_click__menu__video_download_lecture_videos,
+                'callback': MenuCallbacks().on_click__menu__video_download_lecture_chats,
             },
             'Open Folder': {
                 'icon': Icons.MENU__OPEN_FOLDER.value,
@@ -122,11 +122,17 @@ class MenuItems:
             },
         },
         'Slides': {
-            'Download Backpack Slides': {
+            'Download Backpack Document': {
                 'icon': Icons.MENU__DOWNLOAD_SLIDES.value,
                 'shortcut': 'Ctrl+K',
                 'status_tip': 'Download Lecture Slides',
                 'callback': MenuCallbacks().on_click__menu__slides_download_backpack_slides,
+            },
+            'View Document': {
+                'icon': Icons.MENU__SHOW_SLIDES.value,
+                'shortcut': 'Shift+Ctrl+P',
+                'status_tip': 'View Document',
+                'callback': MenuCallbacks().on_click__menu__slides_view_document,
             },
             'Open Folder': {
                 'icon': Icons.MENU__OPEN_FOLDER.value,

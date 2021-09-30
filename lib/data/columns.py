@@ -142,6 +142,19 @@ data_columns = {
         'sortable': True,
         'title_case': True,
     },
+    Labels.DOCUMENT__OFFLINE_FILEPATH.value: {
+        'alignment': Qt.AlignLeft | Qt.AlignVCenter,
+        'display_name': 'Offline Filepath',
+        'editable': False,
+        'hidden': True,
+        'menu_name': 'Offline Filepath',
+        'menu_tooltip': 'Offline Filepath',
+        'original_values_col': None,
+        'resize_policy': QHeaderView.ResizeMode.Stretch,
+        'initial_size': 100,
+        'sortable': False,
+        'title_case': False,
+    },
 }
 
 widget_columns = {
@@ -209,8 +222,8 @@ video_data_columns = {
 
 document_data_columns = {
     k: data_columns.get(k) for k in
-    [Labels.DOCUMENT__SUBJECT_NAME.value, Labels.DOCUMENT__FILENAME.value, Labels.DOCUMENT__FILESIZE.value,
-     Labels.DOCUMENT__DATE.value]
+    [Labels.DOCUMENT__SUBJECT_NAME.value, Labels.DOCUMENT__FILENAME.value,
+     Labels.DOCUMENT__FILESIZE.value, Labels.DOCUMENT__DATE.value, Labels.DOCUMENT__OFFLINE_FILEPATH.value]
 }
 
 video_widget_columns = {

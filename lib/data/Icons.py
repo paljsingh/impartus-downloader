@@ -50,6 +50,7 @@ class Icons(enum.Enum):
     MENU__OPEN_FOLDER = 'fa5.folder-open'
 
     MENU__DOWNLOAD_SLIDES = 'fa5s.file-download'
+    MENU__SHOW_SLIDES = 'fa5.file-pdf'
     MENU__DOWNLOAD_CAPTIONS = 'fa5.closed-captioning'
     MENU__ATTACH_SLIDES = 'fa5s.link'
 

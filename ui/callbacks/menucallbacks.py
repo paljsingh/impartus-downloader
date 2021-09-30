@@ -5,7 +5,6 @@ from PySide2.QtCore import QObject
 from PySide2.QtWidgets import QLabel, QTreeWidget, QTreeWidgetItem, QMessageBox
 
 from lib import version
-from lib.data.configkeys import ConfigKeys
 from lib.utils import Utils
 from ui.callbacks.utils import CallbackUtils
 from lib.data.docs import Docs
@@ -29,7 +28,7 @@ class MenuCallbacks:
                 return act
 
     @classmethod
-    def set_menu_statuses(cls):
+    def _set_video_menu_statuses(cls):
         is_authenticated = CallbackUtils().impartus.is_authenticated()
 
         actions_menu = CallbackUtils().content_window.menuBar().findChild(QObject, 'Actions')
@@ -66,19 +65,15 @@ class MenuCallbacks:
 
         table = CallbackUtils().content_window.videos_tab.table
         video_info = table.selected_checkbox.getValue() if table.selected_checkbox else None
-
         video_menu = CallbackUtils().content_window.menuBar().findChild(QObject, 'Video')
-        slides_menu = CallbackUtils().content_window.menuBar().findChild(QObject, 'Slides')
 
         if not video_info:
             cls.disable_menu_items(video_menu)
-            cls.disable_menu_items(slides_menu)
             return
 
         video_id = video_info.get('video_id')
         if not video_id or not table.video_ids.get(video_id):
             cls.disable_menu_items(video_menu)
-            cls.disable_menu_items(slides_menu)
             return
 
         video_metadata = table.video_ids[video_id]['metadata']
@@ -117,14 +112,27 @@ class MenuCallbacks:
         else:
             video_open_folder_menu.setEnabled(False)
 
-        download_slides_menu = cls.get_action(slides_menu, 'Download Backpack Slides')
+    @classmethod
+    def _set_slides_menu_statuses(cls):
+        is_authenticated = CallbackUtils().impartus.is_authenticated()
+
+        # Slides menu
+        tree = CallbackUtils().content_window.documents_tab.tree
+        slides_menu = CallbackUtils().content_window.menuBar().findChild(QObject, 'Slides')
+        if not tree.selected:
+            cls.disable_menu_items(slides_menu)
+            return
+
+        document_metadata = tree.selected['metadata']
+        download_slides_menu = cls.get_action(slides_menu, 'Download Backpack Document')
+        slides_view_document_menu = cls.get_action(slides_menu, 'View Document')
         slides_open_folder_menu = cls.get_action(slides_menu, 'Open Folder')
         attach_slides_menu = cls.get_action(slides_menu, 'Attach Lecture Slides')
 
         # enable document download menu, when -
         # user logged in to to impartus and document file is not yet downloaded.
-        documents_path = video_metadata.get(ConfigKeys.DOCUMENTS_PATH.value)
-        if is_authenticated and video_metadata.get('slide_url') and documents_path and not os.path.exists(documents_path):
+        documents_path = document_metadata.get('offline_filepath')
+        if is_authenticated and document_metadata.get('fileUrl') and documents_path and not os.path.exists(documents_path):
             download_slides_menu.setEnabled(True)
         else:
             download_slides_menu.setEnabled(False)
@@ -132,11 +140,21 @@ class MenuCallbacks:
         # enable open folder menu, when -
         # a document exists.
         if documents_path and os.path.exists(documents_path):
+            slides_view_document_menu.setEnabled(True)
             slides_open_folder_menu.setEnabled(True)
+        else:
+            slides_view_document_menu.setEnabled(False)
+            slides_open_folder_menu.setEnabled(False)
+
+        if os.path.exists(documents_path):
             attach_slides_menu.setEnabled(True)
         else:
-            slides_open_folder_menu.setEnabled(False)
             attach_slides_menu.setEnabled(False)
+
+    @classmethod
+    def set_menu_statuses(cls):
+        cls._set_video_menu_statuses()
+        cls._set_slides_menu_statuses()
 
     # Actions menu
     @classmethod
@@ -206,7 +224,13 @@ class MenuCallbacks:
             CallbackUtils().content_window.videos_tab.on_click_play_video(video_info['video_id'])
 
     @classmethod
-    def on_click__menu__video_download_lecture_videos(cls):
+    def on_click__menu__video_open_folder(cls):
+        video_info = cls.get_selected_video_info()
+        if video_info:
+            CallbackUtils().content_window.videos_tab.on_click_open_folder(video_info['video_id'])
+
+    @classmethod
+    def on_click__menu__video_download_lecture_chats(cls):
         video_info = cls.get_selected_video_info()
         if video_info:
             CallbackUtils().content_window.videos_tab.on_click_download_chats(
@@ -215,31 +239,31 @@ class MenuCallbacks:
     # Slides menu
     @classmethod
     def on_click__menu__slides_download_backpack_slides(cls):
-        video_metadata = cls.get_selected_video_metadata()
-        if video_metadata:
-            CallbackUtils().content_window.documents_tab.on_click_download_slides(video_metadata['slides_url'])
-
-    @classmethod
-    def on_click__menu__video_open_folder(cls):
-        video_info = cls.get_selected_video_info()
-        if video_info:
-            CallbackUtils().content_window.videos_tab.on_click_open_folder(video_info['video_id'])
+        doc_info = cls.get_selected_document()
+        if doc_info:
+            CallbackUtils().content_window.documents_tab.on_click_download_document(
+                doc_info['subject'], doc_info['metadata'], doc_info['widget'])
 
     @classmethod
     def on_click__menu__slides_open_folder(cls):
-        video_metadata = cls.get_selected_video_metadata()
-        if video_metadata and video_metadata.get(ConfigKeys.DOCUMENTS_PATH.value):
-            CallbackUtils().content_window.videos_tab.on_click_open_folder(
-                os.path.dirname(video_metadata.get()))
+        doc_info = cls.get_selected_document()
+        if doc_info:
+            CallbackUtils().content_window.documents_tab.on_click_open_folder(
+                os.path.dirname(doc_info['metadata']['offline_filepath']))
+
+    @classmethod
+    def on_click__menu__slides_view_document(cls):
+        doc_info = cls.get_selected_document()
+        if doc_info:
+            CallbackUtils().content_window.documents_tab.on_click_view_document(
+                doc_info['metadata']['offline_filepath'])
 
     @classmethod
     def on_click__menu__slides_attach_lecture_slides(cls):
-        metadata = cls.get_selected_document_metadata()
-
-        doc_path_key = ConfigKeys.DOCUMENTS_PATH.value
-        if metadata and metadata.get(doc_path_key):
-            CallbackUtils().content_window.videos_tab.table.on_click_attach_slides(
-                os.path.dirname(metadata.get(doc_path_key)))
+        doc_info = cls.get_selected_document()
+        if doc_info:
+            CallbackUtils().content_window.documents_tab.on_click_attach_document(
+                os.path.dirname(doc_info['metadata']['offline_filepath']))
 
     # Help Menu
     @classmethod
@@ -339,15 +363,5 @@ class MenuCallbacks:
             return selected_checkbox.getValue()
 
     @classmethod
-    def get_selected_doc_info(cls):
-        selected = CallbackUtils().content_window.documents_tab.tree.selected
-        if selected:
-            return selected.getValue()
-
-    @classmethod
-    def get_selected_document_metadata(cls):
-        doc_info = cls.get_selected_doc_info()
-        if doc_info:
-            doc_id = doc_info['filePath']
-            return CallbackUtils().content_window.documents_tab.tree.documents.get(doc_id)['metadata']
-
+    def get_selected_document(cls):
+        return CallbackUtils().content_window.documents_tab.tree.selected
