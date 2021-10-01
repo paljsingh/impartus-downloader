@@ -5,12 +5,10 @@ import qtawesome as qta
 
 from PySide2 import QtCore, QtWidgets
 from PySide2.QtGui import QIcon
-from PySide2.QtWidgets import QTableWidget, QTableWidgetItem, QHeaderView, QCheckBox, QWidget, QPushButton, \
-    QAbstractItemView
+from PySide2.QtWidgets import QTableWidget, QTableWidgetItem, QHeaderView, QWidget, QPushButton, QAbstractItemView
 
 from lib.config import Config, ConfigType
 from lib.core.impartus import Impartus
-from lib.data import columns
 from lib.threadlogging import ThreadLogger
 from ui.callbacks.utils import CallbackUtils
 from ui.callbacks.menucallbacks import MenuCallbacks
@@ -61,7 +59,6 @@ class Table:
         self.index = 0
         self.table_widget = self._setup_table(self.table_widget)
         self.table_widget.setSortingEnabled(False)
-        self.table_widget.selectionModel().currentChanged.connect(self.on_row_select)
 
     def _setup_table(self, table_widget):
         table_widget.setSortingEnabled(False)
@@ -72,10 +69,11 @@ class Table:
         table_widget.parentWidget().setMaximumWidth(QtWidgets.QApplication.primaryScreen().size().width() - 2 * borders)
         table_widget.setMaximumWidth(QtWidgets.QApplication.primaryScreen().size().width() - 2 * borders - tab_width)
 
-        col_count = Columns.get_video_columns_count()
+        col_count = len(Columns.get_video_columns()) + 1
         table_widget.setColumnCount(col_count)
         table_widget = self._set_headers(table_widget)
         table_widget.setSelectionBehavior(QAbstractItemView.SelectRows)
+        table_widget.selectionModel().currentChanged.connect(self.on_row_select)
 
         return table_widget
 
@@ -83,7 +81,7 @@ class Table:
         self.table_widget = self._set_resizable_headers(self.table_widget)
         self.table_widget.setSortingEnabled(True)
         self.table_widget.sortByColumn(
-            Columns.get_column_index_by_key('startDate'), QtCore.Qt.SortOrder.DescendingOrder)
+            Columns.get_video_column_index_by_key('startDate'), QtCore.Qt.SortOrder.DescendingOrder)
 
     def _set_headers(self, table_widget):
         # header item for checkboxes column
@@ -93,12 +91,12 @@ class Table:
         table_widget.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
         table_widget.setColumnHidden(0, True)
 
-        for i, (col, item) in enumerate(Columns.get_video_columns_dict().items(), 1):
+        for i, (col, item) in enumerate(Columns.get_video_columns().items(), 1):
             if item.get('initial_size') and item['resize_policy'] != QHeaderView.ResizeMode.Stretch:
                 table_widget.horizontalHeader().resizeSection(i, item.get('initial_size'))
 
         # enumerate from 1.
-        for index, (key, val) in enumerate(Columns.get_video_columns_dict().items(), 1):
+        for index, (key, val) in enumerate(Columns.get_video_columns().items(), 1):
             widget = QTableWidgetItem()
             widget.setText(val['display_name'])
 
@@ -167,23 +165,23 @@ class Table:
         self.table_widget.setCellWidget(self.index, 0, checkbox_container)
 
         # enumerate rest of the columns from 1
-        for col, (key, val) in enumerate(columns.video_data_columns.items(), 1):
+        for col, (key, val) in enumerate(Columns.get_video_data_columns().items(), 1):
             widget = QTableWidgetItem(str(video_metadata[key]))
             widget.setTextAlignment(val['alignment'])
             self.table_widget.setItem(self.index, col, widget)
 
         # total columns so far...
-        col = len(columns.video_data_columns) + 1
+        col = len(Columns.get_video_data_columns()) + 1
 
         # flipped icon column.
-        flipped_col = columns.video_widget_columns['flipped']
+        flipped_col = Columns.get_video_widget_columns()['flipped']
         flipped_icon = qta.icon(flipped_col['icon']) if is_flipped else QIcon()
         flipped_icon_widget = CustomTableWidgetItem()
         flipped_icon_widget.setIcon(flipped_icon)
-        flipped_icon_widget.setTextAlignment(columns.video_widget_columns['flipped']['alignment'])
+        flipped_icon_widget.setTextAlignment(Columns.get_video_widget_columns()['flipped']['alignment'])
         int_value = 1 if is_flipped else 0
         flipped_icon_widget.setValue(int_value)
-        flipped_icon_widget.setToolTip(columns.video_widget_columns['flipped']['menu_tooltip'])
+        flipped_icon_widget.setToolTip(Columns.get_video_widget_columns()['flipped']['menu_tooltip'])
 
         self.table_widget.setItem(self.index, col, flipped_icon_widget)
         col += 1
@@ -191,7 +189,7 @@ class Table:
         # progress bar.
         progress_bar_widget = SortableRoundProgressbar()
         progress_bar_widget.setValue(0)
-        progress_bar_widget.setAlignment(columns.video_widget_columns['progress_bar']['alignment'])
+        progress_bar_widget.setAlignment(Columns.get_video_widget_columns()['progress_bar']['alignment'])
         self.table_widget.setItem(self.index, col, progress_bar_widget.table_widget_item)
         self.table_widget.setCellWidget(self.index, col, progress_bar_widget)
         if video_metadata.get('offline_filepath'):
@@ -219,16 +217,13 @@ class Table:
             'open_folder_button': video_actions_widget.layout().itemAt(3).widget(),
         }
 
-        # for index in range(len(online_data)):
         self.table_widget.setRowHeight(self.index, 48)
         self.set_widget_statuses(video_id, video_downloaded, chat_downloaded)
         CallbackUtils().processEvents()
         self.index += 1
 
-    def _set_resizable_headers(self, table_widget):
-        # Todo ...
-
-        for i in range(len(['id', *columns.video_data_columns, *columns.video_widget_columns])):
+    def _set_resizable_headers(self, table_widget):     # noqa
+        for i in range(len(Columns.get_video_columns()) + 1):
             table_widget.horizontalHeader().setSectionResizeMode(i, QHeaderView.Interactive)
         return table_widget
 
@@ -253,7 +248,7 @@ class Table:
             self.table_widget.setColumnHidden(col_index, True)
 
     def set_button_state(self, row: int, action_item: str, field: str, status: bool):
-        col_index = Columns.get_column_index_by_key(action_item)
+        col_index = Columns.get_video_column_index_by_key(action_item)
         field_index = ActionItems.get_action_item_index(action_item, field)
         self.table_widget.cellWidget(row, col_index).layout().itemAt(field_index).widget().setEnabled(status)
 
@@ -265,18 +260,11 @@ class Table:
             if self.table_widget.cellWidget(i, 0).layout().itemAt(0).widget().isChecked():
                 return i
 
-    def get_row_from_rfid(self, video_id, is_flipped):
-        col = 0     # checkbox
-        for i in range(self.table_widget.rowCount()-1, -1, -1):
-            if self.table_widget.item(i, col).text() == str(video_id):
-                return i
-        return None
-
     def add_video_actions_buttons(self, metadata):
         widget = QWidget()
         widget.setContentsMargins(0, 0, 0, 0)
         widget_layout = WidgetCreator.get_layout_widget(widget)
-        widget_layout.setAlignment(columns.video_widget_columns.get('video_actions')['alignment'])
+        widget_layout.setAlignment(Columns.get_video_widget_columns().get('video_actions')['alignment'])
 
         # make the widget searchable based on button states.
         download_video_state = None

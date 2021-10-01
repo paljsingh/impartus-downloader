@@ -1,7 +1,6 @@
 import json
 import os
 import platform
-from collections import defaultdict
 from datetime import datetime
 
 import enzyme
@@ -11,7 +10,7 @@ import random
 from lib.config import Config, ConfigType
 from lib.metadataparser import MetadataFileParser, MetadataDictParser
 from lib.threadlogging import ThreadLogger
-from lib.data.configkeys import ConfigKeys
+from lib.data.labels import ConfigKeys
 from lib.data.labels import Labels
 
 
@@ -129,7 +128,8 @@ class Finder:
                 for ext in self.conf.get('allowed_ext'):
                     if filename.endswith(ext):
                         filepath = os.path.join(dirpath, filename)
-                        parsed_fields = MetadataFileParser().parse_from_filepath(filepath, ConfigKeys.DOCUMENTS_PATH.value)
+                        parsed_fields = MetadataFileParser().parse_from_filepath(
+                            filepath, ConfigKeys.DOCUMENTS_PATH.value)
 
                         prof_name = None
                         if parsed_fields.get('professorName'):
@@ -139,7 +139,9 @@ class Finder:
                         backpack_slide = {
                             'offline_filepath': filepath,
                             'fileName': filename,
-                            'fileLength': os.path.getsize(filepath) // 1024,
+                            'fileLength': os.path.getsize(filepath),
+                            'fileLengthKB': os.path.getsize(filepath) // 1024,
+                            'fileLengthMB': '{:.1f}'.format(os.path.getsize(filepath) / (1024 * 1024)),
                             'fileDate': datetime.fromtimestamp(os.path.getmtime(filepath)).strftime("%Y-%m-%d"),
                             'description': '',
                             'professorName': prof_name,

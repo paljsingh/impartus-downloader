@@ -80,7 +80,7 @@ class Videos:
             video_quality=Variables().flipped_lecture_quality()
         )
 
-    def on_click_download_video(self, video_id, is_flipped):
+    def on_click_download_video(self, video_id):
         """
         callback function for Download button.
         Creates a thread to download the request video.
@@ -151,7 +151,7 @@ class Videos:
         if video_metadata and video_metadata.get('offline_filepath'):
             Utils.open_file(video_metadata.get('offline_filepath'))
 
-    def on_click_download_chats(self, video_id: int, is_flipped=False):
+    def on_click_download_chats(self, video_id: int):
         video_data = self.table.video_ids.get(video_id)
         if video_data and video_data.get('download_chat_button'):
             dc_button = video_data['download_chat_button']

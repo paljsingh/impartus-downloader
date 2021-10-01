@@ -93,7 +93,7 @@ class ContentWindow(QMainWindow):
 
         # when scanning offline documents, we get 1 document at a time, and identify it's subject (metadata)
         for subject, document in Finder().get_offline_backpack_slides():
-            self.documents_tab.tree.add_row_items(subject, [document], document_downloaded=True)
+            self.documents_tab.tree.add_row_items(subject, [document])
 
         MenuCallbacks().set_menu_statuses()
         ButtonCallbacks().set_pushbutton_statuses()
@@ -121,11 +121,11 @@ class ContentWindow(QMainWindow):
 
         # when fetching online documents, the api returns all the available documents (metadata) for a given subject.
         for subject_metadata, documents in self.impartus.get_slides(subjects):
-            self.documents_tab.tree.add_row_items(subject_metadata, documents, document_downloaded=False)
+            self.documents_tab.tree.add_row_items(subject_metadata, documents)
 
         # when scanning offline documents, we get 1 document at a time, and identify it's subject (metadata).
         for subject_metadata, document in Finder().get_offline_backpack_slides(mapping_by_name):
-            self.documents_tab.tree.add_row_items(subject_metadata, [document], document_downloaded=True)
+            self.documents_tab.tree.add_row_items(subject_metadata, [document])
 
         MenuCallbacks().set_menu_statuses()
         ButtonCallbacks().set_pushbutton_statuses()

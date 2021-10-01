@@ -1,11 +1,6 @@
 import os
-import platform
 import re
-from collections import defaultdict
-
 import requests
-
-from lib.metadataparser import MetadataFileParser
 from lib.variables import Variables
 
 

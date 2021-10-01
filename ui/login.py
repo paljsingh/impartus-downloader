@@ -9,7 +9,7 @@ from PySide2.QtWidgets import QMainWindow
 from lib.config import Config, ConfigType
 from lib.core.impartus import Impartus
 from ui.callbacks.utils import CallbackUtils
-from lib.data.configkeys import ConfigKeys
+from lib.data.labels import ConfigKeys
 from lib.data.labels import Labels
 from lib.variables import Variables
 

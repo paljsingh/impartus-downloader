@@ -8,7 +8,6 @@ import re
 
 from lib.config import Config, ConfigType
 from lib.core.impartus import Impartus
-from lib.data import columns
 from lib.data.labels import Labels
 from lib.threadlogging import ThreadLogger
 from lib.utils import Utils
@@ -54,7 +53,8 @@ class Tree:
         self.documents = dict()
         self.items = dict()
         self.top_level_index = 0
-        self.treewidget = self.setup_tree(self.treewidget)
+        self.treewidget.setSortingEnabled(False)
+        self.treewidget.clear()
 
     def setup_tree(self, treewidget):
         treewidget.setSortingEnabled(False)
@@ -62,18 +62,21 @@ class Tree:
         treewidget.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOn)
         treewidget.clear()
 
-        col_count = Columns.get_document_columns_count()
+        col_count = len(Columns.get_document_columns())
         treewidget.setColumnCount(col_count)
 
         treewidget = self._set_headers(treewidget)
 
         return treewidget
 
-    def _set_headers(self, treewidget):
+    def _set_headers(self, treewidget):     # noqa
         treewidget.header().setAlternatingRowColors(True)
-        headers = [x['display_name'] for x in Columns.get_document_columns_dict().values()]
+        headers = [x['display_name'] for x in Columns.get_document_columns().values()]
         treewidget.setHeaderLabels(headers)
         treewidget.header().setSortIndicatorShown(True)
+        for i, (key, val) in enumerate(Columns.get_document_columns().items()):
+            if val['hidden']:
+                treewidget.hideColumn(i)
         return treewidget
 
     def new_root_subject_item(self, subject_name):
@@ -87,15 +90,15 @@ class Tree:
         self.treewidget.addTopLevelItem(item)
         return item
 
-    def add_row_items(self, subject_metadata: Dict, documents: Dict, document_downloaded=False):
+    def add_row_items(self, subject_metadata: Dict, documents: Dict):
 
+        # get top level tree item for this subject.
         subject_name = subject_metadata['subjectName']
         if not self.items.get(subject_name):
             self.new_root_subject_item(subject_name)
 
         item_info = self.items.get(subject_name)
         item = item_info['item']
-        index = item_info['index']
 
         seq_no = item.childCount() + 1
         for document in documents:
@@ -109,48 +112,57 @@ class Tree:
             if not document.get('ext'):
                 document['ext'] = str.split(document['filePath'], '.')[-1]
             document['fileName'] = re.sub('.{}$'.format(document['ext']), '', document['fileName'])
+            document['fileLengthKB'] = document['fileLength'] // 1024
+            document['fileLengthMB'] = '{:.1f}'.format(document['fileLength'] / (1024 * 1024))
 
             document['subjectNameShort'] = subject_name
             document['seqNo'] = seq_no
             if not document.get('offline_filepath'):
                 document['offline_filepath'] = Utils.get_documents_path(document)
 
-            child_widget = self.add_row_item(index, item, document, subject_name, document_downloaded)
-            seq_no += 1
+            child_widget = self.add_row_item(item, document, subject_name)
+            if child_widget:
+                seq_no += 1
 
-            key = document.get('offline_filepath')
-            self.documents[key] = {
-                'subject': subject_name,
-                'metadata': document,
-                'widget': child_widget,
-            }
+                key = document.get('offline_filepath')
+                self.documents[key] = {
+                    'subject': subject_name,
+                    'metadata': document,
+                    'widget': child_widget,
+                }
 
-    def add_row_item(self, index, item, document, subject_name, downloaded=False):
+    def add_row_item(self, item_parent, document, subject_name):
 
-        item_child = QTreeWidgetItem(item)
-        for i, (key, val) in enumerate([x for x in columns.document_data_columns.items()][1:], 1):
-            item_child.setText(i, str(document.get(key)))
+        if self.documents.get(document['offline_filepath']):
+            return
+        else:
+            item_child = QTreeWidgetItem(item_parent)
+            for i, (key, val) in enumerate(Columns.get_document_data_columns().items()):
+                if i == 0:
+                    continue
+                col_name = val['original_values_col'] if val.get('original_values_col') else key
+                item_child.setText(i, str(document.get(col_name)))
 
-        # total columns so far...
-        col = len(columns.document_data_columns)
+            # total columns so far...
+            col = len(Columns.get_document_data_columns())
 
-        slides_actions_widget, cell_value = self.add_slides_actions_buttons(index, subject_name, document)
-        custom_item = CustomTreeWidgetItem()
-        custom_item.setValue(cell_value)
-        self.treewidget.setItemWidget(item_child, col, slides_actions_widget)
+            slides_actions_widget, cell_value = self.add_slides_actions_buttons(subject_name, document)
+            custom_item = CustomTreeWidgetItem()
+            custom_item.setValue(cell_value)
+            self.treewidget.setItemWidget(item_child, col, slides_actions_widget)
 
-        item.addChild(item_child)
+            item_parent.addChild(item_child)
 
-        CallbackUtils().processEvents()
-        return item_child
+            CallbackUtils().processEvents()
+            return item_child
 
     def resizable_headers(self):
         # Todo ...
-        for i, (col, item) in enumerate(Columns.get_document_columns_dict().items()):
+        for i, (col, item) in enumerate(Columns.get_document_columns().items()):
             if item.get('initial_size') and item['resize_policy'] != QHeaderView.ResizeMode.Stretch:
                 self.treewidget.header().resizeSection(i, item.get('initial_size'))
 
-        for i in range(Columns.get_document_columns_count()):
+        for i in range(len(Columns.get_document_columns())):
             self.treewidget.header().setSectionResizeMode(i, QHeaderView.Interactive)
 
     def show_hide_column(self, column):
@@ -170,15 +182,16 @@ class Tree:
             if self.treewidget.cellWidget(i, 0).layout().itemAt(0).widget().isChecked():
                 return i
 
-    def add_slides_actions_buttons(self, index, subject, metadata: Dict):
+    def add_slides_actions_buttons(self, subject, metadata: Dict):
         widget = QWidget()
         widget_layout = WidgetCreator.get_layout_widget(widget)
-        widget_layout.setAlignment(columns.widget_columns.get('slides_actions')['alignment'])
+        widget_layout.setAlignment(Columns.get_document_widget_columns().get('slides_actions')['alignment'])
 
         cell_value = ''
+        # add pushbuttons grouped under a QWidget, assign a numeric cell_value to QWidget to enable sorting.
         for pushbutton in WidgetCreator.add_actions_buttons(ActionItems.slides_actions):
             widget_layout.addWidget(pushbutton)
-            btn_type, btn_state = self.set_pushbutton_statuses(pushbutton, metadata, self.callbacks, widget, subject)
+            btn_type, btn_state = self.set_pushbutton_status(pushbutton, metadata, self.callbacks, widget, subject)
 
             # a slightly hackish way to sort widgets -
             # create an integer out of the (slide count, button1_state, button2_state, ...)
@@ -187,7 +200,10 @@ class Tree:
 
         return widget, int(cell_value)
 
-    def set_pushbutton_statuses(self, pushbutton, metadata, callbacks, widget, subject=None):
+    def set_pushbutton_status(self, pushbutton, metadata, callbacks, widget, subject=None):
+        """
+        Set pushbutton status
+        """
         filepath = metadata.get('offline_filepath')
         assert(filepath is not None)
         # slides download is enabled if the slides file exists on server, but not locally.
@@ -238,14 +254,12 @@ class Tree:
             else:
                 btn_state = False
         else:
-            btn_type = None
-            btn_state = False
             assert False
 
         pushbutton.setEnabled(btn_state)
         return btn_type, btn_state
 
-    def on_row_select(self, selected: QModelIndex, deselected: QModelIndex):
+    def on_row_select(self, selected: QModelIndex, deselected: QModelIndex):    # noqa
         self.treewidget: QTreeWidget
         top_level_item = self.treewidget.topLevelItem(selected.parent().row())
         widget_item = top_level_item.child(selected.row()) if top_level_item else None

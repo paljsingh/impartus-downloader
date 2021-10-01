@@ -7,8 +7,7 @@ from typing import List
 import qtawesome as qta
 
 from lib.utils import Utils
-from lib.data.Icons import Icons
-from lib.data.slideicons import SlideIcons
+from lib.data.Icons import Icons, DocumentIcons
 
 
 class CustomComboBox(QComboBox):
@@ -46,7 +45,7 @@ class CustomComboBox(QComboBox):
         self.show()
 
         for item in items:
-            icon_name = SlideIcons.get_icon_type(item)
+            icon_name = DocumentIcons.get_icon_type(item)
             self.addItem(qta.icon(icon_name), os.path.basename(item), item)
 
         if self.connection:
@@ -76,7 +75,7 @@ class CustomComboBox(QComboBox):
 
         for i in range(self.count()):
             qicon = qta.icon(
-                SlideIcons.get_icon_type(self.itemData(i)),
+                DocumentIcons.get_icon_type(self.itemData(i)),
                 color=text_color,
                 color_active=highlight_color,
             )

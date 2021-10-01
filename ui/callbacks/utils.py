@@ -33,7 +33,7 @@ class CallbackUtils:
         from_window.hide()
         return to_window
 
-    def processEvents(self):
+    def processEvents(self):    # noqa
         # process every n seconds at most
         n = 0.5
         if datetime.now().timestamp() - self.last_timestamp >= n:

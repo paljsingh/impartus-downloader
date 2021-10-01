@@ -18,7 +18,7 @@ class WriteDelegate(QStyledItemDelegate):
 
     def createEditor(self, parent: QWidget, option: QStyleOptionViewItem, index: QModelIndex) -> QWidget:
         # if column index belongs to one of the editable columns...
-        if index.column() in [i for i, v in enumerate(Columns.get_video_columns_dict().values(), 1) if v['editable']]:
+        if index.column() in [i for i, v in enumerate(Columns.get_video_columns().values(), 1) if v['editable']]:
             editor = super().createEditor(parent, option, index)
             editor.editingFinished.connect(partial(self.on_editing_finish, editor, index, index.data()))
             return editor

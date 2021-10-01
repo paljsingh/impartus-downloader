@@ -4,8 +4,6 @@ import enum
 class Labels(enum.Enum):
     """
     Labels used throughout the application.
-    TODO: Remove unicode chars as their size and rendering can be platform and font specific, leading to uneven sized
-        or incorrectly displayed widgets.
     """
     RELOAD = '⟳  Reload'
     AUTO_ORGANIZE = '⇄  Auto Organize Lectures'
@@ -50,3 +48,28 @@ class Labels(enum.Enum):
     DOCUMENT__OPEN_DOCUMENT = 'open_document'
     DOCUMENT__ATTACH_DOCUMENT = 'attach_document'
     DOCUMENT__DOWNLOAD_DOCUMENT = 'download_document'
+
+    HELPDOC = 'docs/helpdoc.pdf'
+
+
+class ConfigKeys(enum.Enum):
+    """
+    class to hold all the entries specified in configuration files.
+    TODO: Ensure no code file directly uses a config key.
+    """
+    URL = 'impartus_url'
+    EMAIL = 'login_email'
+    PASSWORD = 'password'
+    TARGET_DIR = 'target_dir'
+    CONFIG_DIR = 'config_dir'
+    ALLOWED_EXT = 'allowed_ext'
+    VIDEO_PATH = 'video_path'
+    DOCUMENTS_PATH = 'documents_path'
+    CAPTIONS_PATH = 'captions_path'
+    COLORSCHEME_DEFAULT = 'default'
+    RESIZE_POLICY = 'resize_policy'
+    USE_SAFE_PATHS = 'use_safe_paths'
+    FLIPPED_LECTURE_QUALITY_ORDER = 'flipped_lecture_quality_order'
+
+    def __str__(self):
+        return str(self.value)

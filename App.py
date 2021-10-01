@@ -2,11 +2,11 @@ from PySide2 import QtWidgets, QtCore
 from PySide2.QtGui import QIcon, QGuiApplication, Qt
 
 from lib.core.impartus import Impartus
+from lib.data.Icons import Icons
 from lib.threadlogging import ThreadLogger
 from lib.variables import Variables
 from ui.callbacks.utils import CallbackUtils
 from ui.content import ContentWindow
-from lib.data.iconfiles import IconFiles
 from ui.login import LoginWindow
 from ui.menubar import Menubar
 
@@ -18,7 +18,7 @@ class App:
 
     def __init__(self):
         self.app = QtWidgets.QApplication([])
-        self.app.setWindowIcon(QIcon(IconFiles.APP_LOGO.value))
+        self.app.setWindowIcon(QIcon(Icons.APP_LOGO.value))
 
         self.impartus = Impartus()
         self.login_window = LoginWindow(self.impartus)

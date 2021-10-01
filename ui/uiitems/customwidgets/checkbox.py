@@ -9,8 +9,8 @@ class CustomCheckBox(QCheckBox):
         super().__init__()
         self.value = None
 
-    def setValue(self, value: typing.Dict):
+    def setValue(self, value: typing.Dict):     # noqa
         self.value = value
 
-    def getValue(self):
+    def getValue(self):     # noqa
         return self.value

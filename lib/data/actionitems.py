@@ -1,4 +1,4 @@
-from PySide2.QtWidgets import QPushButton, QComboBox
+from PySide2.QtWidgets import QPushButton
 
 from lib.data.Icons import Icons
 from lib.data.labels import Labels
@@ -37,6 +37,7 @@ class ActionItems:
             'tooltip': 'Download Backpack Document',
             'text': Icons.SLIDES__DOWNLOAD_SLIDES.value,
             'type': QPushButton,
+            # 'callback': Columns.widget_columns['']
         },
         Labels.DOCUMENT__OPEN_DOCUMENT.value: {
             'tooltip': 'Show Backpack Document',

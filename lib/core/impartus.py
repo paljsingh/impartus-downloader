@@ -33,7 +33,7 @@ class Impartus:
         self.session = None
         self.token = None
 
-        self.logger = Impartus.thread_logger.logger
+        self.logger = self.__class__.thread_logger.logger
         self.conf = Config.load(ConfigType.IMPARTUS)
 
         self.timeouts = tuple([

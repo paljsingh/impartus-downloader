@@ -4,8 +4,8 @@ import re
 from typing import Dict, List
 
 from lib.config import Config, ConfigType
+from lib.data.columns import Columns
 from lib.threadlogging import ThreadLogger
-from lib.data import columns
 
 
 class MetadataDictParser:
@@ -411,7 +411,7 @@ class MetadataDictParser:
 
             # We may want to display a shorter subject name, or a shorter faculty name (or any other field..)
             # This is indicated by the presence of 'original_col_name' field in Columns.data_columns
-            col_mapping = {k: v['original_values_col'] for k, v in columns.data_columns.items()
+            col_mapping = {k: v['original_values_col'] for k, v in Columns.get_video_columns().items()
                            if v.get('original_values_col')}
 
             # for all such columns, load (if any) mappings exist in etc/mappings.conf

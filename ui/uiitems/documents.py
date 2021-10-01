@@ -10,7 +10,6 @@ from lib.data.labels import Labels
 from lib.threadlogging import ThreadLogger
 from lib.utils import Utils
 from lib.data.actionitems import ActionItems
-from lib.data.columns import Columns
 from ui.callbacks.menucallbacks import MenuCallbacks
 from ui.helpers.worker import Worker
 from ui.uiitems.tree import Tree
@@ -53,7 +52,7 @@ class Documents:
         imp = Impartus(self.impartus.token)
         return imp.download_slides(file_url, filepath)
 
-    def on_click_download_document(self, subject, metadata, tree_widget_item):  # noqa
+    def on_click_download_document(self, subject, metadata, pushbutton_widget):  # noqa
         """
         callback function for Download button.
         Creates a thread to download the request video.
@@ -63,24 +62,21 @@ class Documents:
         slide_url = metadata.get('fileUrl')
         filepath = Utils.get_documents_path(metadata)
 
-        doc_col = Columns.get_document_column_index_by_key(Labels.DOCUMENT__ACTIONS.value)
-        # tree_widget_item = self.tree.treewidget.topLevelItem(index).child(document_index)
-
         dd_col = ActionItems.get_action_item_index(
             Labels.DOCUMENT__ACTIONS.value, Labels.DOCUMENT__DOWNLOAD_DOCUMENT.value)
-        dd_button = self.tree.treewidget.itemWidget(tree_widget_item, doc_col).layout().itemAt(dd_col).widget()
+        dd_button = pushbutton_widget.layout().itemAt(dd_col).widget()
 
         od_col = ActionItems.get_action_item_index(
             Labels.DOCUMENT__ACTIONS.value, Labels.DOCUMENT__OPEN_DOCUMENT.value)
-        od_button = self.tree.treewidget.itemWidget(tree_widget_item, doc_col).layout().itemAt(od_col).widget()
+        od_button = pushbutton_widget.layout().itemAt(od_col).widget()
 
         of_col = ActionItems.get_action_item_index(
             Labels.DOCUMENT__ACTIONS.value, Labels.DOCUMENT__OPEN_FOLDER.value)
-        of_button = self.tree.treewidget.itemWidget(tree_widget_item, doc_col).layout().itemAt(of_col).widget()
+        of_button = pushbutton_widget.layout().itemAt(of_col).widget()
 
         ad_col = ActionItems.get_action_item_index(
             Labels.DOCUMENT__ACTIONS.value, Labels.DOCUMENT__ATTACH_DOCUMENT.value)
-        ad_button = self.tree.treewidget.itemWidget(tree_widget_item, doc_col).layout().itemAt(ad_col).widget()
+        ad_button = pushbutton_widget.layout().itemAt(ad_col).widget()
 
         pushbuttons = {
             'download_doc': dd_button,
@@ -123,13 +119,13 @@ class Documents:
             del self.workers[filepath]
             MenuCallbacks.set_menu_statuses()
 
-    def on_click_view_document(self, file_path: str):
+    def on_click_view_document(self, file_path: str):       # noqa
         Utils.open_file(file_path)
 
-    def on_click_open_folder(self, folder_path: str):
+    def on_click_open_folder(self, folder_path: str):       # noqa
         Utils.open_file(folder_path)
 
-    def on_click_attach_document(self, folder_path: str):
+    def on_click_attach_document(self, folder_path: str):   # noqa
         conf = Config.load(ConfigType.IMPARTUS)
         filters = ['{} files (*.{})'.format(str(x).title(), x) for x in conf.get('allowed_ext')]
         filters_str = ';;'.join(filters)

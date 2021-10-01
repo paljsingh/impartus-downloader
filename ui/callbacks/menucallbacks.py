@@ -5,9 +5,9 @@ from PySide2.QtCore import QObject
 from PySide2.QtWidgets import QLabel, QTreeWidget, QTreeWidgetItem, QMessageBox
 
 from lib import version
+from lib.data.labels import Labels
 from lib.utils import Utils
 from ui.callbacks.utils import CallbackUtils
-from lib.data.docs import Docs
 from lib.variables import Variables
 from ui.dialog import Dialog
 from ui.helpers.datautils import DataUtils
@@ -132,7 +132,8 @@ class MenuCallbacks:
         # enable document download menu, when -
         # user logged in to to impartus and document file is not yet downloaded.
         documents_path = document_metadata.get('offline_filepath')
-        if is_authenticated and document_metadata.get('fileUrl') and documents_path and not os.path.exists(documents_path):
+        if is_authenticated and document_metadata.get('fileUrl') and documents_path \
+                and not os.path.exists(documents_path):
             download_slides_menu.setEnabled(True)
         else:
             download_slides_menu.setEnabled(False)
@@ -214,8 +215,7 @@ class MenuCallbacks:
     def on_click__menu__video_download_video(cls):
         video_info = cls.get_selected_video_info()
         if video_info:
-            CallbackUtils().content_window.videos_tab.on_click_download_video(
-                video_info['video_id'], video_info['is_flipped'])
+            CallbackUtils().content_window.videos_tab.on_click_download_video(video_info['video_id'])
 
     @classmethod
     def on_click__menu__video_play_video(cls):
@@ -233,8 +233,7 @@ class MenuCallbacks:
     def on_click__menu__video_download_lecture_chats(cls):
         video_info = cls.get_selected_video_info()
         if video_info:
-            CallbackUtils().content_window.videos_tab.on_click_download_chats(
-                video_info['video_id'], video_info['is_flipped'])
+            CallbackUtils().content_window.videos_tab.on_click_download_chats(video_info['video_id'])
 
     # Slides menu
     @classmethod
@@ -268,7 +267,7 @@ class MenuCallbacks:
     # Help Menu
     @classmethod
     def on_click__menu__help_help(cls):
-        document_path = os.path.join(os.path.abspath(os.curdir), Docs.HELPDOC.value)
+        document_path = os.path.join(os.path.abspath(os.curdir), Labels.HELPDOC.value)
         Utils.open_file(document_path)
 
     @classmethod

@@ -2,9 +2,9 @@ import sys
 from functools import partial
 
 from lib.config import ConfigType, Config
+from lib.data.columns import Columns
 from ui.callbacks.menucallbacks import MenuCallbacks
 from lib.data.Icons import Icons
-from lib.data import columns
 
 
 class MenuItems:
@@ -59,10 +59,9 @@ class MenuItems:
                 'type': 'list',
                 'status': 'disabled',
                 'behavior': 'multiselect',
-                'child_items': {k: v['menu_name'] for k, v in
-                                {**columns.data_columns, **columns.video_widget_columns}.items()},
+                'child_items': {k: v['menu_name'] for k, v in Columns.get_video_columns().items()},
                 'child_callbacks': [partial(MenuCallbacks().on_click__menu__view_columns, key)
-                                    for key in [*columns.data_columns.keys(), *columns.widget_columns.keys()]]
+                                    for key in Columns.get_video_columns()]
             },
             'sep': {
                 'type': 'separator',

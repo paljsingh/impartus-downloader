@@ -14,7 +14,7 @@ class CustomTableWidgetItem(QTableWidgetItem):
         super().__init__()
         self.value = None
 
-    def setValue(self, value: int):
+    def setValue(self, value: int):     # noqa
         self.value = value
 
     def __lt__(self, other):

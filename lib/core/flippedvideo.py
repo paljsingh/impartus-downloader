@@ -11,7 +11,6 @@ class FlippedVideo(Video):
         super().__init__(subjects, session, timeouts)
 
     def get_lectures(self):
-        online_lectures = dict()
         root_url = Variables().login_url()
         for subject in self.subjects:
             response = self.session.get('{}/api/subjects/flipped/{}/{}'.format(

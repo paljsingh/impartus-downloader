@@ -1,8 +1,7 @@
-from functools import partial
-from typing import Dict, Callable
+from typing import Dict
 
 from PySide2 import QtCore
-from PySide2.QtWidgets import QHBoxLayout, QWidget, QPushButton, QCheckBox
+from PySide2.QtWidgets import QHBoxLayout, QWidget, QPushButton
 
 from ui.uiitems.customwidgets.checkbox import CustomCheckBox
 from ui.uiitems.customwidgets.pushbutton import CustomPushButton

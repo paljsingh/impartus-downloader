@@ -10,7 +10,7 @@ from datetime import datetime
 
 from lib.config import Config, ConfigType
 from lib.metadataparser import MetadataDictParser
-from lib.data.configkeys import ConfigKeys
+from lib.data.labels import ConfigKeys
 
 
 class Utils:
@@ -116,4 +116,3 @@ class Utils:
             if os.path.exists(path_with_ext):
                 return True, path_with_ext
         return False, path
-
