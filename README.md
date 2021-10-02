@@ -25,7 +25,6 @@ Downloader for impartus streaming videos.
 -  🆕 Supports system themes.
 - Sortable content.
 - 🆕 Better looking widgets.
-- 🆕 Round progress bar.
 - Configurable columns.
 
 
@@ -130,14 +129,6 @@ see etc/impartus.conf
 ---
 
 ## Known Issues
-
-**Incorrect lecture slide associated to a video**
-
-> The impartus platform does not offer a strict video to lecture slides mapping, the application uses the upload dates of the two for a fuzzy match. 
-> 
-> You may try changing (decreasing) the value of `slides_upload_window` value in `etc/impartus.conf`, which may work better in case you have more than one lectures for a subject within a week's duration.
->
----
 
 **Hard to read closed captions on white background**
 > 
