@@ -107,7 +107,7 @@ class MenuCallbacks:
             download_chats_menu.setEnabled(False)
 
         video_open_folder_menu = cls.get_action(video_menu, 'Open Folder')
-        if (video_path or captions_path) and (os.path.exists(video_path) or os.path.exists(captions_path)):
+        if (video_path and os.path.exists(video_path)) or (captions_path and os.path.exists(captions_path)):
             video_open_folder_menu.setEnabled(True)
         else:
             video_open_folder_menu.setEnabled(False)
