@@ -41,7 +41,7 @@
     </rect>
    </property>
    <property name="text">
-    <string>... loading, please wait...</string>
+    <string>Loading, please wait...</string>
    </property>
    <property name="alignment">
     <set>Qt::AlignCenter</set>

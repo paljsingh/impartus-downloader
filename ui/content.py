@@ -94,7 +94,8 @@ class ContentWindow(QMainWindow):
         self.reset_content()
         count = 0
         for rf_id, video_metadata, is_flipped, chats_path in Finder().get_offline_videos():
-            self.videos_tab.table.add_row_item(rf_id, video_metadata, chats_path, is_flipped, video_downloaded=True)
+            self.videos_tab.table.add_row_item(rf_id, video_metadata, captions_path=chats_path, is_flipped=is_flipped,
+                                               video_downloaded=True)
             count += 1
             self.splashscreen.setText("Found {} offline videos.".format(count))
 
@@ -124,13 +125,14 @@ class ContentWindow(QMainWindow):
         count = 0
         for video_id, video_metadata, is_flipped in self.impartus.get_lecture_videos(subjects):
             # for online videos, we won't know if lecture chats exist or not, until the api is called,
-            # so consider chats_path=True and enable the chat download button.
-            self.videos_tab.table.add_row_item(video_id, video_metadata, is_flipped=is_flipped, chats_path=True)
+            # so consider caption_path=False (not downloaded) and enable the chat download button.
+            self.videos_tab.table.add_row_item(video_id, video_metadata, is_flipped=is_flipped, captions_path=False)
             count += 1
             self.splashscreen.setText("Found {} online videos.".format(count))
 
         for (video_id, video_metadata, is_flipped, chats_path) in Finder().get_offline_videos():
-            self.videos_tab.table.add_row_item(video_id, video_metadata, chats_path, is_flipped, video_downloaded=True)
+            self.videos_tab.table.add_row_item(video_id, video_metadata, captions_path=chats_path,
+                                               is_flipped=is_flipped, video_downloaded=True)
 
         self.videos_tab.table.post_fill_tasks()
 

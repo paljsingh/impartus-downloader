@@ -10,6 +10,7 @@ from PySide2.QtWidgets import QTableWidget, QTableWidgetItem, QHeaderView, QWidg
 from lib.config import Config, ConfigType
 from lib.core.impartus import Impartus
 from lib.threadlogging import ThreadLogger
+from lib.utils import Utils
 from ui.callbacks.utils import CallbackUtils
 from ui.callbacks.menucallbacks import MenuCallbacks
 from ui.helpers.datautils import DataUtils
@@ -145,8 +146,8 @@ class Table:
                 download_chat_button.setEnabled(False)
                 open_folder_button.setEnabled(True)
 
-    def add_row_item(self, video_id, video_metadata, chats_path=None, is_flipped=False, video_downloaded=False):
-        chat_downloaded = True if chats_path else False
+    def add_row_item(self, video_id, video_metadata, captions_path=None, is_flipped=False, video_downloaded=False):
+        chat_downloaded = True if captions_path else False
         if video_downloaded:
             if self.video_ids.get(video_id):
                 # the id is listed already (from online content) => update existing metadata
@@ -281,7 +282,7 @@ class Table:
 
             # disable download button, if video exists locally.
             if pushbutton.objectName() == ActionItems.video_actions['download_video']['text']:
-                pushbutton.clicked.connect(partial(self.callbacks['download_video'], rf_id, is_flipped))
+                pushbutton.clicked.connect(partial(self.callbacks['download_video'], rf_id))
 
                 if metadata.get('offline_filepath'):
                     download_video_state = False
@@ -306,7 +307,7 @@ class Table:
                 pushbutton.clicked.connect(partial(self.callbacks['download_chats'], rf_id))
 
                 # enable download chats button, if lecture chats file does not exist.
-                filepath = metadata.get('chats')
+                filepath = Utils.get_captions_path(metadata)
                 if filepath and os.path.exists(filepath):
                     download_chats_state = False
                 else:
