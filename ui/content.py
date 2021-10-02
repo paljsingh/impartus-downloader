@@ -1,7 +1,9 @@
+import math
+
 from PySide2 import QtCore, QtWidgets
-from PySide2.QtCore import QFile, QObject
+from PySide2.QtCore import QFile, QObject, Qt
 from PySide2.QtUiTools import QUiLoader
-from PySide2.QtWidgets import QMainWindow, QTableWidget, QPlainTextEdit, QTreeWidget, QTabWidget
+from PySide2.QtWidgets import QMainWindow, QTableWidget, QPlainTextEdit, QTreeWidget, QTabWidget, QLabel, QProgressBar
 
 from lib.finder import Finder
 from lib.core.impartus import Impartus
@@ -10,6 +12,7 @@ from ui.callbacks.menucallbacks import MenuCallbacks
 from lib.data.labels import Labels
 from ui.callbacks.utils import CallbackUtils
 from ui.helpers.datautils import DataUtils
+from ui.splash import SplashScreen
 from ui.uiitems.search import SearchBox
 from ui.uiitems.videos import Videos
 from ui.uiitems.documents import Documents
@@ -62,6 +65,7 @@ class ContentWindow(QMainWindow):
         self.data = list()
         self.root_url = None
         self.lecture_slides_mapping = dict()
+        self.splashscreen = SplashScreen(self)
 
     def setup(self):
         pass
@@ -86,33 +90,44 @@ class ContentWindow(QMainWindow):
             self.search_box.search_next()
 
     def work_offline(self):
+        self.splashscreen.show(widgets_to_disable=[self.table_widget, self.tree_widget])
         self.reset_content()
-
+        count = 0
         for rf_id, video_metadata, is_flipped, chats_path in Finder().get_offline_videos():
             self.videos_tab.table.add_row_item(rf_id, video_metadata, chats_path, is_flipped, video_downloaded=True)
+            count += 1
+            self.splashscreen.setText("Found {} offline videos.".format(count))
 
         # when scanning offline documents, we get 1 document at a time, and identify it's subject (metadata)
+        count = 0
         for subject, document in Finder().get_offline_backpack_slides():
             self.documents_tab.tree.add_row_items(subject, [document])
+            count += 1
+            self.splashscreen.setText("Found {} offline documents.".format(count))
 
         MenuCallbacks().set_menu_statuses()
         ButtonCallbacks().set_pushbutton_statuses()
+        self.splashscreen.hide(widgets_to_enable=[self.table_widget, self.tree_widget])
 
     def reset_content(self):
         self.videos_tab.reset_content()
         self.documents_tab.reset_content()
 
     def work_online(self):
+        self.splashscreen.show(widgets_to_disable=[self.table_widget, self.tree_widget])
         self.reset_content()
 
         subjects = self.impartus.get_subjects()
         mapping_by_id, mapping_by_name = DataUtils.get_subject_mappings(subjects)
 
         # videos tab
+        count = 0
         for video_id, video_metadata, is_flipped in self.impartus.get_lecture_videos(subjects):
             # for online videos, we won't know if lecture chats exist or not, until the api is called,
             # so consider chats_path=True and enable the chat download button.
             self.videos_tab.table.add_row_item(video_id, video_metadata, is_flipped=is_flipped, chats_path=True)
+            count += 1
+            self.splashscreen.setText("Found {} online videos.".format(count))
 
         for (video_id, video_metadata, is_flipped, chats_path) in Finder().get_offline_videos():
             self.videos_tab.table.add_row_item(video_id, video_metadata, chats_path, is_flipped, video_downloaded=True)
@@ -120,8 +135,11 @@ class ContentWindow(QMainWindow):
         self.videos_tab.table.post_fill_tasks()
 
         # when fetching online documents, the api returns all the available documents (metadata) for a given subject.
+        count = 0
         for subject_metadata, documents in self.impartus.get_slides(subjects):
             self.documents_tab.tree.add_row_items(subject_metadata, documents)
+            count += len(documents)
+            self.splashscreen.setText("Found {} online documents.".format(count))
 
         # when scanning offline documents, we get 1 document at a time, and identify it's subject (metadata).
         for subject_metadata, document in Finder().get_offline_backpack_slides(mapping_by_name):
@@ -129,6 +147,8 @@ class ContentWindow(QMainWindow):
 
         MenuCallbacks().set_menu_statuses()
         ButtonCallbacks().set_pushbutton_statuses()
+
+        self.splashscreen.hide(widgets_to_enable=[self.table_widget, self.tree_widget])
 
     @staticmethod
     def needs_lecture_rename():
