@@ -281,7 +281,7 @@ class Table:
 
             # disable download button, if video exists locally.
             if pushbutton.objectName() == ActionItems.video_actions['download_video']['text']:
-                pushbutton.clicked.connect(partial(self.callbacks['download_video'], rf_id, is_flipped))
+                pushbutton.clicked.connect(partial(self.callbacks['download_video'], rf_id))
 
                 if metadata.get('offline_filepath'):
                     download_video_state = False
