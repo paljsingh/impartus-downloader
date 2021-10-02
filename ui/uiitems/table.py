@@ -341,3 +341,4 @@ class Table:
         of_button = self.video_ids[video_id]['open_folder_button']
         progresbar_widget = self.video_ids[video_id]['progressbar']
         return progresbar_widget, (dl_button, pl_button, cc_button, of_button)
+
