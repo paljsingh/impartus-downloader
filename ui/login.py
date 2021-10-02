@@ -7,11 +7,12 @@ from PySide2.QtUiTools import QUiLoader
 from PySide2.QtWidgets import QMainWindow
 
 from lib.config import Config, ConfigType
-from lib.impartus import Impartus
+from lib.core.impartus import Impartus
 from ui.callbacks.utils import CallbackUtils
-from ui.data.configkeys import ConfigKeys
-from ui.data.labels import Labels
+from lib.data.labels import ConfigKeys
+from lib.data.labels import Labels
 from lib.variables import Variables
+from ui.splash import SplashScreen
 
 
 class LoginWindow(QMainWindow):
@@ -27,6 +28,7 @@ class LoginWindow(QMainWindow):
         self.login_form = None
         self.login_button = None
         self.content_window = None
+        self.splashscreen = None
 
     def setup_ui(self, content_window):
         self.content_window = content_window
@@ -125,4 +127,5 @@ class LoginWindow(QMainWindow):
             from_window=self,
             to_window=self.content_window
         )
+
         QTimer.singleShot(1, self.content_window.work_offline)

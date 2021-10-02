@@ -1,7 +1,7 @@
-from PySide2.QtWidgets import QTableWidgetItem
+from PySide2.QtWidgets import QTreeWidgetItem
 
 
-class CustomTableWidgetItem(QTableWidgetItem):
+class CustomTreeWidgetItem(QTreeWidgetItem):
     """
     A custom table widget item holds a numeric value and allows the columns to be numerically sorted
     by the value.

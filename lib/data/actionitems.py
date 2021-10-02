@@ -1,6 +1,7 @@
-from PySide2.QtWidgets import QPushButton, QComboBox
+from PySide2.QtWidgets import QPushButton
 
-from ui.data.Icons import Icons
+from lib.data.Icons import Icons
+from lib.data.labels import Labels
 
 
 class ActionItems:
@@ -21,27 +22,34 @@ class ActionItems:
         },
         'download_chats': {
             'tooltip': 'Download Lecture Chats',
-            'text': Icons.SLIDES__DOWNLOAD_CAPTIONS.value,
-            'type': QPushButton,
-        },
-    }
-    slides_actions = {
-        'show_slides': {
-            'tooltip': 'Show Backpack Slides',
-            'text': Icons.SLIDES__DOWNLOAD_SLIDES.value,
-            'type': QComboBox,
-        },
-        'download_slides': {
-            'tooltip': 'Download Backpack Slides',
-            'text': Icons.SLIDES__DOWNLOAD_SLIDES.value,
+            'text': Icons.VIDEO__DOWNLOAD_CAPTIONS.value,
             'type': QPushButton,
         },
         'open_folder': {
+            'tooltip': 'Open Video Folder',
+            'text': Icons.VIDEO__OPEN_FOLDER.value,
+            'type': QPushButton,
+        },
+    }
+
+    slides_actions = {
+        Labels.DOCUMENT__DOWNLOAD_DOCUMENT.value: {
+            'tooltip': 'Download Backpack Document',
+            'text': Icons.SLIDES__DOWNLOAD_SLIDES.value,
+            'type': QPushButton,
+            # 'callback': Columns.widget_columns['']
+        },
+        Labels.DOCUMENT__OPEN_DOCUMENT.value: {
+            'tooltip': 'Show Backpack Document',
+            'text': Icons.SLIDES__SHOW_SLIDES.value,
+            'type': QPushButton,
+        },
+        Labels.DOCUMENT__OPEN_FOLDER.value: {
             'tooltip': 'Open Folder',
             'text': Icons.VIDEO__OPEN_FOLDER.value,
             'type': QPushButton,
         },
-        'attach_slides': {
+        Labels.DOCUMENT__ATTACH_DOCUMENT.value: {
             'tooltip': 'Attach Slides',
             'text': Icons.SLIDES__ATTACH_SLIDES.value,
             'type': QPushButton,

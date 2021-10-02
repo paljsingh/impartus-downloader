@@ -67,14 +67,10 @@ class ThreadLogger:
         logger: logging.Logger
         for name, logger in self.__class__.loggers.items():
             # add threadlog handler only if the content window is available.
-            if Variables().log_window():
+            if Variables().log_window() and len(logger.handlers) <= 1:
                 self.add_handler(logger, ThreadLogHandler())
 
     def add_handler(self, logger, handler):  # noqa
-        # set up log handler
-        # log_handler =
-
-        # for handler in [log_handler, console_handler]:
         handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(name)s - %(message)s'))
 
         # emit signal and write to app log window.

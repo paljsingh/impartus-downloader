@@ -2,9 +2,9 @@ from PySide2.QtGui import QIcon
 from PySide2.QtWidgets import QAction, QMainWindow, QActionGroup
 
 from lib.config import ConfigType, Config
-from lib.impartus import Impartus
-from ui.data.columns import Columns
-from ui.data.menuitems import MenuItems
+from lib.core.impartus import Impartus
+from lib.data.columns import Columns
+from lib.data.menuitems import MenuItems
 import qtawesome as qta
 
 
@@ -66,8 +66,8 @@ class Menubar:
                             pass
 
                         # however, if the column is default hidden, set the menu item to unchecked.
-                        if Columns.get_display_columns_dict().get(level2_child_key) \
-                                and Columns.get_display_columns_dict().get(level2_child_key).get('hidden'):
+                        if Columns.get_video_columns().get(level2_child_key) \
+                                and Columns.get_video_columns().get(level2_child_key).get('hidden'):
                             submenu_item.setChecked(False)
 
                         submenu_item.triggered.connect(callback)    # noqa

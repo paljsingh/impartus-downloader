@@ -44,7 +44,7 @@ class SortableRoundProgressbar(QWidget):
 
         self.setLayout(self.layout)
 
-    def setAlignment(self, alignment=QtCore.Qt.AlignCenter):
+    def setAlignment(self, alignment=QtCore.Qt.AlignCenter):        # noqa
         self.layout.setAlignment(alignment)
 
     def changeEvent(self, event: QEvent) -> None:
@@ -55,7 +55,7 @@ class SortableRoundProgressbar(QWidget):
         if event.type() == QEvent.PaletteChange:
             self.progress_bar.set_palette_color()
 
-    def setValue(self, value: int):
+    def setValue(self, value: int):     # noqa
         self.progress_bar.rpb_setValue(value)
         self.table_widget_item.setValue(value)
 
@@ -93,7 +93,7 @@ class CustomRoundProgressBar(roundProgressBar):
         self.rpb_setLineColor(line_color)
         self.rpb_setPathColor(path_color)
 
-    def setValue(self, value: int):
+    def setValue(self, value: int):     # noqa
         self.rpb_setValue(value)
 
     def value(self):

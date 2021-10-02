@@ -2,7 +2,7 @@ from PySide2 import QtWidgets
 from PySide2.QtCore import QFile
 from PySide2.QtUiTools import QUiLoader
 
-from ui.data.labels import Labels
+from lib.data.labels import Labels
 
 
 class Dialog:

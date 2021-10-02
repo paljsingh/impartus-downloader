@@ -9,7 +9,7 @@ class ButtonCallbacks:
             cls._instance = orig.__new__(cls)
         return cls._instance
 
-    def set_pushbutton_statuses(self):
+    def set_pushbutton_statuses(self):  # noqa
         if CallbackUtils().impartus.is_authenticated():
             CallbackUtils().login_window.login_form.login_button.setEnabled(False)
         else:

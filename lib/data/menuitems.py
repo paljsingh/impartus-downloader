@@ -2,9 +2,9 @@ import sys
 from functools import partial
 
 from lib.config import ConfigType, Config
+from lib.data.columns import Columns
 from ui.callbacks.menucallbacks import MenuCallbacks
-from ui.data.Icons import Icons
-from ui.data.columns import Columns
+from lib.data.Icons import Icons
 
 
 class MenuItems:
@@ -59,10 +59,9 @@ class MenuItems:
                 'type': 'list',
                 'status': 'disabled',
                 'behavior': 'multiselect',
-                'child_items': {k: v['menu_name'] for k, v in
-                                {**Columns.data_columns, **Columns.widget_columns}.items()},
+                'child_items': {k: v['menu_name'] for k, v in Columns.get_video_columns().items()},
                 'child_callbacks': [partial(MenuCallbacks().on_click__menu__view_columns, key)
-                                    for key in [*Columns.data_columns.keys(), *Columns.widget_columns.keys()]]
+                                    for key in Columns.get_video_columns()]
             },
             'sep': {
                 'type': 'separator',
@@ -112,25 +111,37 @@ class MenuItems:
                 'icon': Icons.MENU__DOWNLOAD_CAPTIONS.value,
                 'shortcut': 'Shift+Ctrl+J',
                 'status_tip': 'Download Lecture Chats',
-                'callback': MenuCallbacks().on_click__menu__video_download_lecture_videos,
+                'callback': MenuCallbacks().on_click__menu__video_download_lecture_chats,
+            },
+            'Open Folder': {
+                'icon': Icons.MENU__OPEN_FOLDER.value,
+                'shortcut': 'Ctrl+O',
+                'status_tip': 'Open Video Folder',
+                'callback': MenuCallbacks().on_click__menu__video_open_folder,
             },
         },
         'Slides': {
-            'Download Backpack Slides': {
+            'Download Backpack Document': {
                 'icon': Icons.MENU__DOWNLOAD_SLIDES.value,
                 'shortcut': 'Ctrl+K',
                 'status_tip': 'Download Lecture Slides',
                 'callback': MenuCallbacks().on_click__menu__slides_download_backpack_slides,
             },
+            'View Document': {
+                'icon': Icons.MENU__SHOW_SLIDES.value,
+                'shortcut': 'Shift+Ctrl+P',
+                'status_tip': 'View Document',
+                'callback': MenuCallbacks().on_click__menu__slides_view_document,
+            },
             'Open Folder': {
                 'icon': Icons.MENU__OPEN_FOLDER.value,
-                'shortcut': 'Ctrl+O',
+                'shortcut': 'Shift+Ctrl+O',
                 'status_tip': 'Open Lecture Content Folder',
                 'callback': MenuCallbacks().on_click__menu__slides_open_folder,
             },
             'Attach Lecture Slides': {
                 'icon': Icons.MENU__ATTACH_SLIDES.value,
-                'shortcut': 'Shift+Ctrl+O',
+                'shortcut': 'Shift+Ctrl+A',
                 'status_tip': 'Attach Downloaded Slides to a Lecture',
                 'callback': MenuCallbacks().on_click__menu__slides_attach_lecture_slides,
             },
