@@ -25,6 +25,7 @@ Downloader for impartus streaming videos.
 -  🆕 Supports system themes.
 - Sortable content.
 - 🆕 Better looking widgets.
+- 🆕 Elapsed time / ETA info on progressbar.
 - Configurable columns.
 
 
