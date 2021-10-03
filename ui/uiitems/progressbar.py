@@ -123,6 +123,7 @@ class SortableRoundProgressbar(QWidget):
             eta_format = '  --:--'
         else:
             eta_format = '  -{:d}:{:02d}'.format(int(value) // 60, int(value) % 60)
+        self.eta_progress_bar.rpb_setValue(self.pctValue)
         self.eta_progress_bar.setText(eta_format)
 
     def eta(self):
@@ -157,6 +158,7 @@ class SortableRoundProgressbar(QWidget):
             eta_format = '  --:--'
         else:
             eta_format = '  {:d}:{:02d}'.format(int(value) // 60, int(value) % 60)
+        self.elap_progress_bar.rpb_setValue(self.pctValue)
         self.elap_progress_bar.setText(eta_format)
 
     def elapsed(self):
