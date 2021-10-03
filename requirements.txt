@@ -1,4 +1,4 @@
-pycryptodome
+pycryptodome~=3.10.1
 envyaml~=1.8.210417
 requests~=2.25.1
 enzyme~=0.4.1
@@ -8,6 +8,5 @@ pytest-mock
 PyYAML~=5.4.1
 PySide2~=5.15.2
 PySide2extn~=1.0.0
-
 QtAwesome~=1.0.3
 urllib3~=1.26.6
