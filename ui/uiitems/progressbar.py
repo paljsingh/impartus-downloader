@@ -1,3 +1,7 @@
+import math
+from datetime import datetime
+
+import PySide2
 from PySide2 import QtCore
 from PySide2.QtCore import QEvent
 from PySide2.QtGui import QPalette
@@ -22,7 +26,7 @@ class SortableRoundProgressbar(QWidget):
     - A QHBoxLayout item to keep the roundProgressBar horizontally center aligned.
 
     Every change in the SortableRoundProgressBar item must be updated to both the roundProgressBar
-    instance (for displau) and QTableWidgetItem (for sorting)
+    instance (for display) and QTableWidgetItem (for sorting)
     """
 
     def __init__(self):
@@ -33,16 +37,67 @@ class SortableRoundProgressbar(QWidget):
         self.layout.setContentsMargins(0, 0, 0, 0)
 
         # add a progress bar to the layout.
-        self.progress_bar = CustomRoundProgressBar(parent=self)
-        self.layout.addWidget(self.progress_bar)
+        self.pct_progress_bar = CustomRoundProgressBar(parent=self)
+        self.pct_progress_bar.rpb_setTextFormat('Percentage')
+        self.pct_progress_bar.rpb_setValue(0)
+        self.pct_progress_bar.show()
+
+        self.eta_progress_bar = CustomRoundProgressBar(parent=self)
+        self.eta_progress_bar.rpb_setTextFormat('Value')
+        self.eta_progress_bar.rpb_setValue(0)
+        self.eta_progress_bar.hide()
+
+        self.elap_progress_bar = CustomRoundProgressBar(parent=self)
+        self.elap_progress_bar.rpb_setTextFormat('Value')
+        self.elap_progress_bar.rpb_setValue(0)
+        self.elap_progress_bar.hide()
+
+        self.layout.addWidget(self.pct_progress_bar)
+        self.layout.addWidget(self.eta_progress_bar)
+        self.layout.addWidget(self.elap_progress_bar)
 
         # add a TableWidgetItem based on which the table can be sorted.
         self.table_widget_item = CustomTableWidgetItem()
 
-        # initialize both the progressbar and the widget item to 0
-        self.setValue(0)
+        # % value, to control progressbar's progress
+        self.pctValue = 0
 
+        # calculate ETA using last n updates at max.
+        self.n = 10
+
+        # history of past timestamp updates and progressbar values.
+        # when a download is paused, history is cleared to not impact the ETA adversely.
+        self.history = []
+
+        # set when a download is started, cleared only when download is completed (successful or failed)
+        self.start_epoch = None
+
+        # collect the display metrics in this order.
+        self.display_order = [self.percentageValue, self.eta, self.elapsed]
+
+        # cycle through the display metrics in this order.
+        self.set_order = [self.setPercentageValue, self.setEta, self.setElapsed]
+
+        # cycle through the display metrics in this order.
+        self.progressbars = [self.pct_progress_bar, self.eta_progress_bar, self.elap_progress_bar]
+
+        # currently selected display metric.
+        self.current_display_index = 0
+
+        # initialize both the progressbar and the widget item to 0
+        self.table_widget_item.setValue(0)
         self.setLayout(self.layout)
+
+    def mouseReleaseEvent(self, event: PySide2.QtGui.QMouseEvent) -> None:
+        """
+        When progressbar is clicked, switch the view to next metric.
+        """
+        self.current_display_index = (self.current_display_index + 1) % len(self.display_order)
+        value = self.display_order[self.current_display_index]()
+        self.set_order[self.current_display_index](value)
+        for pb in self.progressbars:
+            pb.hide()
+        self.progressbars[self.current_display_index].show()
 
     def setAlignment(self, alignment=QtCore.Qt.AlignCenter):        # noqa
         self.layout.setAlignment(alignment)
@@ -53,14 +108,118 @@ class SortableRoundProgressbar(QWidget):
         """
         super().changeEvent(event)
         if event.type() == QEvent.PaletteChange:
-            self.progress_bar.set_palette_color()
+            self.pct_progress_bar.set_palette_color()
+            self.eta_progress_bar.set_palette_color()
+            self.elap_progress_bar.set_palette_color()
+            return
 
-    def setValue(self, value: int):     # noqa
-        self.progress_bar.rpb_setValue(value)
-        self.table_widget_item.setValue(value)
+    def setEta(self, value: int):
+        """
+        ETA display value for download
+        --:-- when not started / paused.
+        -mm:ss otherwise
+        """
+        if not self.start_epoch or not self.history:
+            eta_format = '  --:--'
+        else:
+            eta_format = '  -{:d}:{:02d}'.format(int(value) // 60, int(value) % 60)
+        self.eta_progress_bar.setText(eta_format)
 
-    def value(self):
-        self.table_widget_item.value()
+    def eta(self):
+        """
+        calculated ETA (numeric)
+        0 when video already downloaded.
+        <0 / undefined when paused or not started the download.
+        int no. of seconds when download in progress.
+        """
+        if self.pctValue == 100:
+            return 0
+
+        if not len(self.history):
+            return -1
+
+        timestamps = [x['timestamp'] for x in self.history]
+        values = [x['value'] for x in self.history]
+        time_last_n = max(timestamps) - min(timestamps)
+        progress_last_n = max(values) - min(values)
+        time_per_unit = time_last_n / progress_last_n if progress_last_n > 0 else 0
+
+        eta_value = (100 - self.pctValue) * time_per_unit
+        return int(eta_value)
+
+    def setElapsed(self, value: int):
+        """
+        Elapsed time display format
+        mm:ss when download in progress / paused
+        --:-- when download not started.
+        """
+        if not self.start_epoch:
+            eta_format = '  --:--'
+        else:
+            eta_format = '  {:d}:{:02d}'.format(int(value) // 60, int(value) % 60)
+        self.elap_progress_bar.setText(eta_format)
+
+    def elapsed(self):
+        """
+        Elapsed time (numeric) in seconds
+        0 - if video is downloaded (previously), but not in this session.
+        (last recorded timestamp - start timestamp) - if downloaded fully in this session.
+        0 - if video is yet to be downloaded.
+        (current timestamp - start timestamp) - if download in is progress.
+        """
+        if self.pctValue == 100:
+            if self.history:
+                return max([x['timestamp'] for x in self.history]) - self.start_epoch
+            else:
+                return 0
+        elif self.pctValue == 0:
+            return 0
+        else:
+            return int(datetime.utcnow().timestamp()) - self.start_epoch
+
+    def setPercentageValue(self, value: int):
+        """
+        percentage Value - display format
+        """
+        self.pctValue = value
+        self.pct_progress_bar.rpb_setValue(value)
+
+    def percentageValue(self):
+        """
+        percentage value (numeric)
+        """
+        return self.pctValue
+
+    def setValue(self, value: int, timestamp: int = None):     # noqa
+        """
+        The controller api for all the display units.
+        Takes a value (pct value) and timestamp (can be None when the progressbar is initialized to 0 or 100.)
+
+        If timestamp provided
+            initialize start epoch for download if not already set.
+            maintain a queue(circular) of previous values/timestamps of upto N size.
+        If no timestamp provided
+            clear history if exists (useful when a video download is paused)
+
+        update the text value of progressbar as per the currently selected metric.
+        """
+
+        if timestamp:
+            if not self.start_epoch:
+                self.start_epoch = timestamp
+            self.history.insert(len(self.history) % self.n, {
+                'timestamp': timestamp,
+                'value': value,
+            })
+        else:
+            # reset
+            self.history = []
+
+        self.table_widget_item.setValue(value)      # for numeric sort
+        self.setPercentageValue(value)              # for progressbar display (arc value)
+
+        current_value_format = self.display_order[self.current_display_index]()
+        self.set_order[self.current_display_index](current_value_format)    # set the text of progressbar.
 
 
 class CustomRoundProgressBar(roundProgressBar):
@@ -72,13 +231,12 @@ class CustomRoundProgressBar(roundProgressBar):
     def __init__(self, parent=None):
         super().__init__(parent)
 
-        self.rpb_setMinimumSize(36, 36)
+        self.rpb_setMinimumSize(48, 48)
         self.rpb_setMaximumSize(48, 48)
         self.rpb_setTextRatio(5)
-        self.rpb_setTextFont('Arial')
+        self.rpb_setTextFont('Courier')
         self.rpb_setTextFormat('Percent')
-        self.rpb_setLineWidth(4)
-        self.rpb_setTextWidth(9)
+        self.rpb_setLineWidth(3)
         self.set_palette_color()
         self.show()
 
@@ -96,5 +254,13 @@ class CustomRoundProgressBar(roundProgressBar):
     def setValue(self, value: int):     # noqa
         self.rpb_setValue(value)
 
+    def setText(self, value: str):
+        self.rpb_textValue = str(value)
+        self.update()
+
     def value(self):
         return self.rpb_getValue()
+
+    # def rpb_textFactor(self):
+    #     self.textFactorX = self.posFactor + (self.rpb_Size - self.sizeFactor)/2  # - self.rpb_textWidth*0.5*(len(self.rpb_textValue)/2)
+    #     self.textFactorY = self.rpb_textWidth/2 + self.rpb_Size/2

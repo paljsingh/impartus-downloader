@@ -1,4 +1,5 @@
 import os
+from datetime import datetime
 from functools import partial
 
 import qtawesome as qta
@@ -133,11 +134,11 @@ class Table:
                 download_video_button.setEnabled(False)
                 play_video_button.setEnabled(True)
                 open_folder_button.setEnabled(True)
-                progressbar_widget.setValue(100)
+                progressbar_widget.setValue(100, int(datetime.utcnow().timestamp()))
             else:
                 download_video_button.setEnabled(True)
                 play_video_button.setEnabled(False)
-                progressbar_widget.setValue(0)
+                progressbar_widget.setValue(0, None)
 
             download_chat_button: QPushButton
             if self.impartus.is_authenticated() and not chat_downloaded:
@@ -189,12 +190,12 @@ class Table:
 
         # progress bar.
         progress_bar_widget = SortableRoundProgressbar()
-        progress_bar_widget.setValue(0)
+        progress_bar_widget.setValue(0, None)
         progress_bar_widget.setAlignment(Columns.get_video_widget_columns()['progress_bar']['alignment'])
         self.table_widget.setItem(self.index, col, progress_bar_widget.table_widget_item)
         self.table_widget.setCellWidget(self.index, col, progress_bar_widget)
         if video_metadata.get('offline_filepath'):
-            progress_bar_widget.setValue(100)
+            progress_bar_widget.setValue(100, None)
         col += 1
 
         video_actions_widget, cell_value = self.add_video_actions_buttons(video_metadata)

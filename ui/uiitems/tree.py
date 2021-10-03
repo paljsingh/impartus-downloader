@@ -70,7 +70,7 @@ class Tree:
         return treewidget
 
     def _set_headers(self, treewidget):     # noqa
-        treewidget.header().setAlternatingRowColors(True)
+        # treewidget.header().setAlternatingRowColors(True)
         headers = [x['display_name'] for x in Columns.get_document_columns().values()]
         treewidget.setHeaderLabels(headers)
         treewidget.header().setSortIndicatorShown(True)
