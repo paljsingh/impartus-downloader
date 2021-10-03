@@ -32,7 +32,7 @@ class WriteDelegate(QStyledItemDelegate):
         table = editor.parent().parent()
         video_id = table.cellWidget(index.row(), 0).layout().itemAt(0).widget().getValue()['video_id']
 
-        column_name = Columns.get_video_columns()[index.column() - 1]
+        column_name = [x for x in Columns.get_video_columns().keys()][index.column() - 1]
         original_value = self.data_callback()[video_id]['metadata'][column_name]
         new_value = editor.text()
 
