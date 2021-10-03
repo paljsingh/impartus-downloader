@@ -1,4 +1,3 @@
-import math
 from datetime import datetime
 
 import PySide2
@@ -41,23 +40,25 @@ class SortableRoundProgressbar(QWidget):
         self.pct_progress_bar.rpb_setTextFormat('Percentage')
         self.pct_progress_bar.rpb_setValue(0)
         self.pct_progress_bar.show()
+        self.layout.addWidget(self.pct_progress_bar)
 
+        # and one for eta...
         self.eta_progress_bar = CustomRoundProgressBar(parent=self)
         self.eta_progress_bar.rpb_setTextFormat('Value')
         self.eta_progress_bar.rpb_setValue(0)
         self.eta_progress_bar.hide()
+        self.layout.addWidget(self.eta_progress_bar)
 
+        # and another one for elapsed time...
         self.elap_progress_bar = CustomRoundProgressBar(parent=self)
         self.elap_progress_bar.rpb_setTextFormat('Value')
         self.elap_progress_bar.rpb_setValue(0)
         self.elap_progress_bar.hide()
-
-        self.layout.addWidget(self.pct_progress_bar)
-        self.layout.addWidget(self.eta_progress_bar)
         self.layout.addWidget(self.elap_progress_bar)
 
         # add a TableWidgetItem based on which the table can be sorted.
         self.table_widget_item = CustomTableWidgetItem()
+        self.table_widget_item.setValue(0)
 
         # % value, to control progressbar's progress
         self.pctValue = 0
@@ -69,7 +70,7 @@ class SortableRoundProgressbar(QWidget):
         # when a download is paused, history is cleared to not impact the ETA adversely.
         self.history = []
 
-        # set when a download is started, cleared only when download is completed (successful or failed)
+        # set when a download is started.
         self.start_epoch = None
 
         # collect the display metrics in this order.
@@ -78,19 +79,18 @@ class SortableRoundProgressbar(QWidget):
         # cycle through the display metrics in this order.
         self.set_order = [self.setPercentageValue, self.setEta, self.setElapsed]
 
-        # cycle through the display metrics in this order.
+        # cycle through the progress bars in this order.
         self.progressbars = [self.pct_progress_bar, self.eta_progress_bar, self.elap_progress_bar]
 
         # currently selected display metric.
         self.current_display_index = 0
 
-        # initialize both the progressbar and the widget item to 0
-        self.table_widget_item.setValue(0)
+        # initialize the widget item to 0
         self.setLayout(self.layout)
 
     def mouseReleaseEvent(self, event: PySide2.QtGui.QMouseEvent) -> None:
         """
-        When progressbar is clicked, switch the view to next metric.
+        When this widget is clicked, switch the view to next progressbar.
         """
         self.current_display_index = (self.current_display_index + 1) % len(self.display_order)
         value = self.display_order[self.current_display_index]()
@@ -120,9 +120,9 @@ class SortableRoundProgressbar(QWidget):
         -mm:ss otherwise
         """
         if not self.start_epoch or not self.history:
-            eta_format = '  --:--'
+            eta_format = '--:--'
         else:
-            eta_format = '  -{:d}:{:02d}'.format(int(value) // 60, int(value) % 60)
+            eta_format = '-{:d}:{:02d}'.format(int(value) // 60, int(value) % 60)
         self.eta_progress_bar.rpb_setValue(self.pctValue)
         self.eta_progress_bar.setText(eta_format)
 
@@ -155,9 +155,9 @@ class SortableRoundProgressbar(QWidget):
         --:-- when download not started.
         """
         if not self.start_epoch:
-            eta_format = '  --:--'
+            eta_format = '--:--'
         else:
-            eta_format = '  {:d}:{:02d}'.format(int(value) // 60, int(value) % 60)
+            eta_format = '{:d}:{:02d}'.format(int(value) // 60, int(value) % 60)
         self.elap_progress_bar.rpb_setValue(self.pctValue)
         self.elap_progress_bar.setText(eta_format)
 
@@ -235,8 +235,8 @@ class CustomRoundProgressBar(roundProgressBar):
 
         self.rpb_setMinimumSize(48, 48)
         self.rpb_setMaximumSize(48, 48)
-        self.rpb_setTextRatio(5)
-        self.rpb_setTextFont('Courier')
+        self.rpb_setTextRatio(6)
+        self.rpb_setTextFont('Avant Garde')
         self.rpb_setTextFormat('Percent')
         self.rpb_setLineWidth(3)
         self.set_palette_color()
@@ -262,7 +262,3 @@ class CustomRoundProgressBar(roundProgressBar):
 
     def value(self):
         return self.rpb_getValue()
-
-    # def rpb_textFactor(self):
-    #     self.textFactorX = self.posFactor + (self.rpb_Size - self.sizeFactor)/2  # - self.rpb_textWidth*0.5*(len(self.rpb_textValue)/2)
-    #     self.textFactorY = self.rpb_textWidth/2 + self.rpb_Size/2
