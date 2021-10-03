@@ -35,12 +35,13 @@ class Utils:
 
     @staticmethod
     def open_file(path, event=None):   # noqa
+
         if re.match('https?', path) or re.match('file:', path):
             webbrowser.open(r'{}'.format(path))
         elif platform.system() == 'Darwin':
-            # when preview.app, keynote.app is already launched,
-            # a second window often throws an error: 'cannot import <file>'
-            # use 'open' launcher.
+            # for Mac, use 'open' launcher to open non-web urls.
+            # 'webbrowser' launcher throws error 'cannot import <file>' when preview.app, keynote.app
+            # is already open.
             subprocess.run(["open", path])
         else:
             webbrowser.open(r'file://{}'.format(path))
