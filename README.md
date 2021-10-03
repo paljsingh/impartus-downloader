@@ -32,11 +32,11 @@ Downloader for impartus streaming videos.
 ---
 
 ### UI
-Dark theme
-![Impartus Downloader - Dark theme](ui/images/dark-theme.png)
+Videos
+![Impartus Downloader - Video Tab](https://drive.google.com/uc?export=view&id=1IBn-AIdEvccFIe5LRq68ujqkucQ0FzA6)
 
-Light theme
-![Impartus Downloader - Dark theme](ui/images/light-theme.png)
+Documents
+![Impartus Downloader - Documents Tab](https://drive.google.com/uc?export=view&id=1zQhqikeEv1D7-khQNPBgjoUN_kTdy9Ky)
 
 
 ### Demo video
