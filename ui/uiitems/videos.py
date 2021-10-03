@@ -1,4 +1,5 @@
 import os
+from datetime import datetime
 from functools import partial
 from typing import Tuple
 from threading import Event
@@ -47,7 +48,8 @@ class Videos:
     def reset_content(self):
         self.table.reset_content()
 
-    def pause_resume_button_click(self, download_button: CustomPushButton, pause_event, resume_event):   # noqa
+    def pause_resume_button_click(self, pushbuttons: Tuple, pause_event, resume_event):   # noqa
+        download_button = pushbuttons[0]
         if pause_event.is_set():
             download_button.setIcon(Icons.VIDEO__PAUSE_DOWNLOAD.value)
             download_button.setToolTip('Pause Download')
@@ -61,7 +63,7 @@ class Videos:
 
     @staticmethod
     def progress_callback(download_button: CustomPushButton, progressbar_widget: SortableRoundProgressbar, value: int):
-        progressbar_widget.setValue(value)
+        progressbar_widget.setValue(value, int(datetime.utcnow().timestamp()))
         if value == 100:
             # update download button to show 'video under processing'
             download_button.setIcon(Icons.VIDEO__VIDEO_PROCESSING.value, animate=True)
@@ -92,10 +94,10 @@ class Videos:
         # the event will show up here.
         # pass the earlier saved fields to pause_resume_button_callback.
         if self.workers.get(video_id):
-            pushbutton = self.workers.get(video_id)['pushbuttons']['download_video']
+            pushbuttons = self.workers.get(video_id)['pushbuttons']
             pause_ev = self.workers.get(video_id)['pause_event']
             resume_ev = self.workers.get(video_id)['resume_event']
-            self.pause_resume_button_click(pushbutton, pause_ev, resume_ev)
+            self.pause_resume_button_click(pushbuttons, pause_ev, resume_ev)
             return
 
         # A fresh download reaches here..
