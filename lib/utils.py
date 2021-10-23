@@ -60,7 +60,7 @@ class Utils:
 
     @staticmethod
     def save_json(content, filepath):
-        with open(filepath, "w") as fh:
+        with open(filepath, "w", encoding="utf-8") as fh:
             json.dump(content, fh, indent=4)
 
     @staticmethod
