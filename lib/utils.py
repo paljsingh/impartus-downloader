@@ -4,6 +4,7 @@ import platform
 import re
 import shutil
 import subprocess
+import sys
 from typing import List
 import webbrowser
 from datetime import datetime
@@ -117,3 +118,39 @@ class Utils:
             if os.path.exists(path_with_ext):
                 return True, path_with_ext
         return False, path
+
+        #
+        # except AttributeError:
+        #     if level < -13:
+        #         process.nice(psutil.REALTIME_PRIORITY_CLASS)
+        #     elif -13 <= level < -7:
+        #         process.nice(psutil.HIGH_PRIORITY_CLASS)
+        #     elif -7 <= level < 0:
+        #         process.nice(psutil.ABOVE_NORMAL_PRIORITY_CLASS)
+        #     elif 0 <= level < 7:
+        #         process.nice(psutil.NORMAL_PRIORITY_CLASS)
+        #     elif 7 <= level < 12:
+        #         process.nice(psutil.BELOW_NORMAL_PRIORITY_CLASS)
+        #     elif 13 <= level:
+        #         process.nice(psutil.IDLE_PRIORITY_CLASS)
+
+    @classmethod
+    def run_with_priority(cls, command: str, priority='normal'):
+        command_args = command.split(' ')
+        if sys.platform == 'Windows':
+            priorities = {
+                'normal': subprocess.NORMAL_PRIORITY_CLASS,
+                'low': subprocess.BELOW_NORMAL_PRIORITY_CLASS,
+                'lowest': subprocess.IDLE_PRIORITY_CLASS
+            }
+            priority_class = priorities[priority] if priorities.get(priority) else subprocess.NORMAL_PRIORITY_CLASS
+            process = subprocess.Popen(command_args, creationFlags=priority_class)
+        else:
+            nice_values = {
+                'normal': 0,
+                'low': 10,
+                'lowest': 20,
+            }
+            nice_value = nice_values[priority] if nice_values.get(priority) else 0
+            process = subprocess.Popen(command_args, preexec_fn=lambda: os.nice(nice_value))
+        return process.wait()

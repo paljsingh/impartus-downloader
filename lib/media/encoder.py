@@ -2,6 +2,7 @@ import os
 from shutil import move
 from typing import List
 
+from lib.utils import Utils
 from lib.threadlogging import ThreadLogger
 
 
@@ -14,7 +15,7 @@ class Encoder:
     """
 
     @classmethod
-    def split_track(cls, ts_files: List, duration: int, debug: bool = False):
+    def split_track(cls, ts_files: List, duration: int, debug: bool = False, priority='normal'):
         """
         Impartus platform has some m3u8 streams that are badly coded, and put all the stream
         contents to a single track, despite the metadata claiming to have more than 1 tracks.
@@ -25,6 +26,7 @@ class Encoder:
         :param duration: Duration of the lecture from the metadata.
         Total size of track 0 is expected to be number_of_tracks * duration
         :param debug: If true, print verbose output of ffmpeg command.
+        :param priority: priority of the process launched via subprocess.run()
         """
         if debug:
             loglevel = "verbose"
@@ -34,24 +36,22 @@ class Encoder:
         # take out splices from track 0 ts_file and create ts_file1, ts_file2 ..
         for index in range(1, len(ts_files)):
             start_ss = index * duration
-            (
-                os.system("ffmpeg -y -loglevel {level} -i {input} -c copy -ss {start} -t {duration} {output}"
-                          .format(level=loglevel, input=ts_files[0], start=start_ss, duration=duration,
-                                  output=ts_files[index]))
-            )
+            command = "ffmpeg -y -loglevel {level} -i {input} -c copy -ss {start} -t {duration} {output}".format(
+                level=loglevel, input=ts_files[0], start=start_ss, duration=duration, output=ts_files[index])
+            Utils.run_with_priority(command, priority)
 
         # trim ts_file 0, so that it contains only track 0 content
         tmp_file_path = os.path.join(os.path.dirname(ts_files[0]), "tmp.ts")
-        (
-            os.system("ffmpeg -y -loglevel {level} -i {input} -c copy -ss {start} -t {duration} {output}"
-                      .format(level=loglevel, input=ts_files[0], start=0, duration=duration, output=tmp_file_path))
-        )
+        command = "ffmpeg -y -loglevel {level} -i {input} -c copy -ss {start} -t {duration} {output}".format(
+            level=loglevel, input=ts_files[0], start=0, duration=duration, output=tmp_file_path)
+        Utils.run_with_priority(command, priority)
+
         # os.rename() fails on windows if the target file exists.
         # using shutils.move
         move(tmp_file_path, ts_files[0])
 
     @classmethod
-    def encode_mkv(cls, rf_id, ts_files, filepath, duration, debug=False, flipped=False):
+    def encode_mkv(cls, rf_id, ts_files, filepath, duration, debug=False, flipped=False, priority='normal'):
         """
         Encode to mkv using ffmpeg and create a multiview video file.
         :param rf_id: video ttid (for regular) or fcid (for flipped)
@@ -60,6 +60,7 @@ class Encoder:
         :param duration: duration from the metadata.
         :param debug: debug flag, if True print verbose output from ffmpeg.
         :param flipped: Whether the video is a flipped video.
+        :param priority: priority of the process launched via subprocess.run()
         :return: True if encode successful.
         """
 
@@ -90,22 +91,17 @@ class Encoder:
 
             if split_flag:
                 logger.info("[{}]: Splitting track 0 .. ".format(rf_id))
-                Encoder.split_track(ts_files, duration, debug)
+                Encoder.split_track(ts_files, duration, debug=debug, priority=priority)
 
             logger.info("[{}]: Encoding output file ..".format(rf_id))
             # adding rf_id to metadata.
             if flipped:
-                (
-                    os.system("ffmpeg -y -loglevel {level} {input} -metadata fcid={fcid} -c copy {maps} {output}"
-                              .format(level=log_level, fcid=rf_id, input=' '.join(in_args), maps=' '.join(map_args),
-                                      output=filepath))
-                )
+                command = "ffmpeg -y -loglevel {level} {input} -metadata fcid={fcid} -c copy {maps} {output}".format(
+                    level=log_level, fcid=rf_id, input=' '.join(in_args), maps=' '.join(map_args), output=filepath)
             else:
-                (
-                    os.system("ffmpeg -y -loglevel {level} {input} -metadata ttid={ttid} -c copy {maps} {output}"
-                              .format(level=log_level, ttid=rf_id, input=' '.join(in_args), maps=' '.join(map_args),
-                                      output=filepath))
-                )
+                command = "ffmpeg -y -loglevel {level} {input} -metadata ttid={ttid} -c copy {maps} {output}".format(
+                    level=log_level, ttid=rf_id, input=' '.join(in_args), maps=' '.join(map_args), output=filepath)
+            Utils.run_with_priority(command, priority)
         except Exception as ex:
             logger.error("[{}]: ffmpeg exception: {}".format(rf_id, ex))
             logger.error("[{}]: Check the ts file(s) generated at location: {}".format(rf_id, ', '.join(ts_files)))
