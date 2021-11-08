@@ -117,3 +117,23 @@ class Utils:
             if os.path.exists(path_with_ext):
                 return True, path_with_ext
         return False, path
+
+    @classmethod
+    def run_with_priority(cls, command_args: List, priority='normal'):
+        if platform.system() == 'Windows':
+            priorities = {
+                'normal': subprocess.NORMAL_PRIORITY_CLASS,
+                'low': subprocess.BELOW_NORMAL_PRIORITY_CLASS,
+                'lowest': subprocess.IDLE_PRIORITY_CLASS
+            }
+            priority_class = priorities[priority] if priorities.get(priority) else subprocess.NORMAL_PRIORITY_CLASS
+            process = subprocess.Popen(command_args, creationflags=priority_class)
+        else:
+            nice_values = {
+                'normal': 0,
+                'low': 10,
+                'lowest': 20,
+            }
+            nice_value = nice_values[priority] if nice_values.get(priority) else 0
+            process = subprocess.Popen(command_args, preexec_fn=lambda: os.nice(nice_value))
+        return process.wait()

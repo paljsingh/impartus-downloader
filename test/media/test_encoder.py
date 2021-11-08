@@ -54,7 +54,7 @@ def test_split_track(mocker, tests_data):
     from lib.media.encoder import Encoder
 
     for test_data in tests_data:
-        Encoder.split_track(test_data['files'], test_data['duration'])
+        Encoder.split_track(test_data['files'], test_data['duration'], priority='low')
         assert os_system.call_count == len(test_data['files'])
         os_system.assert_has_calls(test_data['split_calls'])
         os_system.reset_mock()

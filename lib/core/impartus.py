@@ -179,7 +179,8 @@ class Impartus:
 
             # Encode all ts files into a single output mkv.
             os.makedirs(os.path.dirname(mkv_filepath), exist_ok=True)
-            flag = Encoder.encode_mkv(rf_id, ts_files, mkv_filepath, duration, self.conf.get('debug'))
+            flag = Encoder.encode_mkv(rf_id, ts_files, mkv_filepath, duration, debug=self.conf.get('debug'),
+                                      priority=self.conf.get('external_process_priority'))
 
             if flag:
                 self.logger.info("[{}]: Processed {}\n---".format(rf_id, mkv_filepath))
