@@ -1,5 +1,6 @@
-Impartus Downloader
+Impartus Downloader (Desktop App)
 ===
+
 
 [NEW] - 
 **Impartus Downloader for Android** (Coming soon on Google PlayStore)
@@ -8,7 +9,6 @@ For the impatient -
 https://github.com/paljsingh/Impartus-Downloader-Android
 
 
-==
 
 
 Downloader for impartus streaming videos.
