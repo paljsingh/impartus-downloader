@@ -1,32 +1,28 @@
 Impartus Downloader
 ===
 
+[NEW] - 
+**Impartus Downloader for Android** (Coming soon on Google PlayStore)
+
+For the impatient - 
+https://github.com/paljsingh/Impartus-Downloader-Android
+
+
+==
+
+
 Downloader for impartus streaming videos.
 ---
 
+- Tested on Mac OSX, Linux (ubuntu) and Windows 10.
+
+Feature list
+
 - Convert impartus lectures to mkv files.
 - Regular and flipped lecture download supported.
-- Tested on Mac OSX, Linux (ubuntu) and Windows 10.
-- Parallel downloads supported. 
-- Pause / Resume individual downloads.
 - Supports multi-track files. Tested with video lectures having up to 4 tracks.
 - Backpack slides download supported.
--  🆕 Pyside2/Qt5 based ui.
--  🆕 Bypass login screen to access previously downloaded content.
--  🆕 Content Search.
-- Attach slides downloaded from external sources to the lecture folder.
--  🆕 Option to view all the attached slides from the UI.
--  🆕 Better management of the downloaded content.
 - Lecture chats overlayed as closed captions for the video.
--  🆕 Download chats / captions file separately.
-- Editable subject field to use shorter subject names and better organize the folders.
-- Auto Organize lectures to match any change in lecture topic, subject. 
--  🆕 Fast, Responsive UI.
--  🆕 Supports system themes.
-- Sortable content.
-- 🆕 Better looking widgets.
-- 🆕 Elapsed time / ETA info on progressbar.
-- Configurable columns.
 
 
 ---
