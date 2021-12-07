@@ -1,6 +1,11 @@
-**Impartus Downloader for Android** (Coming soon on Google PlayStore)  
-For the impatient - https://github.com/paljsingh/Impartus-Downloader-Android
+  
+**Impartus Downloader for Android** 
 
+**on PlayStore** - https://play.google.com/store/apps/details?id=jp.id
+
+**Source** - https://github.com/paljsingh/Impartus-Downloader-Android
+
+---
 
 
 Impartus Downloader (Desktop App)
