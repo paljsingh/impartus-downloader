@@ -1,12 +1,13 @@
   
-Also checkout **Impartus Downloader for Android** 
-https://github.com/paljsingh/Impartus-Downloader-Android
-
----
 
 
 Impartus Downloader (Desktop App)
 ===
+
+***For Android version - click***
+https://github.com/paljsingh/Impartus-Downloader-Android
+
+---
 
 
 Downloader for impartus streaming videos.
