@@ -45,8 +45,7 @@ ffmpeg >= v4.3
 
 ## Installation / Run
 
-### OSX (10.14+)
-
+OSX (10.14+)
 >   ```
 > # setup virtualenv (optional)
 > $ virtualenv venv
