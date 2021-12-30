@@ -69,8 +69,8 @@ OSX (10.14+)
 Windows 10
 >``` 
 > # clone repo
-> $ git.exe clone https://github.com/paljsingh/impartus-downloader.git
-> $ cd impartus-downloader
+> git.exe clone https://github.com/paljsingh/impartus-downloader.git
+> cd impartus-downloader
 > 
 > # setup virtualenv (optional)
 > pip.exe install virtualenv
