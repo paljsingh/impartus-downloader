@@ -52,11 +52,6 @@ class Impartus:
         platform_name = platform.system()
         self.download_dir = self.conf.get('target_dir').get(platform_name)
 
-        # export any required variables:
-        if self.conf.get('export_variables') and self.conf['export_variables'].get(platform_name):
-            for key, value in self.conf['export_variables'].get(platform_name).items():
-                os.environ[key] = value
-
         self.temp_downloads_dir = os.path.join(Utils.get_temp_dir(), 'impartus.media')
         os.makedirs(self.temp_downloads_dir, exist_ok=True)
 

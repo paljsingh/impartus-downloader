@@ -1,6 +1,9 @@
 from PySide2 import QtWidgets, QtCore
 from PySide2.QtGui import QIcon, QGuiApplication, Qt
+import platform
+import os
 
+from lib.config import Config, ConfigType
 from lib.core.impartus import Impartus
 from lib.data.Icons import Icons
 from lib.threadlogging import ThreadLogger
@@ -47,6 +50,14 @@ class App:
 
 
 if __name__ == '__main__':
+
+    # export any required variables for this platform.
+    conf = Config.load(ConfigType.IMPARTUS)
+    platform_name = platform.system()
+    if conf.get('export_variables') and conf['export_variables'].get(platform_name):
+        for key, value in conf['export_variables'].get(platform_name).items():
+            os.environ[key] = value
+
     QtCore.QCoreApplication.setAttribute(QtCore.Qt.AA_ShareOpenGLContexts)
     QGuiApplication.setAttribute(Qt.AA_EnableHighDpiScaling)
     QGuiApplication.setAttribute(Qt.AA_UseHighDpiPixmaps)
