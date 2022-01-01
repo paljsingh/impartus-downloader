@@ -45,8 +45,7 @@ ffmpeg >= v4.3
 
 ## Installation / Run
 
-### OSX (10.14+)
-
+OSX (10.14+)
 >   ```
 > # setup virtualenv (optional)
 > $ virtualenv venv
@@ -68,13 +67,17 @@ ffmpeg >= v4.3
 > ```
 
 Windows 10
->```
+>``` 
 > # clone repo
-> $ git.exe clone https://github.com/paljsingh/impartus-downloader.git
-> $ cd impartus-downloader
->
+> git.exe clone https://github.com/paljsingh/impartus-downloader.git
+> cd impartus-downloader
+> 
+> # setup virtualenv (optional)
+> pip.exe install virtualenv
+> .\venv\Scripts\activate
+> 
 > # install dependencies
-> $ pip3.exe install -r requirements.txt
+> pip3.exe install -r requirements.txt
 >
 > Download win64-gpl zip from the following link, extract and copy ffmpeg.exe to
 > impartus-downloader folder. The ffmpeg.exe statically bundles the dependent libs and
@@ -82,10 +85,10 @@ Windows 10
 > [https://github.com/BtbN/FFmpeg-Builds/releases](https://github.com/BtbN/FFmpeg-Builds/releases)
 > 
 > # Ensure ffmpeg version is >= 4.3.0
-> $ ffmpeg.exe -version 
+> ffmpeg.exe -version 
 >
 > # Run application
-> $ python.exe App.py
+> python.exe App.py
 > ```
 
 Linux (Ubuntu 20+)
