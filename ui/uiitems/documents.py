@@ -139,5 +139,4 @@ class Documents:
             return
 
         for filepath in filepaths[0]:
-            dest_path = shutil.copy(filepath, folder_path)
-            # ss_combobox.add_items([dest_path])
+            shutil.copy(filepath, folder_path)

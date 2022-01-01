@@ -4,6 +4,7 @@ import platform
 import re
 import shutil
 import subprocess
+from pathlib import Path
 from typing import List
 import webbrowser
 from datetime import datetime
@@ -54,7 +55,7 @@ class Utils:
 
     @staticmethod
     def move_and_rename_file(source, destination):
-        if source != destination:
+        if source != destination and os.path.exists(source):
             os.makedirs(os.path.dirname(destination), exist_ok=True)
             shutil.move(source, destination)
 
@@ -87,14 +88,20 @@ class Utils:
     def get_filepath(cls, metadata, config_key: str):
         conf = cls.conf
         download_dir = conf.get(ConfigKeys.TARGET_DIR.value).get(platform.system())
+
+        d = dict()
+        if metadata is None:
+            return None
+
+        d.update(metadata)
+        d.update({'target_dir': download_dir})
         if conf.get(ConfigKeys.USE_SAFE_PATHS.value):
             sanitized_components = MetadataDictParser.sanitize(MetadataDictParser.parse_metadata(metadata))
-            file_path = conf.get(config_key).format(
-                **{**metadata, **sanitized_components}, target_dir=download_dir
-            )
-        else:
-            file_path = conf.get(config_key).format(**metadata, target_dir=download_dir)
-        return file_path
+            d.update(sanitized_components)
+        try:
+            return conf.get(config_key).format(**d)
+        except KeyError:
+            return None
 
     @staticmethod
     def get_mkv_path(video_metadata):
@@ -137,3 +144,15 @@ class Utils:
             nice_value = nice_values[priority] if nice_values.get(priority) else 0
             process = subprocess.Popen(command_args, preexec_fn=lambda: os.nice(nice_value))
         return process.wait()
+
+    @classmethod
+    def strip_root_dir(cls, filepath: str):
+        conf = cls.conf
+        download_dir = conf.get(ConfigKeys.TARGET_DIR.value).get(platform.system())
+        return os.path.relpath(filepath, download_dir)
+
+    @classmethod
+    def cleanup_dir(cls, dirpath: Path):
+        while os.path.exists(dirpath) and len(os.listdir(dirpath)) == 0:
+            os.rmdir(dirpath)
+            dirpath = Path(dirpath).parent.absolute()

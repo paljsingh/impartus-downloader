@@ -69,7 +69,7 @@ class MetadataDictParser:
             'datatype': str,
             'regex': r'[^/\\]+',
             'priority': 2,
-            'default': 'Misc',
+            'default': '-',
             'sanitize': True,
         },
         "subjectNameShort": {

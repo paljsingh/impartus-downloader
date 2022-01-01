@@ -12,7 +12,6 @@ from ui.callbacks.utils import CallbackUtils
 from lib.data.labels import ConfigKeys
 from lib.data.labels import Labels
 from lib.variables import Variables
-from ui.splash import SplashScreen
 
 
 class LoginWindow(QMainWindow):

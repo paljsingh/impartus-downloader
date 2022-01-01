@@ -2,8 +2,6 @@ from PySide2 import QtWidgets
 from PySide2.QtCore import QFile
 from PySide2.QtUiTools import QUiLoader
 
-from lib.data.labels import Labels
-
 
 class Dialog:
     """
@@ -17,8 +15,6 @@ class Dialog:
         file.open(QFile.ReadOnly)
         self.dialog = loader.load(file, parent)
 
-        # TODO - get title from the caller, or use whatever specified in the .ui file.
-        self.dialog.setWindowTitle(Labels.CHECK_FOR_UPDATES.value)
         self.dialog.setSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
         file.close()
         self.dialog.show()

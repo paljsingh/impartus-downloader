@@ -5,7 +5,7 @@ from PySide2.QtCore import Qt, QTimer
 from PySide2.QtCore import QFile
 from PySide2.QtGui import QGuiApplication
 from PySide2.QtUiTools import QUiLoader
-from PySide2.QtWidgets import QApplication, QDialog, QWidget, QLabel, QProgressBar
+from PySide2.QtWidgets import QApplication, QDialog, QLabel, QProgressBar
 
 from ui.callbacks.utils import CallbackUtils
 
@@ -57,7 +57,6 @@ class SplashScreen(QDialog):
         CallbackUtils().processEvents()
 
 
-
 if __name__ == '__main__':
     QtCore.QCoreApplication.setAttribute(QtCore.Qt.AA_ShareOpenGLContexts)
     QGuiApplication.setAttribute(Qt.AA_EnableHighDpiScaling)
@@ -66,4 +65,3 @@ if __name__ == '__main__':
     app = QApplication([])
     SplashScreen(app).show()
     app.exec_()
-

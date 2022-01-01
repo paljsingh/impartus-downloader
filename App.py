@@ -12,7 +12,6 @@ from ui.callbacks.utils import CallbackUtils
 from ui.content import ContentWindow
 from ui.login import LoginWindow
 from ui.menubar import Menubar
-from ui.splash import SplashScreen
 
 
 class App:

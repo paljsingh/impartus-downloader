@@ -1,6 +1,8 @@
 import os
 from datetime import datetime
 from functools import partial
+from typing import List
+from pathlib import Path
 
 import qtawesome as qta
 
@@ -10,6 +12,7 @@ from PySide2.QtWidgets import QTableWidget, QTableWidgetItem, QHeaderView, QWidg
 
 from lib.config import Config, ConfigType
 from lib.core.impartus import Impartus
+from lib.finder import Finder
 from lib.threadlogging import ThreadLogger
 from lib.utils import Utils
 from ui.callbacks.utils import CallbackUtils
@@ -344,3 +347,60 @@ class Table:
         progresbar_widget = self.video_ids[video_id]['progressbar']
         return progresbar_widget, (dl_button, pl_button, cc_button, of_button)
 
+    def auto_organize__pre(self):
+        # read mappings.
+        # For each known video(and wtt) / document
+        #   get current path, also get new (expected) path as per the mappings dict.
+        #   if paths differ ->
+        #       collect the items that need to be moved.
+        # return items and show table.
+
+        mappings_conf = Config.load(ConfigType.MAPPINGS).get('subjectNameShort')
+        offline_videos_data = {k: v for k, v, _, _ in Finder().get_offline_videos()}
+
+        commands = list()
+        for video_id, video_info in self.video_ids.items():
+            if video_id <= 0:
+                continue
+            video_metadata = video_info['metadata']
+
+            # update shortSubjectName in metadata with lst known mapping if exists.
+            if video_metadata.get('subjectNameShort') is not None \
+                    and mappings_conf is not None \
+                    and mappings_conf.get(video_metadata['subjectName']) is not None \
+                    and video_metadata['subjectNameShort'] != mappings_conf[video_metadata['subjectName']]:
+                video_metadata['subjectNameShort'] = mappings_conf[video_metadata['subjectName']]
+
+            # the video (and vtt) should be placed here...
+            expected_path = Utils.get_mkv_path(video_metadata)
+
+            offline_video = offline_videos_data.get(video_id)
+
+            # the actual path as found on disk...
+            current_path = offline_video.get('offline_filepath')
+
+            current_dir = os.path.dirname(current_path)
+            expected_dir = os.path.dirname(expected_path)
+
+            # collect all files that belong to this directory...
+            if current_path != expected_path:
+                for file in os.listdir(current_dir):
+                    source_file = os.path.join(current_dir, file)
+                    dest_file = os.path.join(expected_dir, file)
+                    if source_file != dest_file:
+                        commands.append({
+                            'id': video_id,
+                            'source': os.path.join(current_dir, file),
+                            'dest': os.path.join(expected_dir, file)
+                        })
+        return commands
+
+    def auto_organize__post(self, commands: List):
+        for cmd in commands:
+            # only videos and vtt captions.
+            if cmd['source'].endswith('.mkv') or cmd['source'].endswith('.vtt'):
+                Utils.move_and_rename_file(cmd['source'], cmd['dest'])
+                Utils.cleanup_dir(Path(cmd['source']).parent.absolute())
+
+                # update in-memory metadata.
+                self.video_ids[cmd['id']]['metadata']['offline_filepath'] = cmd['dest']

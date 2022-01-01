@@ -88,8 +88,8 @@ class Menubar:
     def set_video_quality(self, quality):
         self.conf['flipped_lecture_quality'] = quality
 
-    def auto_organize(self):
-        pass
+    # def auto_organize(self):
+    #     pass
 
     def reload_content(self):
         pass

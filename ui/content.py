@@ -1,9 +1,9 @@
-import math
+import logging
 
 from PySide2 import QtCore, QtWidgets
-from PySide2.QtCore import QFile, QObject, Qt
+from PySide2.QtCore import QFile, QObject
 from PySide2.QtUiTools import QUiLoader
-from PySide2.QtWidgets import QMainWindow, QTableWidget, QPlainTextEdit, QTreeWidget, QTabWidget, QLabel, QProgressBar
+from PySide2.QtWidgets import QMainWindow, QTableWidget, QPlainTextEdit, QTreeWidget, QTabWidget
 
 from lib.finder import Finder
 from lib.core.impartus import Impartus
@@ -24,6 +24,8 @@ class ContentWindow(QMainWindow):
     Also maintains a copy of the data obtained from the online and offline workflows and responsible for merging the
     two.
     """
+
+    logger = logging.getLogger('content')
 
     def __init__(self, impartus: Impartus):
         super().__init__()
@@ -128,8 +130,9 @@ class ContentWindow(QMainWindow):
             # so consider caption_path=False (not downloaded) and enable the chat download button.
             self.videos_tab.table.add_row_item(video_id, video_metadata, is_flipped=is_flipped, captions_path=False)
             count += 1
-            self.splashscreen.setText("Found {} online videos.".format(count))
+            self.splashscreen.setText("Found {} online videos...".format(count))
 
+        self.splashscreen.setText("Reconciling with offline data.")
         for (video_id, video_metadata, is_flipped, chats_path) in Finder().get_offline_videos():
             self.videos_tab.table.add_row_item(video_id, video_metadata, captions_path=chats_path,
                                                is_flipped=is_flipped, video_downloaded=True)

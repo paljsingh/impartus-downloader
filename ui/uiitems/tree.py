@@ -1,6 +1,7 @@
 import os
 from functools import partial
-from typing import Dict
+from pathlib import Path
+from typing import Dict, List
 from PySide2 import QtCore
 from PySide2.QtCore import QModelIndex
 from PySide2.QtWidgets import QHeaderView, QWidget, QTreeWidget, QTreeWidgetItem
@@ -41,20 +42,23 @@ class Tree:
 
         self.logger = ThreadLogger(self.__class__.__name__).logger
 
-        self.treewidget = self.setup_tree(treewidget)
-        self.treewidget.selectionModel().currentChanged.connect(self.on_row_select)
+        self.tree_widget = self.setup_tree(treewidget)
+        self.tree_widget.selectionModel().currentChanged.connect(self.on_row_select)
 
         self.documents = dict()
         self.items = dict()
         self.top_level_index = 0
         self.selected = None
 
+    def get_data(self):
+        return self.documents
+
     def reset_content(self):
         self.documents = dict()
         self.items = dict()
         self.top_level_index = 0
-        self.treewidget.setSortingEnabled(False)
-        self.treewidget.clear()
+        self.tree_widget.setSortingEnabled(False)
+        self.tree_widget.clear()
 
     def setup_tree(self, treewidget):
         treewidget.setSortingEnabled(False)
@@ -80,14 +84,14 @@ class Tree:
         return treewidget
 
     def new_root_subject_item(self, subject_name):
-        item = QTreeWidgetItem(self.treewidget)
+        item = QTreeWidgetItem(self.tree_widget)
         item.setText(0, subject_name)
         item.setTextAlignment(0, QtCore.Qt.AlignmentFlag.AlignTop)
         self.items[subject_name] = {
             'index': len(self.items),
             'item': item,
         }
-        self.treewidget.addTopLevelItem(item)
+        self.tree_widget.addTopLevelItem(item)
         return item
 
     def add_row_items(self, subject_metadata: Dict, documents: Dict):
@@ -149,7 +153,7 @@ class Tree:
             slides_actions_widget, cell_value = self.add_slides_actions_buttons(subject_name, document)
             custom_item = CustomTreeWidgetItem()
             custom_item.setValue(cell_value)
-            self.treewidget.setItemWidget(item_child, col, slides_actions_widget)
+            self.tree_widget.setItemWidget(item_child, col, slides_actions_widget)
 
             item_parent.addChild(item_child)
 
@@ -160,10 +164,10 @@ class Tree:
         # Todo ...
         for i, (col, item) in enumerate(Columns.get_document_columns().items()):
             if item.get('initial_size') and item['resize_policy'] != QHeaderView.ResizeMode.Stretch:
-                self.treewidget.header().resizeSection(i, item.get('initial_size'))
+                self.tree_widget.header().resizeSection(i, item.get('initial_size'))
 
         for i in range(len(Columns.get_document_columns())):
-            self.treewidget.header().setSectionResizeMode(i, QHeaderView.Interactive)
+            self.tree_widget.header().setSectionResizeMode(i, QHeaderView.Interactive)
 
     def show_hide_column(self, column):
         col_index = None
@@ -172,14 +176,14 @@ class Tree:
                 col_index = i
                 break
 
-        if self.treewidget.isColumnHidden(col_index):
-            self.treewidget.setColumnHidden(col_index, False)
+        if self.tree_widget.isColumnHidden(col_index):
+            self.tree_widget.setColumnHidden(col_index, False)
         else:
-            self.treewidget.setColumnHidden(col_index, True)
+            self.tree_widget.setColumnHidden(col_index, True)
 
     def get_selected_row(self):
-        for i in range(self.treewidget.rowCount()):
-            if self.treewidget.cellWidget(i, 0).layout().itemAt(0).widget().isChecked():
+        for i in range(self.tree_widget.rowCount()):
+            if self.tree_widget.cellWidget(i, 0).layout().itemAt(0).widget().isChecked():
                 return i
 
     def add_slides_actions_buttons(self, subject, metadata: Dict):
@@ -260,8 +264,8 @@ class Tree:
         return btn_type, btn_state
 
     def on_row_select(self, selected: QModelIndex, deselected: QModelIndex):    # noqa
-        self.treewidget: QTreeWidget
-        top_level_item = self.treewidget.topLevelItem(selected.parent().row())
+        self.tree_widget: QTreeWidget
+        top_level_item = self.tree_widget.topLevelItem(selected.parent().row())
         widget_item = top_level_item.child(selected.row()) if top_level_item else None
         if not widget_item:
             self.selected = {}
@@ -271,3 +275,14 @@ class Tree:
         document_key = widget_item.text(key_col)
         self.selected = self.documents.get(document_key)
         MenuCallbacks().set_menu_statuses()
+
+    def auto_organize__post(self, commands: List):
+        for cmd in commands:
+            # only documents.
+            if not cmd['source'].endswith('.mkv') and not cmd['source'].endswith('.vtt'):
+                Utils.move_and_rename_file(cmd['source'], cmd['dest'])
+                Utils.cleanup_dir(Path(cmd['source']).parent.absolute())
+
+                # update in-memory metadata.
+                if self.documents.get(cmd['source']):
+                    self.documents[cmd['dest']] = self.documents.pop(cmd['source'])

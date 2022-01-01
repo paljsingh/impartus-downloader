@@ -1,8 +1,11 @@
 import os
+from functools import partial
+from typing import List
 
 from PySide2 import QtCore
 from PySide2.QtCore import QObject
-from PySide2.QtWidgets import QLabel, QTreeWidget, QTreeWidgetItem, QMessageBox
+from PySide2.QtWidgets import QLabel, QTreeWidget, QTreeWidgetItem, QMessageBox, QTableWidget, QTableWidgetItem, \
+    QDialogButtonBox
 
 from lib import version
 from lib.data.labels import Labels
@@ -11,9 +14,12 @@ from ui.callbacks.utils import CallbackUtils
 from lib.variables import Variables
 from ui.dialog import Dialog
 from ui.helpers.datautils import DataUtils
+from ui.splash import SplashScreen
 
 
 class MenuCallbacks:
+
+    auto_organize_window = None
 
     def __new__(cls, *args, **kw):
         if not hasattr(cls, '_instance'):
@@ -47,16 +53,7 @@ class MenuCallbacks:
         else:
             reload_menu.setEnabled(True)
 
-        # if lecture files need update in their name / location, or video /chats / backpack slides need to be
-        # downloaded, enable auto organize menu.
-        if is_authenticated and (
-                CallbackUtils().content_window.needs_lecture_rename() or
-                CallbackUtils().content_window.needs_video_download() or
-                CallbackUtils().content_window.needs_chat_download() or
-                CallbackUtils().content_window.needs_backpack_slides_download()):
-            auto_organize_menu.setEnabled(True)
-        else:
-            auto_organize_menu.setEnabled(False)
+        auto_organize_menu.setEnabled(True)
 
         if is_authenticated:
             logout_menu.setEnabled(True)
@@ -186,7 +183,51 @@ class MenuCallbacks:
 
     @classmethod
     def on_click__menu__actions_auto_organize(cls):
-        print('auto organize called...')
+        splashscreen = SplashScreen(CallbackUtils().content_window)
+        splashscreen.show(widgets_to_disable=[CallbackUtils().content_window.table_widget,
+                                              CallbackUtils().content_window.tree_widget])
+
+        splashscreen.setText("Re-collecting videos and documents info, please wait...")
+        splashscreen.update()
+
+        commands = CallbackUtils().content_window.videos_tab.table.auto_organize__pre()
+
+        splashscreen.hide(widgets_to_enable=[CallbackUtils().content_window.table_widget,
+                          CallbackUtils().content_window.tree_widget])
+        if len(commands) > 0:
+            dialog = Dialog(file='ui/views/auto_organize.ui', parent=CallbackUtils().content_window).dialog
+
+            button_box: QDialogButtonBox
+            button_box = dialog.findChild(QDialogButtonBox, "buttonBox")
+
+            table_widget: QTableWidget
+            table_widget = dialog.findChild(QTableWidget, "tableWidget")
+            table_widget.setAlternatingRowColors(True)
+
+            num_columns = 3
+            table_widget.setColumnCount(num_columns)
+            table_widget.setColumnWidth(0, table_widget.width() * 0.46)
+            table_widget.setColumnWidth(1, table_widget.width() * 0.08)
+            table_widget.setColumnWidth(2, table_widget.width() * 0.46)
+
+            for i, cmd in enumerate(commands):
+                table_widget.setRowCount(i+1)
+                table_widget.setItem(i, 0, QTableWidgetItem(Utils.strip_root_dir(cmd['source'])))
+                table_widget.setItem(i, 1, QTableWidgetItem('-->'))
+                table_widget.setItem(i, 2, QTableWidgetItem(Utils.strip_root_dir(cmd['dest'])))
+                table_widget.setRowHeight(i, 32)
+
+            button_box.accepted.connect(partial(cls.on_click_auto_organize_ok_button, commands))
+        else:
+            dialog = QMessageBox()
+            dialog.setIcon(QMessageBox.Icon.Information)
+            dialog.information(CallbackUtils().content_window, "Auto Organize",
+                               "All files and folders are up to date!", QMessageBox.Ok)
+
+    @classmethod
+    def on_click_auto_organize_ok_button(cls, commands: List):
+        CallbackUtils().content_window.videos_tab.table.auto_organize__post(commands)
+        CallbackUtils().content_window.documents_tab.tree.auto_organize__post(commands)
 
     def on_click__menu__actions_logout(self):
         CallbackUtils().impartus.logout()
