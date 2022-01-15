@@ -82,7 +82,7 @@ Windows 10
 > Download win64-gpl zip from the following link, extract and copy ffmpeg.exe to
 > impartus-downloader folder. The ffmpeg.exe statically bundles the dependent libs and
 > should be about 90 MB in size.
-> [https://github.com/BtbN/FFmpeg-Builds/releases](https://github.com/BtbN/FFmpeg-Builds/releases)
+> https://github.com/BtbN/FFmpeg-Builds/releases
 > 
 > # Ensure ffmpeg version is >= 4.3.0
 > ffmpeg.exe -version 
