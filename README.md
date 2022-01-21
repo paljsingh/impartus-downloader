@@ -74,6 +74,7 @@ Windows 10
 > 
 > # setup virtualenv (optional)
 > pip.exe install virtualenv
+> virtualenv venv
 > .\venv\Scripts\activate
 > 
 > # install dependencies
