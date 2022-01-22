@@ -129,7 +129,12 @@ class SearchTree(SearchType):
     def search(self, text: str):
         self.set_search_term(text)
         self.tree_widget.clearSelection()
-        self.search_results = self.tree_widget.findItems(text, QtCore.Qt.MatchFlag.MatchContains)
+
+        # search all columns.
+        results = list()
+        for i in range(self.tree_widget.columnCount()):
+            results.extend(self.tree_widget.findItems(text, QtCore.Qt.MatchFlag.MatchContains | QtCore.Qt.MatchFlag.MatchRecursive, i))
+        self.search_results = results
         self.last_index = -1  # first search shall be index 0.
         return self.highlight_next()
 
