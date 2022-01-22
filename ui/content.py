@@ -1,12 +1,14 @@
 import logging
+from enum import Enum
 
 from PySide2 import QtCore, QtWidgets
 from PySide2.QtCore import QFile, QObject
 from PySide2.QtUiTools import QUiLoader
-from PySide2.QtWidgets import QMainWindow, QTableWidget, QPlainTextEdit, QTreeWidget, QTabWidget
+from PySide2.QtWidgets import QMainWindow, QTableWidget, QPlainTextEdit, QTreeWidget, QTabWidget, QWidget
 
 from lib.finder import Finder
 from lib.core.impartus import Impartus
+from lib.variables import Variables
 from ui.callbacks.buttoncallbacks import ButtonCallbacks
 from ui.callbacks.menucallbacks import MenuCallbacks
 from lib.data.labels import Labels
@@ -26,6 +28,10 @@ class ContentWindow(QMainWindow):
     """
 
     logger = logging.getLogger('content')
+    tabs = {
+        0: "Video",
+        1: "Slides"
+    }
 
     def __init__(self, impartus: Impartus):
         super().__init__()
@@ -61,35 +67,43 @@ class ContentWindow(QMainWindow):
         # type hints
         self.table_widget: QTableWidget
         self.tree_widget: QTreeWidget
-        self.search_box = SearchBox(self.content_form, self.table_widget, self.tree_widget)
+        self.search_box = SearchBox(self.content_form)
         self.log_window = self.content_form.findChild(QPlainTextEdit, "log_window")
 
         self.data = list()
         self.root_url = None
         self.lecture_slides_mapping = dict()
         self.splashscreen = SplashScreen(self)
+        self.set_selected_tab_widget(0)
 
     def setup(self):
         pass
 
     def on_click_tab_change(self, index: int):
-        tabs = {0: 'Video', 1: 'Slides'}
-        for i, tab_name in tabs.items():
+        for i, tab_name in self.tabs.items():
             menu_item = CallbackUtils().content_window.menuBar().findChild(QObject, tab_name)
             if i == index:
                 MenuCallbacks().enable_menu_items(menu_item)
             else:
                 MenuCallbacks().disable_menu_items(menu_item)
+        self.set_selected_tab_widget(index)
+        self.search_box.update_search_edit_text()
+
+    def set_selected_tab_widget(self, index: int = 0):
+        if index == 0:
+            Variables().set_current_tab_widget(self.table_widget)
+        else:
+            Variables().set_current_tab_widget(self.tree_widget)
 
     def keyPressEvent(self, e):
         # TODO: this can be moved to search class.
         if e.key() == QtCore.Qt.Key_Enter or e.key() == QtCore.Qt.Key_Return:
-            self.search_box.search_next()
+            self.search_box.highlight_next()
         elif e.key() == QtCore.Qt.Key_G and (e.modifiers() & QtCore.Qt.ShiftModifier) \
                 and (e.modifiers() & QtCore.Qt.ControlModifier):
-            self.search_box.search_prev()
+            self.search_box.highlight_prev()
         elif e.key() == QtCore.Qt.Key_G and (e.modifiers() & QtCore.Qt.ControlModifier):
-            self.search_box.search_next()
+            self.search_box.highlight_next()
 
     def work_offline(self):
         self.splashscreen.show(widgets_to_disable=[self.table_widget, self.tree_widget])

@@ -26,6 +26,7 @@ class Variables(object):
     _menu_slides_show_slides_item = None
 
     _log_window = None
+    _tab_widget = None
 
     def __new__(cls, *args, **kw):
         if not hasattr(cls, '_instance'):
@@ -76,3 +77,11 @@ class Variables(object):
     @classmethod
     def set_log_window(cls, _log_window):
         cls._log_window = _log_window
+
+    @classmethod
+    def set_current_tab_widget(cls, widget):
+        cls._tab_widget = widget
+
+    @classmethod
+    def get_current_tab_widget(cls):
+        return cls._tab_widget
