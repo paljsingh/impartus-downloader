@@ -3,6 +3,7 @@ from abc import ABC, abstractmethod
 from PySide2 import QtCore
 from PySide2.QtWidgets import QLabel, QLineEdit, QMainWindow, QTableWidget, QTreeWidget
 
+from lib.data.columns import Columns
 from lib.data.searchdirections import SearchDirection
 from lib.variables import Variables
 
@@ -132,8 +133,11 @@ class SearchTree(SearchType):
 
         # search all columns.
         results = list()
-        for i in range(self.tree_widget.columnCount()):
-            results.extend(self.tree_widget.findItems(text, QtCore.Qt.MatchFlag.MatchContains | QtCore.Qt.MatchFlag.MatchRecursive, i))
+        for i, (name, col) in enumerate(Columns.get_document_columns().items()):
+            if not col.get('hidden'):
+                results.extend(
+                    self.tree_widget.findItems(text, QtCore.Qt.MatchFlag.MatchContains | QtCore.Qt.MatchFlag.MatchRecursive, i)
+                )
         self.search_results = results
         self.last_index = -1  # first search shall be index 0.
         return self.highlight_next()
