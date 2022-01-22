@@ -3,7 +3,7 @@ import logging
 from PySide2 import QtCore, QtWidgets
 from PySide2.QtCore import QFile, QObject
 from PySide2.QtUiTools import QUiLoader
-from PySide2.QtWidgets import QMainWindow, QTableWidget, QPlainTextEdit, QTreeWidget, QTabWidget, QWidget
+from PySide2.QtWidgets import QMainWindow, QTableWidget, QPlainTextEdit, QTreeWidget, QTabWidget, QWidget, QToolButton
 
 from lib.finder import Finder
 from lib.core.impartus import Impartus
@@ -87,6 +87,7 @@ class ContentWindow(QMainWindow):
                 MenuCallbacks().disable_menu_items(menu_item)
         self.set_selected_tab_widget(index)
         self.search_box.update_search_edit_text()
+        self.search_box.update_search_buttons()
 
     def set_selected_tab_widget(self, index: int = 0):
         if index == 0:
