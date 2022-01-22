@@ -1,5 +1,4 @@
 import logging
-from enum import Enum
 
 from PySide2 import QtCore, QtWidgets
 from PySide2.QtCore import QFile, QObject
@@ -168,19 +167,3 @@ class ContentWindow(QMainWindow):
         ButtonCallbacks().set_pushbutton_statuses()
 
         self.splashscreen.hide(widgets_to_enable=[self.table_widget, self.tree_widget])
-
-    @staticmethod
-    def needs_lecture_rename():
-        return True
-
-    @staticmethod
-    def needs_video_download():
-        return True
-
-    @staticmethod
-    def needs_chat_download():
-        return True
-
-    @staticmethod
-    def needs_backpack_slides_download():
-        return True
