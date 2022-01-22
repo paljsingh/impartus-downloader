@@ -135,9 +135,11 @@ class Videos:
                 dl_button.setToolTip('Download Video')
                 dl_button.setEnabled(False)
                 pl_button.setEnabled(True)
+                of_button.setEnabled(True)
             else:
                 try:
                     dl_button.setEnabled(True)
+                    of_button.setEnabled(False)
                 except RuntimeError as ex:
                     self.logger.error("Error in downloading video: {}".format(ex))
                     pass
