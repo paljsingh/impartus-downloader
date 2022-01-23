@@ -3,9 +3,7 @@ from typing import Dict
 import qtawesome as qta
 
 from PySide2 import QtCore
-from PySide2.QtGui import QIcon
-from PySide2.QtWidgets import QLabel, QLineEdit, QMainWindow, QTableWidget, QTreeWidget, QToolButton, QMenu, QAction, \
-    QPushButton
+from PySide2.QtWidgets import QLabel, QLineEdit, QMainWindow, QTableWidget, QTreeWidget, QPushButton
 
 from lib.data.columns import Columns
 from lib.data.searchdirections import SearchDirection
