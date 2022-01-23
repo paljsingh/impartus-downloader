@@ -8,13 +8,15 @@ import qtawesome as qta
 
 from PySide2 import QtCore, QtWidgets
 from PySide2.QtGui import QIcon
-from PySide2.QtWidgets import QTableWidget, QTableWidgetItem, QHeaderView, QWidget, QPushButton, QAbstractItemView
+from PySide2.QtWidgets import QTableWidget, QTableWidgetItem, QHeaderView, QWidget, QPushButton, QAbstractItemView, \
+    QTabWidget
 
 from lib.config import Config, ConfigType
 from lib.core.impartus import Impartus
 from lib.finder import Finder
 from lib.threadlogging import ThreadLogger
 from lib.utils import Utils
+from lib.variables import Variables
 from ui.callbacks.utils import CallbackUtils
 from ui.callbacks.menucallbacks import MenuCallbacks
 from ui.helpers.datautils import DataUtils
@@ -69,10 +71,21 @@ class Table:
         table_widget.setSortingEnabled(False)
         table_widget.clear()
         table_widget.setRowCount(0)
-        borders = 10
-        tab_width = 10
-        table_widget.parentWidget().setMaximumWidth(QtWidgets.QApplication.primaryScreen().size().width() - 2 * borders)
-        table_widget.setMaximumWidth(QtWidgets.QApplication.primaryScreen().size().width() - 2 * borders - tab_width)
+
+        # table height/width adjustment
+        app_width = QtWidgets.QApplication.primaryScreen().size().width()
+        app_height = QtWidgets.QApplication.primaryScreen().size().height()
+        tab_width = 20
+        margin = 20
+
+        log_window_height = 200
+        search_window_height = 50
+        splitter_height = 10
+
+        table_max_width = app_width - tab_width - 2*margin
+        table_max_height = app_height - log_window_height - search_window_height - splitter_height - 3*margin
+        table_widget.setMaximumWidth(table_max_width)
+        table_widget.setMaximumHeight(table_max_height)
 
         col_count = len(Columns.get_video_columns()) + 1
         table_widget.setColumnCount(col_count)

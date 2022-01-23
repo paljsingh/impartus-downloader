@@ -2,7 +2,7 @@ import os
 from functools import partial
 from pathlib import Path
 from typing import Dict, List
-from PySide2 import QtCore
+from PySide2 import QtCore, QtWidgets
 from PySide2.QtCore import QModelIndex
 from PySide2.QtWidgets import QHeaderView, QWidget, QTreeWidget, QTreeWidgetItem
 import re
@@ -70,6 +70,21 @@ class Tree:
         treewidget.setColumnCount(col_count)
 
         treewidget = self._set_headers(treewidget)
+
+        # tree height/width adjustment
+        app_width = QtWidgets.QApplication.primaryScreen().size().width()
+        app_height = QtWidgets.QApplication.primaryScreen().size().height()
+        tab_width = 20
+        margin = 20
+
+        log_window_height = 200
+        search_window_height = 50
+        splitter_height = 10
+
+        treewidget_max_width = app_width - tab_width - 2*margin
+        treewidget_max_height = app_height - log_window_height - search_window_height - splitter_height - 3*margin
+        treewidget.setMaximumWidth(treewidget_max_width)
+        treewidget.setMaximumHeight(treewidget_max_height)
 
         return treewidget
 
