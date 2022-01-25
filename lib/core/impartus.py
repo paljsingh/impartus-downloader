@@ -120,6 +120,7 @@ class Impartus:
             ts_files = list()
             items_processed = 0
             for track_index, track_info in enumerate(tracks_info):
+                self.logger.info("[{}]: Downloading streams for track {} ..".format(rf_id, track_index))
                 streams_to_join = list()
                 for item in track_info:
 
@@ -167,7 +168,7 @@ class Impartus:
                         return False
 
                 # All stream files for this track are decrypted, join them.
-                self.logger.info("[{}]: Joining streams for track {} ..".format(rf_id, track_index))
+                self.logger.debug("[{}]: Joining streams for track {} ..".format(rf_id, track_index))
                 ts_file = Encoder.join(streams_to_join, download_dir, track_index)
                 ts_files.append(ts_file)
                 temp_files_to_delete.add(ts_file)
