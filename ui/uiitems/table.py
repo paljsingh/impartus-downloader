@@ -246,12 +246,14 @@ class Table:
         return table_widget
 
     def on_row_select(self, row_index):
-        checkbox = self.table_widget.cellWidget(row_index.row(), 0).layout().itemAt(0).widget()
-        self.table_widget.scrollToItem(self.table_widget.item(row_index.row(), 0))
-        if self.selected_checkbox and self.selected_checkbox != checkbox:
-            self.selected_checkbox.setChecked(False)
-        self.selected_checkbox = checkbox
-        MenuCallbacks().set_menu_statuses()
+        cell_widget = self.table_widget.cellWidget(row_index.row(), 0)
+        if cell_widget:
+            checkbox = cell_widget.layout().itemAt(0).widget()
+            self.table_widget.scrollToItem(self.table_widget.item(row_index.row(), 0))
+            if self.selected_checkbox and self.selected_checkbox != checkbox:
+                self.selected_checkbox.setChecked(False)
+            self.selected_checkbox = checkbox
+            MenuCallbacks().set_menu_statuses()
 
     def show_hide_column(self, column):
         col_index = None
