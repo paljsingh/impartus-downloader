@@ -46,7 +46,8 @@ class M3u8Parser:
         Also, populate the summary object listing total number of files, number of keys and total duration.
         """
 
-        current_track = 0
+        url_maps = dict()
+
         current_file_number = -1
         current_file_duration = 0
         current_encryption_method = "NONE"
@@ -72,21 +73,21 @@ class M3u8Parser:
             elif str(token).startswith("http"):  # media file
                 current_file_number += 1
                 media_files += 1
+
+                url = str(token).strip()
+                base_url = self.get_base_url(url)
+                if url_maps.get(base_url) is None:
+                    url_maps[base_url] = len(url_maps.keys())
+
+                current_track = url_maps[base_url]
                 self.tracks[current_track].append({
                     "file_number": current_file_number,
                     "duration": current_file_duration,
                     "encryption_key_url": current_encryption_key_url,
                     "encryption_key_id": key_id,
                     "encryption_method": current_encryption_method,
-                    "url": str(token).strip(),
+                    "url": url,
                 })
-            elif str(token).startswith("#EXT-X-DISCONTINUITY"):
-                # do we need anything here ?
-                pass
-            elif str(token).startswith("#EXT-X-MEDIA-SEQUENCE"):    # switch view
-                current_track = int(re.sub("#EXT-X-MEDIA-SEQUENCE:", '', token))
-            elif str(token).startswith("#EXT-X-ENDLIST"):    # end of streams
-                break
             else:
                 continue
 
@@ -97,3 +98,6 @@ class M3u8Parser:
             "total_duration": round(total_duration),   # combined of all tracks.
         }
         return self.summary, self.tracks
+
+    def get_base_url(self, url: str):
+        return re.sub('/[^/]+\.[a-zA-Z0-9]{2,3}$', '', url)
