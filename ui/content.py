@@ -122,6 +122,7 @@ class ContentWindow(QMainWindow):
             count += 1
             self.splashscreen.setText("Found {} offline documents.".format(count))
 
+        self.videos_tab.table.post_fill_tasks()
         MenuCallbacks().set_menu_statuses()
         ButtonCallbacks().set_pushbutton_statuses()
         self.splashscreen.hide(widgets_to_enable=[self.table_widget, self.tree_widget])
