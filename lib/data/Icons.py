@@ -105,6 +105,7 @@ class DocumentIcons:
         'ipynb': Icons.DOCUMENT__FILETYPE_CODE.value,
         'r': Icons.DOCUMENT__FILETYPE_CODE.value,
         'java': Icons.DOCUMENT__FILETYPE_CODE.value,
+        'dmg': Icons.DOCUMENT__FILETYPE_CODE.value,
 
         'txt': Icons.DOCUMENT__FILETYPE_CODE.value,
         'text': Icons.DOCUMENT__FILETYPE_CODE.value,

@@ -3,7 +3,7 @@ from typing import Dict
 from PySide2 import QtCore
 from PySide2.QtWidgets import QHBoxLayout, QWidget, QPushButton
 
-from lib.data.Icons import DocumentIcons
+from lib.data.Icons import DocumentIcons, Icons
 from ui.uiitems.customwidgets.checkbox import CustomCheckBox
 from ui.uiitems.customwidgets.pushbutton import CustomPushButton
 
@@ -33,7 +33,10 @@ class WidgetCreator:
                 if val['icon']:
                     pushbutton.setIcon(val['icon'])
                 elif extension:
-                    pushbutton.setIcon(DocumentIcons.filetypes.get(extension))
+                    icon = DocumentIcons.filetypes.get(extension)
+                    if not icon:
+                        icon = Icons.DOCUMENT__FILETYPE_MISC.value
+                    pushbutton.setIcon(icon)
 
                 yield pushbutton
 
