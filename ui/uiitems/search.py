@@ -1,11 +1,15 @@
+import os
 from abc import ABC, abstractmethod
 from typing import Dict
 import qtawesome as qta
+import webvtt
 
 from PySide2 import QtCore
 from PySide2.QtWidgets import QLabel, QLineEdit, QMainWindow, QTableWidget, QTreeWidget, QPushButton
 
+from lib.data.Icons import Icons
 from lib.data.columns import Columns
+from lib.data.labels import Labels
 from lib.data.searchdirections import SearchDirection
 from lib.variables import Variables
 
@@ -31,14 +35,14 @@ class SearchBox:
         self.case_sensitive_search_button = self.content_window.findChild(QPushButton, "caseSensitiveSearch")
         self.case_sensitive_search_button.setCheckable(True)
         self.case_sensitive_search_button.setToolTip("Case Sensitive")
-        self.case_sensitive_search_button.setIcon(qta.icon("fa5s.spell-check"))
+        self.case_sensitive_search_button.setIcon(qta.icon(Icons.SEARCH__CASE_SENSITIVE.value))
         self.case_sensitive_search_button.clicked.connect(self.on_click_case_sensitive_button)
 
         self.wildcard_search = False
         self.wildcard_search_button = self.content_window.findChild(QPushButton, "wildcardSearch")
         self.wildcard_search_button.setCheckable(True)
         self.wildcard_search_button.setToolTip("Wildcard Search")
-        self.wildcard_search_button.setIcon(qta.icon("fa5s.asterisk"))
+        self.wildcard_search_button.setIcon(qta.icon(Icons.SEARCH__WILDCARD.value))
         self.wildcard_search_button.clicked.connect(self.on_click_wildcard_search_button)
 
         self.search_in_chats = False
@@ -46,7 +50,7 @@ class SearchBox:
         self.search_chats_button.setCheckable(True)
         self.search_chats_button.setToolTip("Search Lecture Chats")
         self.search_chats_button.setVisible(True)
-        self.search_chats_button.setIcon(qta.icon("fa5s.closed-captioning"))
+        self.search_chats_button.setIcon(qta.icon(Icons.SEARCH__CHATS.value))
         self.search_chats_button.clicked.connect(self.on_click_search_chats_button)
 
         self.search_in_documents = False
@@ -54,7 +58,7 @@ class SearchBox:
         self.search_documents_button.setCheckable(True)
         self.search_documents_button.setToolTip("Search Documents")
         self.search_documents_button.setVisible(False)
-        self.search_documents_button.setIcon(qta.icon("fa5s.file-pdf"))
+        self.search_documents_button.setIcon(qta.icon(Icons.SEARCH__DOCUMENTS.value))
         self.search_documents_button.clicked.connect(self.on_click_search_documents_button)
 
         self.search_prev_button = self.content_window.findChild(QPushButton, "prevSearch")
@@ -192,6 +196,10 @@ class SearchTable(SearchType):
         self.set_search_term(text)
         self.table.clearSelection()
         self.search_results = self.table.findItems(text, self.get_search_flags(search_options))
+
+        if search_options.get('search_in_chats'):
+            self.search_results.extend(self.search_in_chats())
+
         self.last_index = -1  # first search shall be index 0.
         return self.highlight_next()
 
@@ -211,6 +219,23 @@ class SearchTable(SearchType):
 
     def highlight_prev(self):
         return self.highlight_next(SearchDirection.BACKWARD.value)
+
+    def index_chats(self):
+        if self.search_results_extra:
+            return
+
+        rows = self.table.rowCount()
+        col = Columns.get_video_column_index_by_key(Labels.DOCUMENT__OFFLINE_FILEPATH.value)
+        # rfid_col = Columns.get_video_column_index_by_key(Labels.V.value)
+
+        captions_list = dict()
+        for i in range(rows):
+            mkvfile = self.table.item(i, col).text()
+            if mkvfile:
+                file = '{}.vtt'.format(mkvfile.removesuffix('.mkv'))
+                if os.path.exists(file) and os.path.isfile(file):
+                    captions_list[mkvfile] = webvtt.read(file)
+        self.search_results_extra = captions_list
 
 
 class SearchTree(SearchType):
