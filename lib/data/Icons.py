@@ -12,9 +12,9 @@ class Icons(enum.Enum):
     VIDEO__DOWNLOAD_CAPTIONS = 'fa5.closed-captioning'
     VIDEO__OPEN_FOLDER = 'fa5.folder-open'
 
-    SLIDES__DOWNLOAD_SLIDES = 'fa5s.file-download'
-    SLIDES__SHOW_SLIDES = 'fa5.file-pdf'
-    SLIDES__ATTACH_SLIDES = 'fa5s.link'
+    DOCUMENT__DOWNLOAD_SLIDES = 'fa5s.file-download'
+    DOCUMENT__SHOW_SLIDES = 'fa5.file-pdf'
+    DOCUMENT__ATTACH_SLIDES = 'fa5s.link'
 
     DOCUMENT__FILETYPE_DOC_ARCHIVE = 'fa5.file-pdf'
     DOCUMENT__FILETYPE_DOC = 'fa5.file-word'
@@ -23,9 +23,9 @@ class Icons(enum.Enum):
     DOCUMENT__FILETYPE_SPREADSHEET = 'fa5.file-excel'
     DOCUMENT__FILETYPE_CODE = 'fa5.file-code'
     DOCUMENT__FILETYPE_ARCHIVE = 'fa5.file-archive'
-    SLIDES__FILETYPE_AUDIO = 'fa5.file-audio'
+    DOCUMENT__FILETYPE_AUDIO = 'fa5.file-audio'
     DOCUMENT__FILETYPE_CSV = 'fa5s.file-csv'
-    SLIDES__FILETYPE_MISC = 'fa5.file-alt'
+    DOCUMENT__FILETYPE_MISC = 'fa5.file-alt'
 
     VIDEO__PAUSE_DOWNLOAD = 'fa5.pause-circle'
     VIDEO__RESUME_DOWNLOAD = 'fa5s.chevron-circle-right'
@@ -56,6 +56,11 @@ class Icons(enum.Enum):
 
     MENU__HELP = 'fa5s.info'
     MENU__RELEASE_NOTES = 'fa5s.list-ul'
+
+    SEARCH__CASE_SENSITIVE = 'mdi.format-letter-case'
+    SEARCH__WILDCARD = 'mdi.regex'
+    SEARCH__CHATS = 'mdi.comment-search-outline'
+    SEARCH__DOCUMENTS = 'mdi.file-search-outline'
 
     APP_LOGO = 'ui/images/logo.png'
 
@@ -100,6 +105,11 @@ class DocumentIcons:
         'ipynb': Icons.DOCUMENT__FILETYPE_CODE.value,
         'r': Icons.DOCUMENT__FILETYPE_CODE.value,
         'java': Icons.DOCUMENT__FILETYPE_CODE.value,
+
+        'txt': Icons.DOCUMENT__FILETYPE_CODE.value,
+        'text': Icons.DOCUMENT__FILETYPE_CODE.value,
+        'html': Icons.DOCUMENT__FILETYPE_CODE.value,
+        'htm': Icons.DOCUMENT__FILETYPE_CODE.value,
     }
 
     @classmethod
@@ -108,4 +118,4 @@ class DocumentIcons:
         if DocumentIcons.filetypes.get(ext):
             return DocumentIcons.filetypes[ext]
         else:
-            return Icons.SLIDES__FILETYPE_MISC.value
+            return Icons.DOCUMENT__FILETYPE_MISC.value

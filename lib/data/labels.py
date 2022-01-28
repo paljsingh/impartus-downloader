@@ -37,6 +37,7 @@ class Labels(enum.Enum):
     DOCUMENT__SUBJECT_NAME = 'subjectNameShort'
     DOCUMENT__SEQ = 'seqNo'
     DOCUMENT__FILENAME = 'fileName'
+    DOCUMENT__EXTENSION = 'ext'
     DOCUMENT__FILESIZE = 'fileLength'
     DOCUMENT__DATE = 'fileDate'
     DOCUMENT__ACTIONS = 'slides_actions'
