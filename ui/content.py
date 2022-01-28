@@ -123,6 +123,7 @@ class ContentWindow(QMainWindow):
             self.splashscreen.setText("Found {} offline documents.".format(count))
 
         self.videos_tab.table.post_fill_tasks()
+        self.documents_tab.tree.post_fill_tasks()
         MenuCallbacks().set_menu_statuses()
         ButtonCallbacks().set_pushbutton_statuses()
         self.splashscreen.hide(widgets_to_enable=[self.table_widget, self.tree_widget])
@@ -153,6 +154,7 @@ class ContentWindow(QMainWindow):
                                                is_flipped=is_flipped, video_downloaded=True)
 
         self.videos_tab.table.post_fill_tasks()
+        self.documents_tab.tree.post_fill_tasks()
 
         # when fetching online documents, the api returns all the available documents (metadata) for a given subject.
         count = 0
