@@ -58,7 +58,6 @@ class Documents:
         Creates a thread to download the request video.
         """
 
-        # document_index = metadata.get('seqNo') - 1
         slide_url = metadata.get('fileUrl')
         filepath = Utils.get_documents_path(metadata)
 

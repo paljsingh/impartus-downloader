@@ -9,6 +9,7 @@ import re
 
 from lib.config import Config, ConfigType
 from lib.core.impartus import Impartus
+from lib.data.Icons import DocumentIcons
 from lib.data.labels import Labels
 from lib.threadlogging import ThreadLogger
 from lib.utils import Utils
@@ -89,13 +90,17 @@ class Tree:
         return treewidget
 
     def _set_headers(self, treewidget):     # noqa
-        # treewidget.header().setAlternatingRowColors(True)
         headers = [x['display_name'] for x in Columns.get_document_columns().values()]
         treewidget.setHeaderLabels(headers)
-        treewidget.header().setSortIndicatorShown(True)
+
         for i, (key, val) in enumerate(Columns.get_document_columns().items()):
-            if val['hidden']:
+            if val.get('hidden'):
                 treewidget.hideColumn(i)
+
+            if val.get('initial_size') and val.get('resize_policy') != QHeaderView.ResizeMode.Stretch:
+                treewidget.header().resizeSection(i, val.get('initial_size'))
+
+        treewidget.header().setSortIndicatorShown(True)
         return treewidget
 
     def new_root_subject_item(self, subject_name):
@@ -149,6 +154,18 @@ class Tree:
                     'metadata': document,
                     'widget': child_widget,
                 }
+
+    def post_fill_tasks(self):
+        self._set_resizable_headers()
+
+    def _set_resizable_headers(self):  # noqa
+        self.tree_widget: QTreeWidget
+        self.tree_widget.header().setStretchLastSection(False)
+        self.tree_widget.header().setMinimumSectionSize(100)
+        for i, (key, val) in enumerate(Columns.get_document_columns().items()):
+            self.tree_widget.header().resizeSection(i, val.get('initial_size'))
+            self.tree_widget.header().setSectionResizeMode(i, QHeaderView.ResizeMode.Interactive)
+        self.tree_widget.collapseAll()
 
     def add_row_item(self, item_parent, document, subject_name):
 
@@ -208,7 +225,7 @@ class Tree:
 
         cell_value = ''
         # add pushbuttons grouped under a QWidget, assign a numeric cell_value to QWidget to enable sorting.
-        for pushbutton in WidgetCreator.add_actions_buttons(ActionItems.slides_actions):
+        for pushbutton in WidgetCreator.add_actions_buttons(ActionItems.slides_actions, metadata.get('ext')):
             widget_layout.addWidget(pushbutton)
             btn_type, btn_state = self.set_pushbutton_status(pushbutton, metadata, self.callbacks, widget, subject)
 
@@ -226,22 +243,8 @@ class Tree:
         filepath = metadata.get('offline_filepath')
         assert(filepath is not None)
         # slides download is enabled if the slides file exists on server, but not locally.
-        if pushbutton.objectName() == ActionItems.slides_actions[Labels.DOCUMENT__DOWNLOAD_DOCUMENT.value]['text']:
-            assert(widget is not None)
-            assert(subject is not None)
-            btn_type = Labels.DOCUMENT__DOWNLOAD_DOCUMENT.value
-            pushbutton.clicked.connect(partial(callbacks[Labels.DOCUMENT__DOWNLOAD_DOCUMENT.value],
-                                               subject, metadata, widget))
-
-            if self.impartus.is_authenticated():
-                file_url = metadata.get('fileUrl')
-                if file_url and not os.path.exists(filepath):
-                    btn_state = True
-                else:
-                    btn_state = False
-            else:
-                btn_state = False
-        elif pushbutton.objectName() == ActionItems.slides_actions[Labels.DOCUMENT__OPEN_DOCUMENT.value]['text']:
+        if pushbutton.objectName() == ActionItems.slides_actions[Labels.DOCUMENT__OPEN_DOCUMENT.value]['text'] \
+                or pushbutton.objectName() in DocumentIcons.filetypes.values():
             btn_type = Labels.DOCUMENT__OPEN_DOCUMENT.value
             pushbutton.clicked.connect(partial(self.callbacks[Labels.DOCUMENT__OPEN_DOCUMENT.value], filepath))
 
@@ -270,6 +273,21 @@ class Tree:
 
             if folder_path and os.path.exists(folder_path):
                 btn_state = True
+            else:
+                btn_state = False
+        elif pushbutton.objectName() == ActionItems.slides_actions[Labels.DOCUMENT__DOWNLOAD_DOCUMENT.value]['text']:
+            assert(widget is not None)
+            assert(subject is not None)
+            btn_type = Labels.DOCUMENT__DOWNLOAD_DOCUMENT.value
+            pushbutton.clicked.connect(partial(callbacks[Labels.DOCUMENT__DOWNLOAD_DOCUMENT.value],
+                                               subject, metadata, widget))
+
+            if self.impartus.is_authenticated():
+                file_url = metadata.get('fileUrl')
+                if file_url and not os.path.exists(filepath):
+                    btn_state = True
+                else:
+                    btn_state = False
             else:
                 btn_state = False
         else:
