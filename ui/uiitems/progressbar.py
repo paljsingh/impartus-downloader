@@ -223,6 +223,19 @@ class SortableRoundProgressbar(QWidget):
         current_value_format = self.display_order[self.current_display_index]()
         self.set_order[self.current_display_index](current_value_format)    # set the text of progressbar.
 
+    def setTextColor(self, text_color):
+        self.pct_progress_bar.rpb_setTextColor(text_color)
+        self.eta_progress_bar.rpb_setTextColor(text_color)
+        self.elap_progress_bar.rpb_setTextColor(text_color)
+
+    def setTextColorNormal(self):
+        text_color = QApplication.palette().color(QPalette.Text).getRgb()
+        self.setTextColor(text_color)
+
+    def setTextColorHighlight(self):
+        text_color = QApplication.palette().color(QPalette.Background).getRgb()
+        self.setTextColor(text_color)
+
 
 class CustomRoundProgressBar(roundProgressBar):
     """
