@@ -1,6 +1,8 @@
 import os
 import re
+import sys
 import time
+from functools import partial
 
 import requests
 import platform
@@ -127,42 +129,47 @@ class Impartus:
                     # download encrypted stream..
                     enc_stream_filepath = '{}/{}'.format(download_dir, item['file_number'])
                     temp_files_to_delete.add(enc_stream_filepath)
-                    download_flag = False
-                    while not download_flag:
-                        if pause_ev.is_set():
-                            self.logger.info("[{}]: Pausing download for {}".format(rf_id, mkv_filepath))
-                            resume_ev.wait()
-                            self.logger.info("[{}]: Resuming download for {}".format(rf_id, mkv_filepath))
-                            resume_ev.clear()
-                        try:
-                            content = requests.get(item['url'], timeout=self.timeouts).content
-                            download_flag = True
-                            with open(enc_stream_filepath, 'wb') as fh:
-                                fh.write(content)
-                        except (ConnectionError, Timeout, ConnectTimeout):
-                            self.logger.warning("[{}]: Timeout error. retrying download for {}...".format(
-                                rf_id, item['url']))
-                            time.sleep(self.conf.get('retry_wait'))
+
+                    if not os.path.exists(enc_stream_filepath) or os.path.getsize(enc_stream_filepath) == 0:
+                        download_flag = False
+                        while not download_flag:
+                            if pause_ev and pause_ev.is_set():
+                                self.logger.info("[{}]: Pausing download for {}".format(rf_id, mkv_filepath))
+                                resume_ev.wait()
+                                self.logger.info("[{}]: Resuming download for {}".format(rf_id, mkv_filepath))
+                                resume_ev.clear()
+                            try:
+                                content = requests.get(item['url'], timeout=self.timeouts).content
+                                download_flag = True
+                                with open(enc_stream_filepath, 'wb') as fh:
+                                    fh.write(content)
+                            except (ConnectionError, Timeout, ConnectTimeout):
+                                self.logger.warning("[{}]: Timeout error. retrying download for {}...".format(
+                                    rf_id, item['url']))
+                                time.sleep(self.conf.get('retry_wait'))
 
                     # decrypt files if encrypted.
                     if item.get('encryption_method') == "NONE":
                         streams_to_join.append(enc_stream_filepath)
                     else:
-                        if not encryption_keys.get(item['encryption_key_id']):
-                            key = self.session.get(item['encryption_key_url'], timeout=self.timeouts).content[2:]
-                            key = key[::-1]  # reverse the bytes.
-                            encryption_keys[item['encryption_key_id']] = key
-                        encryption_key = encryption_keys[item['encryption_key_id']]
-                        decrypted_stream_filepath = Decrypter.decrypt(
-                            encryption_key, enc_stream_filepath,
-                            download_dir)
+                        decrypted_stream_filepath = '{}.ts'.format(enc_stream_filepath)
+                        if not os.path.exists(decrypted_stream_filepath) or os.path.getsize(decrypted_stream_filepath) == 0:
+                            if not encryption_keys.get(item['encryption_key_id']):
+                                key = self.session.get(item['encryption_key_url'], timeout=self.timeouts).content[2:]
+                                key = key[::-1]  # reverse the bytes.
+                                encryption_keys[item['encryption_key_id']] = key
+                            encryption_key = encryption_keys[item['encryption_key_id']]
+                            decrypted_stream_filepath = Decrypter.decrypt(
+                                encryption_key, enc_stream_filepath,
+                                download_dir)
                         streams_to_join.append(decrypted_stream_filepath)
                         temp_files_to_delete.add(decrypted_stream_filepath)
                     # update progress bar
                     items_processed += 1
                     items_processed_percent = items_processed * 100 // summary.get('media_files')
                     try:
-                        progress_callback_func(items_processed_percent)
+                        if progress_callback_func:
+                            progress_callback_func(items_processed_percent)
                     except RuntimeError as ex:
                         self.logger.warning("Download interrupted - {}".format(ex))
                         return False
@@ -188,6 +195,7 @@ class Impartus:
             return flag
 
     def get_slides(self, subjects):
+        mappings = Config.load(ConfigType.MAPPINGS)
         for subject in subjects:
             root_url = Variables().login_url()
             subject_id = subject.get('subjectId')
@@ -198,6 +206,17 @@ class Impartus:
             if response.status_code == 200:
                 backpack_slides = response.json()
                 if backpack_slides:
+                    for backpack_slide in backpack_slides:
+                        backpack_slide['professorName'] = subject['professorName'].strip()
+                        backpack_slide['subjectName'] = subject['subjectName'].strip()
+
+                        backpack_slide['subjectNameShort'] = backpack_slide['subjectName']
+                        if mappings.get(subject['subjectName']):
+                            backpack_slide['subjectNameShort'] = mappings.get(backpack_slide['subjectName'])
+                        backpack_slide['ext'] = backpack_slide['filePath'].split('.')[-1]
+                        pattern = r'.{}$'.format(backpack_slide['ext'])
+                        backpack_slide['fileName'] = re.sub(pattern, '', backpack_slide['fileName'])
+
                     yield subject, backpack_slides
 
     def get_subjects(self):
