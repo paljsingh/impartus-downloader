@@ -1,3 +1,5 @@
+import pathlib
+
 from envyaml import EnvYAML
 import yaml
 import enum
@@ -30,10 +32,11 @@ class Config:
             return cls.configs[config_type]
 
         method = cls.config_maps[config_type]['method']
+        this_dir = pathlib.Path(__file__).parent.resolve()
         if method == 'envyaml':
-            cls.configs[config_type] = EnvYAML(cls.config_maps[config_type]['filepath'], strict=False)
+            cls.configs[config_type] = EnvYAML('{}/../{}'.format(this_dir, cls.config_maps[config_type]['filepath']), strict=False)
         else:
-            with open(cls.config_maps[config_type]['filepath'], 'r') as file:
+            with open('{}/../{}'.format(this_dir, cls.config_maps[config_type]['filepath']), 'r') as file:
                 cls.configs[config_type] = yaml.load(file, Loader=yaml.FullLoader) or {}
         return cls.configs[config_type]
 
