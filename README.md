@@ -141,7 +141,7 @@ Linux (Ubuntu 20+)
 > $ python3 app-cli.py download chat -j json/subject-1/lectures/lecture-1.json -o data/videos/
 > 
 > # download backpack document for subject-1 / document-1, save it under data/documents/
-> $ python3 app-cli.py download document -j json/subject-1/document-1.json -o data/documents/
+> $ python3 app-cli.py download document -j json/subject-1/documents/document-1.json -o data/documents/
 > 
 >```
 
