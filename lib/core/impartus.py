@@ -121,6 +121,7 @@ class Impartus:
             temp_files_to_delete = set()
             ts_files = list()
             items_processed = 0
+            last_percent = 0
             for track_index, track_info in enumerate(tracks_info):
                 self.logger.info("[{}]: Downloading streams for track {} ..".format(rf_id, track_index))
                 streams_to_join = list()
@@ -168,8 +169,9 @@ class Impartus:
                     items_processed += 1
                     items_processed_percent = items_processed * 100 // summary.get('media_files')
                     try:
-                        if progress_callback_func:
+                        if progress_callback_func and items_processed_percent > last_percent:
                             progress_callback_func(items_processed_percent)
+                            last_percent = items_processed_percent
                     except RuntimeError as ex:
                         self.logger.warning("Download interrupted - {}".format(ex))
                         return False
