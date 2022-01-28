@@ -7,16 +7,16 @@ from pathlib import Path
 import qtawesome as qta
 
 from PySide2 import QtCore, QtWidgets
+from PySide2.QtCore import QItemSelection
 from PySide2.QtGui import QIcon
-from PySide2.QtWidgets import QTableWidget, QTableWidgetItem, QHeaderView, QWidget, QPushButton, QAbstractItemView, \
-    QTabWidget
+from PySide2.QtWidgets import QTableWidget, QTableWidgetItem, QHeaderView, QWidget, QPushButton, QAbstractItemView
 
 from lib.config import Config, ConfigType
 from lib.core.impartus import Impartus
+from lib.data.labels import Labels
 from lib.finder import Finder
 from lib.threadlogging import ThreadLogger
 from lib.utils import Utils
-from lib.variables import Variables
 from ui.callbacks.utils import CallbackUtils
 from ui.callbacks.menucallbacks import MenuCallbacks
 from ui.helpers.datautils import DataUtils
@@ -54,6 +54,8 @@ class Table:
         self.logger = ThreadLogger(self.__class__.__name__).logger
 
         self.table_widget = self._setup_table(table_widget)
+        self.table_widget.selectionModel().selectionChanged.connect(self.on_row_select)
+
         self.video_ids = dict()
         self.selected_checkbox = None
         self.index = 0      # table rows
@@ -91,8 +93,6 @@ class Table:
         table_widget.setColumnCount(col_count)
         table_widget = self._set_headers(table_widget)
         table_widget.setSelectionBehavior(QAbstractItemView.SelectRows)
-        table_widget.selectionModel().currentChanged.connect(self.on_row_select)
-
         return table_widget
 
     def post_fill_tasks(self):
@@ -245,15 +245,38 @@ class Table:
             table_widget.horizontalHeader().setSectionResizeMode(i, QHeaderView.Interactive)
         return table_widget
 
-    def on_row_select(self, row_index):
-        cell_widget = self.table_widget.cellWidget(row_index.row(), 0)
-        if cell_widget:
-            checkbox = cell_widget.layout().itemAt(0).widget()
-            self.table_widget.scrollToItem(self.table_widget.item(row_index.row(), 0))
-            if self.selected_checkbox and self.selected_checkbox != checkbox:
-                self.selected_checkbox.setChecked(False)
-            self.selected_checkbox = checkbox
-            MenuCallbacks().set_menu_statuses()
+    def on_row_deselect(self, row_index):
+        progress_bar = self.table_widget.cellWidget(row_index, Columns.get_video_column_index_by_key('progressbar')).layout().itemAt(0).widget()
+        progress_bar.setTextColor()
+
+    def check_selected_row(self, row_index):
+        cell_widget = self.table_widget.cellWidget(row_index, 0)  # current table row/cell
+        if not cell_widget:
+            return
+
+        self.table_widget.scrollToItem(self.table_widget.item(row_index, 0))
+
+        checkbox = cell_widget.layout().itemAt(0).widget()
+        checkbox.setChecked(True)
+        self.selected_checkbox = checkbox
+
+    def set_progressbar_color(self, row_index, highlight=False):
+        cell_widget = self.table_widget.cellWidget(row_index, 0)  # current table row/cell
+        if not cell_widget:
+            return
+
+        progress_bar = self.table_widget.cellWidget(row_index, Columns.get_video_column_index_by_key(Labels.VIDEO__PROGRESSBAR.value))
+        progress_bar.setTextColorHighlight() if highlight else progress_bar.setTextColorNormal()
+
+    def on_row_select(self, selected_row: QItemSelection, deselected_row: QItemSelection):
+        if len(selected_row.indexes()) > 0:
+            selected_row_index = selected_row.indexes().pop().row()
+            self.check_selected_row(selected_row_index)
+            self.set_progressbar_color(selected_row_index, highlight=True)
+        if len(deselected_row.indexes()) > 0:
+            self.set_progressbar_color(deselected_row.indexes().pop().row(), highlight=False)
+
+        MenuCallbacks().set_menu_statuses()
 
     def show_hide_column(self, column):
         col_index = None
