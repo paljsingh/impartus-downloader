@@ -22,6 +22,7 @@ Feature list
 - Supports multi-track files. Tested with video lectures having up to 4 tracks.
 - Backpack slides download supported.
 - Lecture chats overlayed as closed captions for the video.
+- A command line interface.
 
 
 ---
@@ -112,6 +113,35 @@ Linux (Ubuntu 20+)
 > # Run application
 > $ python3 App.py
 > ```
+
+## Command Line
+> export IMPARTUS_USER='user@domain'
+> export IMPARTUS_PASS='password'
+> 
+> # login to impartus
+> $ python3 app-cli.py login
+> 
+> $ export IMPARTUS_TOKEN='token.from.login-command'
+> 
+> # save json info of subscribed subjects under json/subjects/
+> $ python3 app-cli.py subjects -s json/subjects/
+> 
+> # save lectures info for subject-1 under json/subject-1/lectures/
+> $ python3 app-cli.py lectures -j json/subjects/subject-1.json -o json/subject-1/lectures/
+> 
+> # save backpack documents info for subject-1 under json/subject-1/documents/
+> $ python3 app-cli.py documents -j json/subjects/subject-1.json -o json/subject-1/documents/
+> 
+> # download video for subject-1 / lecture-1, save it under data/videos/
+> $ python3 app-cli.py download video -j json/subject-1/lectures/lecture-1.json -o data/videos/
+> 
+> # download lecture chats for subject-1 / lecture-1, save it under data/videos/
+> $ python3 app-cli.py download chat -j json/subject-1/lectures/lecture-1.json -o data/videos/
+> 
+> # download backpack document for subject-1 / document-1, save it under data/documents/
+> $ python3 app-cli.py download document -j json/subject-1/document-1.json -o data/documents/
+> 
+
 
 
 ## Configuration
