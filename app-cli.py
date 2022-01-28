@@ -144,42 +144,42 @@ epiog_subjects = """
 Returns a json list containing subject data.
 
 example:
-./{app} subjects
+./{app} subjects [-o dir]
 """.format(app=app)
 
 epilog_lectures = """
 Returns a json list containing lecture videos info.
 
 example:
-./{app} lectures -j subject.json
+./{app} lectures -j subject.json [-o dir]
 """.format(app=app)
 
 epilog_documents = """
 Returns a json list containing backpack documents info.
 
 example:
-./{app} documents -j subject.json
+./{app} documents -j subject.json [-o dir]
 """.format(app=app)
 
 epilog_download_video = """
 Download a lecture video
 
 example:
-./{app} download video --j lecture.json -o dir
+./{app} download video -j lecture.json -o dir
 """
 
 epilog_download_chat = """
 Download chat for a lecture
 
 example:
-./{app} download chat --j lecture.json -o dir
+./{app} download chat -j lecture.json -o dir
 """
 
 epilog_download_document = """
 Download a document.
 
 example:
-./{app} download document -s subject.json -n 1 -o dir
+./{app} download document -j document.json -o dir
 """.format(app=app)
 
 epilog = """
