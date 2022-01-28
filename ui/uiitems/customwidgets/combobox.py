@@ -39,7 +39,7 @@ class CustomComboBox(QComboBox):
             self.setItemText(0, '{}'.format(prev_item_count - 1 + len(items)))
         else:
             # add item : 0
-            self.addItem(qta.icon(Icons.SLIDES__SHOW_SLIDES.value), '{}'.format(len(items)), '')
+            self.addItem(qta.icon(Icons.DOCUMENT__SHOW_SLIDES.value), '{}'.format(len(items)), '')
             self.model().item(0).setEnabled(False)
 
         self.show()

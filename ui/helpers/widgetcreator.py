@@ -3,6 +3,7 @@ from typing import Dict
 from PySide2 import QtCore
 from PySide2.QtWidgets import QHBoxLayout, QWidget, QPushButton
 
+from lib.data.Icons import DocumentIcons
 from ui.uiitems.customwidgets.checkbox import CustomCheckBox
 from ui.uiitems.customwidgets.pushbutton import CustomPushButton
 
@@ -21,15 +22,18 @@ class WidgetCreator:
         return widget_layout
 
     @classmethod
-    def add_actions_buttons(cls, actions: Dict):
+    def add_actions_buttons(cls, actions: Dict, extension: str = None):
         for key, val in actions.items():
             if val['type'] == QPushButton:
                 pushbutton = CustomPushButton()
                 pushbutton.setText('')
-                pushbutton.setObjectName(val['text'])
                 pushbutton.setToolTip(val['tooltip'])
                 pushbutton.setMaximumWidth(48)
-                pushbutton.setIcon(val['text'])
+                pushbutton.setObjectName(val['text'])
+                if val['icon']:
+                    pushbutton.setIcon(val['icon'])
+                elif extension:
+                    pushbutton.setIcon(DocumentIcons.filetypes.get(extension))
 
                 yield pushbutton
 
