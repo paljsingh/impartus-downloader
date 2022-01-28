@@ -126,7 +126,7 @@ Linux (Ubuntu 20+)
 > $ export IMPARTUS_TOKEN='token.from.login-command'
 > 
 > # save json info of subscribed subjects under json/subjects/
-> $ python3 app-cli.py subjects -s json/subjects/
+> $ python3 app-cli.py subjects -o json/subjects/
 > 
 > # save lectures info for subject-1 under json/subject-1/lectures/
 > $ python3 app-cli.py lectures -j json/subjects/subject-1.json -o json/subject-1/lectures/
