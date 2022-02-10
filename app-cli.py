@@ -110,7 +110,9 @@ def download_chat():
         video_metadata = json.load(fh)
     vtt_filename = os.path.basename(Utils.get_captions_path(video_metadata))
     vtt_filepath = '{}/{}'.format(app_args.dir, vtt_filename)
-    Captions().save_vtt(impartus.get_chats(json), vtt_filepath)
+    chats = impartus.get_chats(video_metadata)
+    video_id = video_metadata['ttid'] if video_metadata.get('ttid') else video_metadata['fcid']
+    Captions.save_as_captions(video_id, video_metadata, chats, vtt_filepath)
 
 
 def download_document():
