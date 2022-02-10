@@ -173,6 +173,7 @@ class Tree:
             return
         else:
             item_child = QTreeWidgetItem(item_parent)
+
             for i, (key, val) in enumerate(Columns.get_document_data_columns().items()):
                 if i == 0:
                     continue
@@ -225,9 +226,9 @@ class Tree:
 
         cell_value = ''
         # add pushbuttons grouped under a QWidget, assign a numeric cell_value to QWidget to enable sorting.
-        for pushbutton in WidgetCreator.add_actions_buttons(ActionItems.slides_actions, metadata.get('ext')):
+        for key, pushbutton in WidgetCreator.add_actions_buttons(ActionItems.slides_actions, metadata.get('ext')):
             widget_layout.addWidget(pushbutton)
-            btn_type, btn_state = self.set_pushbutton_status(pushbutton, metadata, self.callbacks, widget, subject)
+            btn_type, btn_state = self.set_pushbutton_status(key, pushbutton, metadata, self.callbacks, widget, subject)
 
             # a slightly hackish way to sort widgets -
             # create an integer out of the (slide count, button1_state, button2_state, ...)
@@ -236,51 +237,43 @@ class Tree:
 
         return widget, int(cell_value)
 
-    def set_pushbutton_status(self, pushbutton, metadata, callbacks, widget, subject=None):
+    def set_pushbutton_status(self, btn_type, pushbutton, metadata, callbacks, widget, subject=None):
         """
         Set pushbutton status
         """
         filepath = metadata.get('offline_filepath')
         assert(filepath is not None)
-        # slides download is enabled if the slides file exists on server, but not locally.
-        if pushbutton.objectName() == ActionItems.slides_actions[Labels.DOCUMENT__OPEN_DOCUMENT.value]['text'] \
-                or pushbutton.objectName() in DocumentIcons.filetypes.values():
-            btn_type = Labels.DOCUMENT__OPEN_DOCUMENT.value
-            pushbutton.clicked.connect(partial(self.callbacks[Labels.DOCUMENT__OPEN_DOCUMENT.value], filepath))
 
+        # slides download is enabled if the slides file exists on server, but not locally.
+        if btn_type == Labels.DOCUMENT__OPEN_DOCUMENT.value:
+            pushbutton.clicked.connect(partial(self.callbacks[btn_type], filepath))
             # open document is enabled if the document file exists locally.
             if os.path.exists(filepath):
                 btn_state = True
             else:
                 btn_state = False
-        elif pushbutton.objectName() == ActionItems.slides_actions[Labels.DOCUMENT__OPEN_FOLDER.value]['text']:
-            btn_type = Labels.DOCUMENT__OPEN_FOLDER.value
+        elif btn_type == Labels.DOCUMENT__OPEN_FOLDER.value:
             folder_path = os.path.dirname(filepath)
-            pushbutton.clicked.connect(partial(self.callbacks[Labels.DOCUMENT__OPEN_FOLDER.value], folder_path))
+            pushbutton.clicked.connect(partial(self.callbacks[btn_type], folder_path))
 
             # open folder should be enabled, if folder exist
-
             if folder_path and os.path.exists(folder_path):
                 btn_state = True
             else:
                 btn_state = False
-        elif pushbutton.objectName() == ActionItems.slides_actions[Labels.DOCUMENT__ATTACH_DOCUMENT.value]['text']:
-            btn_type = Labels.DOCUMENT__ATTACH_DOCUMENT.value
-
+        elif btn_type == Labels.DOCUMENT__ATTACH_DOCUMENT.value:
             # attach slides is enabled, if at least one of the files exist.
             folder_path = os.path.dirname(filepath)
-            pushbutton.clicked.connect(partial(self.callbacks[Labels.DOCUMENT__ATTACH_DOCUMENT.value], folder_path))
+            pushbutton.clicked.connect(partial(self.callbacks[btn_type], folder_path))
 
             if folder_path and os.path.exists(folder_path):
                 btn_state = True
             else:
                 btn_state = False
-        elif pushbutton.objectName() == ActionItems.slides_actions[Labels.DOCUMENT__DOWNLOAD_DOCUMENT.value]['text']:
+        elif btn_type == Labels.DOCUMENT__DOWNLOAD_DOCUMENT.value:
             assert(widget is not None)
             assert(subject is not None)
-            btn_type = Labels.DOCUMENT__DOWNLOAD_DOCUMENT.value
-            pushbutton.clicked.connect(partial(callbacks[Labels.DOCUMENT__DOWNLOAD_DOCUMENT.value],
-                                               subject, metadata, widget))
+            pushbutton.clicked.connect(partial(callbacks[btn_type], subject, metadata, widget))
 
             if self.impartus.is_authenticated():
                 file_url = metadata.get('fileUrl')

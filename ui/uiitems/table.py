@@ -319,11 +319,11 @@ class Table:
         is_flipped = False if metadata.get('ttid') else True
         rf_id = metadata.get('fcid') if is_flipped else metadata.get('ttid')
 
-        for pushbutton in WidgetCreator.add_actions_buttons(ActionItems.video_actions):
+        for key, pushbutton in WidgetCreator.add_actions_buttons(ActionItems.video_actions):
             widget_layout.addWidget(pushbutton)
 
             # disable download button, if video exists locally.
-            if pushbutton.objectName() == ActionItems.video_actions['download_video']['text']:
+            if pushbutton.objectName() == ActionItems.video_actions['download_video']['icon']:
                 pushbutton.clicked.connect(partial(self.callbacks['download_video'], rf_id))
 
                 if metadata.get('offline_filepath'):
@@ -335,7 +335,7 @@ class Table:
                         download_video_state = False
 
                 pushbutton.setEnabled(download_video_state)
-            elif pushbutton.objectName() == ActionItems.video_actions['play_video']['text']:
+            elif pushbutton.objectName() == ActionItems.video_actions['play_video']['icon']:
                 pushbutton.clicked.connect(partial(self.callbacks['play_video'], rf_id))
 
                 if metadata.get('offline_filepath'):
@@ -345,7 +345,7 @@ class Table:
                     play_video_state = False
 
                 pushbutton.setEnabled(play_video_state)
-            elif pushbutton.objectName() == ActionItems.video_actions['download_chats']['text']:
+            elif pushbutton.objectName() == ActionItems.video_actions['download_chats']['icon']:
                 pushbutton.clicked.connect(partial(self.callbacks['download_chats'], rf_id))
 
                 # enable download chats button, if lecture chats file does not exist.
@@ -359,7 +359,7 @@ class Table:
                         download_chats_state = False
 
                 pushbutton.setEnabled(download_chats_state)
-            elif pushbutton.objectName() == ActionItems.video_actions['open_folder']['text']:
+            elif pushbutton.objectName() == ActionItems.video_actions['open_folder']['icon']:
                 pushbutton.clicked.connect(partial(self.callbacks['open_folder'], rf_id))
 
                 # enable download chats button, if lecture chats file does not exist.

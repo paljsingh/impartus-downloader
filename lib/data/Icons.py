@@ -78,6 +78,7 @@ class DocumentIcons:
 
         'ppt': Icons.DOCUMENT__FILETYPE_PRESENTATION.value,
         'pptx': Icons.DOCUMENT__FILETYPE_PRESENTATION.value,
+        'ppsx': Icons.DOCUMENT__FILETYPE_PRESENTATION.value,
         'odp': Icons.DOCUMENT__FILETYPE_PRESENTATION.value,
         'key': Icons.DOCUMENT__FILETYPE_PRESENTATION.value,
 

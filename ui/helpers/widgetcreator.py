@@ -22,23 +22,31 @@ class WidgetCreator:
         return widget_layout
 
     @classmethod
-    def add_actions_buttons(cls, actions: Dict, extension: str = None):
+    def add_actions_buttons(cls, actions: Dict, ext: str = None):
         for key, val in actions.items():
             if val['type'] == QPushButton:
                 pushbutton = CustomPushButton()
                 pushbutton.setText('')
                 pushbutton.setToolTip(val['tooltip'])
                 pushbutton.setMaximumWidth(48)
-                pushbutton.setObjectName(val['text'])
-                if val['icon']:
+
+                # if icon is undefined, infer it from the extension
+                if val.get('icon'):
+                    pushbutton.setObjectName(val['icon'])
                     pushbutton.setIcon(val['icon'])
-                elif extension:
-                    icon = DocumentIcons.filetypes.get(extension)
-                    if not icon:
-                        icon = Icons.DOCUMENT__FILETYPE_MISC.value
+                else:
+                    icon = cls.get_icon_from_ext(ext)
+                    pushbutton.setObjectName(icon)
                     pushbutton.setIcon(icon)
 
-                yield pushbutton
+                yield key, pushbutton
+
+    @classmethod
+    def get_icon_from_ext(cls, ext: str):
+        if ext and DocumentIcons.filetypes.get(ext):
+            return DocumentIcons.filetypes[ext]
+        else:
+            return Icons.DOCUMENT__FILETYPE_MISC.value
 
     @classmethod
     def add_checkbox_widget(cls, data):
