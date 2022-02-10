@@ -68,18 +68,20 @@ OSX (10.14+)
 > ```
 
 Windows 10
->``` 
+>```
+> The following steps shall work on Windows CMD prompt.
+>
 > # clone repo
 > git.exe clone https://github.com/paljsingh/impartus-downloader.git
 > cd impartus-downloader
 > 
-> # setup virtualenv (optional)
+> # setup virtualenv (optional, but recommended if you have Anaconda installed on the system)
 > pip.exe install virtualenv
 > virtualenv venv
-> source .\venv\Scripts\activate
+> call .\venv\Scripts\activate.bat
 > 
 > # install dependencies
-> pip3.exe install -r requirements.txt
+> pip.exe install -r requirements.txt
 >
 > Download win64-gpl zip from the following link, extract and copy ffmpeg.exe to
 > impartus-downloader folder. The ffmpeg.exe statically bundles the dependent libs and
