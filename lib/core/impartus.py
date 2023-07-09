@@ -216,7 +216,7 @@ class Impartus:
                         if mappings.get(subject['subjectName']):
                             backpack_slide['subjectNameShort'] = mappings.get(backpack_slide['subjectName'])
                         backpack_slide['ext'] = backpack_slide['filePath'].split('.')[-1]
-                        pattern = r'.{}$'.format(backpack_slide['ext'])
+                        pattern = r'.{}$'.format(re.escape(backpack_slide['ext']))
                         backpack_slide['fileName'] = re.sub(pattern, '', backpack_slide['fileName'])
 
                     yield subject, backpack_slides

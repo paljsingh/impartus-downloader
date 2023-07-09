@@ -135,7 +135,7 @@ class Tree:
 
             if not document.get('ext'):
                 document['ext'] = str.split(document['filePath'], '.')[-1]
-            document['fileName'] = re.sub('.{}$'.format(document['ext']), '', document['fileName'])
+            document['fileName'] = re.sub('.{}$'.format(re.escape(document['ext'])), '', document['fileName'])
             document['fileLengthKB'] = document['fileLength'] // 1024
             document['fileLengthMB'] = '{:.1f}'.format(document['fileLength'] / (1024 * 1024))
 
