@@ -74,7 +74,16 @@ class Impartus:
         m3u8_urls = self._download_m3u8(master_url)
 
         if len(m3u8_urls) > 0:
-            response = self.session.get(m3u8_urls[0], timeout=self.timeouts)
+            m3u8_url = m3u8_urls[0]
+            last_res = 0
+            for url in m3u8_urls:
+                resolution = re.sub(r'^.*?([0-9]+)[xX][0-9]+.*\.m3u8', r"\1", url)
+                if resolution and int(resolution) > last_res:
+                    m3u8_url = url
+                    last_res = int(resolution)
+
+            self.logger.info("Using {} for download".format(m3u8_url))
+            response = self.session.get(m3u8_url, timeout=self.timeouts)
             if response.status_code == 200:
                 return response.text.splitlines()
 
